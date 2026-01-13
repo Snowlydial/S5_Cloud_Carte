@@ -1,0 +1,69 @@
+services:
+  postgres:
+    image: postgis/postgis:17-3.5
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pwd
+      POSTGRES_DB: cloud_carte
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - appnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  springboot:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: springboot-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/cloud_carte
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: pwd
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8080:8080"
+    networks:
+      - appnet
+
+  web-frontend:
+    build:
+      context: ./frontend-web
+      dockerfile: Dockerfile
+    container_name: react-web-app
+    depends_on:
+      - springboot
+    ports:
+      - "80:80"
+    networks:
+      - appnet
+
+  mobile-frontend:
+    build:
+      context: ./frontend-mobile
+      dockerfile: Dockerfile
+    container_name: ionic-vue-app
+    depends_on:
+      - springboot
+    ports:
+      - "8100:80"
+    networks:
+      - appnet
+
+volumes:
+  postgres_data:
+
+networks:
+  appnet:
+    driver: bridge
