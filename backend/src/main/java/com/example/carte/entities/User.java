@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "\"user\"")  // Escaped because "user" is a reserved keyword in PostgreSQL
+@Table(name = "user_cloud")
 public class User {
 
     @Id

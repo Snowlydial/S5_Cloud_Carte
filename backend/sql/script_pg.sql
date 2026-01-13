@@ -2,7 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS postgis;
 
 -- Users table (matches your User entity)
-CREATE TABLE IF NOT EXISTS "user" (
+CREATE TABLE IF NOT EXISTS user_cloud (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     mot_de_passe VARCHAR(255) NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS "user" (
 -- Table for road issues with geolocation
 CREATE TABLE IF NOT EXISTS road_issues (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES "user"(id),
+    user_id INTEGER REFERENCES user_cloud(id),
     location GEOGRAPHY(POINT, 4326),  -- Lat/Long point
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS road_issues (
 CREATE INDEX idx_road_issues_location ON road_issues USING GIST(location);
 
 -- Create default manager account (password: manager123 - should be hashed in production)
-INSERT INTO "user" (email, mot_de_passe, role) 
+INSERT INTO user_cloud (email, mot_de_passe, role) 
 VALUES ('manager@gmail.com', 'man', 'MANAGER')
 ON CONFLICT (email) DO NOTHING;
 
