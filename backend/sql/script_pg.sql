@@ -34,7 +34,7 @@ CREATE INDEX idx_road_issues_location ON road_issues USING GIST(location);
 
 -- Create default manager account (password: manager123 - should be hashed in production)
 INSERT INTO "user" (email, mot_de_passe, role) 
-VALUES ('manager@example.com', 'manager123', 'MANAGER')
+VALUES ('manager@gmail.com', 'man', 'MANAGER')
 ON CONFLICT (email) DO NOTHING;
 
 -- Example: Insert a test road issue in Antananarivo center
