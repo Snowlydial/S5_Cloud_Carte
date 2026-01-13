@@ -1,4 +1,9 @@
-To "reinitialize" the db in case you change the content script_pg.sql:
+# IMPORTANT:
+Before starting up the docker with ```docker compose up --build -d``` make sure to change ```./backend/sql/script_pg.sql```. 
+And if you update the script mid-coding then read the instructions below.
+
+# In case you changed the content or the DB doesn't update:
+In case you changed the content script_pg.sql, you'll have to do this:
 ```bash
 docker compose down
 
