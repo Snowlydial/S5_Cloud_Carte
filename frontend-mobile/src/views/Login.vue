@@ -24,7 +24,7 @@
           </ion-input>
         </ion-item>
 
-        <ion-button expand="block" @click="handleLogin" class="ion-margin-top">
+        <ion-button expand="block" @click="handlelogin" class="ion-margin-top">
           Se connecter
         </ion-button>
 
@@ -63,7 +63,7 @@ const maFonctionDeVerification = (user: string, pass: string): boolean => {
 const inscription = () => {
   router.push('/inscription');
 }
-const handleLogin = async () => {
+const handlelogin = async () => {
 
   const loginResult = await login(username.value, password.value);
   if (success.value) {
