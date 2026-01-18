@@ -16,20 +16,13 @@
         </div>
 
         <ion-item fill="outline" mode="md" class="ion-margin-bottom">
-          <ion-input 
-            v-model="username" 
-            label="Nom d'utilisateur" 
-            label-placement="floating" 
+          <ion-input v-model="username" label="Nom d'utilisateur" label-placement="floating"
             placeholder="Choisissez un nom">
           </ion-input>
         </ion-item>
 
         <ion-item fill="outline" mode="md" class="ion-margin-bottom">
-          <ion-input 
-            v-model="password" 
-            type="password" 
-            label="Mot de passe" 
-            label-placement="floating" 
+          <ion-input v-model="password" type="password" label="Mot de passe" label-placement="floating"
             placeholder="********">
           </ion-input>
         </ion-item>
@@ -45,32 +38,43 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { 
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem, 
+import {
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonItem,
   IonLabel, IonInput, IonButton, IonIcon, IonButtons, IonBackButton,
-  IonDatetime, IonDatetimeButton, IonModal, toastController 
+  IonDatetime, IonDatetimeButton, IonModal, toastController , alertController
 } from '@ionic/vue';
 import { personAddOutline } from 'ionicons/icons';
+import useAuth from '@/composables/useAuth';
 
 const router = useRouter();
 const username = ref('');
 const password = ref('');
 const birthDate = ref('');
 
+const { signin, error, success } = useAuth();
+
 const handleRegister = async () => {
-  // Ici, vous ajouteriez votre logique pour sauvegarder l'utilisateur
-  console.log('Inscription de:', username.value, birthDate.value);
+  const signinResult = await signin(username.value, password.value);
+  if (success.value) {
+    router.push('/login');
+    const toast = await toastController.create({
+      message: 'Compte créé avec succès !',
+      duration: 2000,
+      color: 'success',
+      position: 'top'
+    });
+    await toast.present();
+    return;
+  }
+  else {
 
-  const toast = await toastController.create({
-    message: 'Compte créé avec succès !',
-    duration: 2000,
-    color: 'success',
-    position: 'top'
-  });
-  await toast.present();
-
-  // Retour à la page de login
-  router.push('/login');
+    const alert = await alertController.create({
+      header: 'Échec de connexion',
+      message: error.value || 'Nom d\'utilisateur ou mot de passe incorrect.',
+      buttons: ['OK'],
+    });
+    await alert.present();
+  }
 };
 </script>
 
