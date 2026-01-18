@@ -14,7 +14,7 @@
 
         <ion-item fill="outline" mode="md" class="ion-margin-bottom">
           <ion-input v-model="username" label="Nom d'utilisateur" label-placement="floating"
-            placeholder="Entrez votre nom">
+            placeholder="Entrez votre nom" >
           </ion-input>
         </ion-item>
 
@@ -48,8 +48,8 @@ import { personCircleOutline } from 'ionicons/icons';
 import useAuth from '@/composables/useAuth';
 
 // Data
-const username = ref('');
-const password = ref('');
+const username = ref('testuser123@example.com');
+const password = ref('123456');
 const router = useRouter();
 const { login, signin, error, success } = useAuth();
 

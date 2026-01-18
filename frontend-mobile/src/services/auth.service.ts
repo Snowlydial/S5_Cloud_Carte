@@ -6,7 +6,8 @@ export async function loginService(email: string, password: string): Promise<Api
     try {
         const testEmail = "testuser123@example.com";
         const testPassword = "123456";
-        const userCredential = await signInWithEmailAndPassword(auth, testEmail, testPassword);
+        // const userCredential = await signInWithEmailAndPassword(auth, testEmail, testPassword);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
         return {
             success: true,
