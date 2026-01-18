@@ -15,3 +15,4 @@ docker-compose up --build -d
 -v will delete the volumes
 
 --build for everytime you change a Java code
+a
