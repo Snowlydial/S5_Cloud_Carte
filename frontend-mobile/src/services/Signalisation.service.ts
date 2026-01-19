@@ -1,5 +1,6 @@
 import { auth } from "@/firebase";
 import { ApiResponse } from "@/types/apiResponse";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 // import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "@firebase/auth";
 
 export async function signaler(email: string, password: string): Promise<ApiResponse> {
