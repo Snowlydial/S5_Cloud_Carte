@@ -1,14 +1,32 @@
-import { auth } from "@/firebase";
-import { ApiResponse } from "@/types/apiResponse";
+
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "@firebase/auth";
+import { ApiResponse } from "@/types/apiResponse";
+import { Profil } from "@/models/Profil";
+import { ProfilRepository } from "@/repositories/ProfilRepository";
+import { Compte } from "@/models/Compte";
+import { CompteRepository } from "@/repositories/CompteRepository";
+import { auth } from "@/firebase";
 
 export async function loginService(email: string, password: string): Promise<ApiResponse> {
+    const compte = await CompteRepository.findByEmail(email);
+
     try {
-        const testEmail = "testuser123@example.com";
-        const testPassword = "123456";
+        if (compte && compte.tentative && compte.tentative >= 3) {
+            throw new Error("Compte verrouillé en raison de trop nombreuses tentatives de connexion échouées.");
+        }
+        // const testEmail = "testuser123@example.com";
+        // const testPassword = "123456";
         // const userCredential = await signInWithEmailAndPassword(auth, testEmail, testPassword);
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
+        // const profil: Profil = {
+        //     id: "admin",
+        //     nom: "Administrateur"
+        // };
+
+        // const profils : Profil[] = await ProfilRepository.getAll();
+        // console.log("Profils récupérés lors de la connexion :",     profils);
+        localStorage.setItem("loginTime", Date.now().toString());
         return {
             success: true,
             code: 200,
@@ -19,6 +37,16 @@ export async function loginService(email: string, password: string): Promise<Api
             }
         };
     } catch (err: any) {
+
+        console.log("Compte trouvé lors de l'échec de connexion :", compte);
+        if (compte && compte.mdp !== password) {
+            const tentative = compte.tentative || 0;
+
+            await CompteRepository.update(compte.id!, { tentative: tentative + 1 });
+
+        }
+
+
         return {
             success: false,
             code: 400,
@@ -33,9 +61,30 @@ export async function loginService(email: string, password: string): Promise<Api
 
 export async function signinService(email: string, password: string): Promise<ApiResponse> {
     try {
-        const testEmail = "testuser123@example.com";
-        const testPassword = "123456";
-        const userCredential = await createUserWithEmailAndPassword(auth, testEmail, testPassword);
+        // const testEmail = "testuser123@example.com";
+        // const testPassword = "123456";
+
+
+
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+        const profil: Profil | null = await ProfilRepository.getByName("utilisateur");
+        if (!profil) {
+            throw new Error("Profil 'utilisateur' non trouvé");
+        }
+        if (!profil.id) {
+            throw new Error("Profil ID non défini");
+        }
+
+        const compte: Compte = {
+            email: email,
+            nom: email,
+            mdp: password,
+            profilId: profil.id
+        };
+        await CompteRepository.create(compte);
+
+
 
         return {
             success: true,
