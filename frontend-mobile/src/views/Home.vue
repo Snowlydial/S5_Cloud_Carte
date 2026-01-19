@@ -10,12 +10,18 @@
       <div class="main-wrapper">
         
         <div id="map" ref="mapContainer"></div>
-
+        <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin">
+          <ion-fab-button size="small" @click="getCurrentLocation" color="light">
+            <ion-icon :icon="locateOutline"></ion-icon>
+          </ion-fab-button>
+        </ion-fab>
         <div class="form-container">
           <ion-list>
             <ion-item lines="none">
               <ion-label>
-                <h2 v-if="form.lat">📍 Position : {{ form.lat.toFixed(4) }}, {{ form.lng.toFixed(4) }}</h2>
+                <h2 v-if="form.lat !== null && form.lng !== null">
+  📍 Position : {{ form.lat.toFixed(4) }}, {{ form.lng.toFixed(4) }}
+</h2>
                 <h2 v-else>Sélectionnez un point sur la carte</h2>
               </ion-label>
             </ion-item>
@@ -45,10 +51,12 @@ import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, 
   IonList, IonItem, IonLabel, IonSelect, IonSelectOption, IonButton 
 } from '@ionic/vue';
+import { Geolocation } from '@capacitor/geolocation'; // Importation du plugin
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import useTypeSignalement from '@/composables/useTypeSignalement';
 import useSignalement from '@/composables/useSignalement';
+import { locateOutline } from 'ionicons/icons';
 
 const { typesSignalement,  getListeTypeSignalement, error, success  } = useTypeSignalement();
 const {signaler, loading  } = useSignalement();
@@ -72,6 +80,35 @@ callGetTypesSignalement();
 
 let map: L.Map;
 let marker: L.Marker | null = null;
+
+// --- NOUVELLE FONCTION DE GÉOLOCALISATION ---
+const getCurrentLocation = async () => {
+  try {
+    const coordinates = await Geolocation.getCurrentPosition({
+      enableHighAccuracy: true
+    });
+
+    const { latitude, longitude } = coordinates.coords;
+    const newPos = L.latLng(latitude, longitude);
+
+    // 1. Centrer la carte
+    map.setView(newPos, 16);
+
+    // 2. Mettre à jour le formulaire
+    form.value.lat = latitude;
+    form.value.lng = longitude;
+
+    // 3. Placer ou déplacer le marqueur
+    if (marker) {
+      marker.setLatLng(newPos);
+    } else {
+      marker = L.marker(newPos).addTo(map);
+    }
+  } catch (err) {
+    console.error("Erreur de localisation", err);
+    alert("Impossible de récupérer votre position. Vérifiez vos paramètres GPS.");
+  }
+};
 
 const envoyerSignalement = () => {
   if (form.value.lat === null || form.value.lng === null) {
@@ -112,6 +149,7 @@ onMounted(() => {
   setTimeout(() => {
     map.invalidateSize();
   }, 500);
+  getCurrentLocation();
 });
 </script>
 
@@ -135,4 +173,11 @@ onMounted(() => {
   box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
   overflow-y: auto;
 }
+
+ion-fab {
+  margin-top: 10px;
+}
+#map { flex: 6; width: 100%; position: relative; }
+.main-wrapper { display: flex; flex-direction: column; height: 100%; }
+.form-container { flex: 4; background: white; padding: 10px; z-index: 10; }
 </style>
