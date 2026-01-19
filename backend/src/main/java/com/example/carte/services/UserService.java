@@ -128,7 +128,6 @@ public class UserService {
         if (isOnline() && request.getFirebaseUid() != null && !request.getFirebaseUid().isEmpty()) {
             FirebaseToken token = FirebaseAuth.getInstance().verifyIdToken(request.getFirebaseUid());
             String firebaseUid = token.getUid();
-
             // Assigner Firebase UID et synchroniser
             user.setFirebaseUid(firebaseUid);
             user = syncFirebaseUser(user.getFirebaseUid(), user.getEmail());
