@@ -37,8 +37,13 @@ const DashboardPage = () => {
                 <div className="modules-grid">
                     <div className="module-card">
                         <h3>Carte & Signalements</h3>
-                        <p>Visualiser les problèmes routiers</p>
-                        <button className="btn-primary" disabled>Bientôt disponible</button>
+                        <p>Visualiser les problèmes routiers sur la carte d'Antananarivo</p>
+                        <button 
+                        onClick={() => navigate('/map')}
+                        className="btn-primary"
+                        >
+                        Voir la carte
+                        </button>
                     </div>
 
                     {user?.role === 'MANAGER' && (

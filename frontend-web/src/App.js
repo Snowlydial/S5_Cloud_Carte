@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import UserManagementPage from './pages/UserManagementPage';
+import MapPage from './pages/MapPage';
 import './App.css';
 
 //*-- Protected Route: redirects to login if not authenticated
@@ -75,8 +76,16 @@ function App() {
                         } 
                     />
 
+                    <Route 
+                        path="/map" 
+                        element={
+                        <ProtectedRoute>
+                            <MapPage />
+                        </ProtectedRoute>
+                        } 
+                    />
                     
-                    
+
                     {/* 404 fallback */}
                     <Route path="*" element={<Navigate to="/login" />} />
                 
