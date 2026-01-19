@@ -7,8 +7,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.carte.dto.LoginDTO;
+import com.example.carte.dto.UserDTO;
+import com.example.carte.entities.User;
+import com.example.carte.request.AuthRegisterRequest;
 import com.example.carte.request.AuthRequest;
 import com.example.carte.security.JwtUtil;
+import com.example.carte.services.UserService;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -17,26 +21,75 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+    private final UserService userService; // service hybride
 
-    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
+    public AuthController(AuthenticationManager authenticationManager, JwtUtil jwtUtil, UserService userService) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
+        this.userService = userService;
     }
+
+    // @PostMapping("/login")
+    // public ResponseEntity<LoginDTO> login(@RequestBody AuthRequest request) {
+
+    // Authentication authentication = authenticationManager.authenticate(
+    // new UsernamePasswordAuthenticationToken(request.getUsername(),
+    // request.getPassword()));
+
+    // String jwtToken = jwtUtil.generateToken(request.getUsername());
+
+    // LoginDTO loginDTO = new LoginDTO();
+    // loginDTO.setEmail(request.getUsername());
+    // // loginDTO.setMotDePasse(request.getPassword());
+    // loginDTO.setToken(jwtToken);
+
+    // return ResponseEntity.ok(loginDTO);
+    // }
 
     @PostMapping("/login")
     public ResponseEntity<LoginDTO> login(@RequestBody AuthRequest request) {
+        try {
+            // Utilisation du service hybride
+            var userDTO = userService.getUserHybrid(request.getFirebaseUid(), request.getUsername());
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+            // Vérification mot de passe offline uniquement
+            if (!userService.isOnline() && !userService.checkPasswordLocal(userDTO.getEmail(), request.getPassword())) {
+                return ResponseEntity.status(401).body(null);
+            }
 
-        String jwtToken = jwtUtil.generateToken(request.getUsername());
+            // Génération du token JWT local
+            String jwtToken = jwtUtil.generateToken(userDTO.getEmail());
 
-        LoginDTO loginDTO = new LoginDTO();
-        loginDTO.setEmail(request.getUsername());
-        // loginDTO.setMotDePasse(request.getPassword());
-        loginDTO.setToken(jwtToken);
+            LoginDTO loginDTO = new LoginDTO();
+            loginDTO.setEmail(userDTO.getEmail());
+            loginDTO.setRole(userDTO.getRole());
+            loginDTO.setToken(jwtToken);
 
-        return ResponseEntity.ok(loginDTO);
+            return ResponseEntity.ok(loginDTO);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(null);
+        }
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<LoginDTO> register(@RequestBody AuthRegisterRequest request) {
+        try {
+            UserDTO userDTO = userService.registerUser(request);
+
+            // Générer JWT après inscription
+            String jwtToken = jwtUtil.generateToken(userDTO.getEmail());
+
+            LoginDTO loginDTO = new LoginDTO();
+            loginDTO.setEmail(userDTO.getEmail());
+            loginDTO.setRole(userDTO.getRole());
+            loginDTO.setToken(jwtToken);
+
+            return ResponseEntity.ok(loginDTO);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 
 }

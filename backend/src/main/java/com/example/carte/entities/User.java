@@ -4,18 +4,32 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "user_cloud")
+@Table(
+    name = "user_cloud",
+    indexes = {
+        @Index(name = "idx_user_email", columnList = "email"),
+        @Index(name = "idx_user_firebase_uid", columnList = "firebase_uid")
+    }
+)
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(name = "firebase_uid", unique = true, length = 128)
+    private String firebaseUid;
+
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(name = "mot_de_passe", nullable = false)
-    private String motDePasse;
+    /**
+     * Mot de passe LOCAL (hashé – BCrypt)
+     * Utilisé UNIQUEMENT en mode offline
+     */
+    @Column(name = "password_plain")
+private String password;
+
 
     @Column(length = 50)
     private String role = "USER";
@@ -26,21 +40,38 @@ public class User {
     @Column(name = "is_blocked")
     private Boolean isBlocked = false;
 
-    @Column(name = "created_at")
+    @Column(name = "last_sync")
+    private LocalDateTime lastSync;
+
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    // Constructors
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_profil", nullable = false)
+    private Profil profil;
+
+
     public User() {}
 
-    public User(String email, String motDePasse, String role) {
+    public User(String firebaseUid, String email, String password, String role) {
+        this.firebaseUid = firebaseUid;
         this.email = email;
-        this.motDePasse = motDePasse;
+        this.password = password;
         this.role = role;
+        this.createdAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+
     public Integer getId() {
         return id;
+    }
+
+    public String getFirebaseUid() {
+        return firebaseUid;
+    }
+
+    public void setFirebaseUid(String firebaseUid) {
+        this.firebaseUid = firebaseUid;
     }
 
     public void setId(Integer id) {
@@ -55,12 +86,12 @@ public class User {
         this.email = email;
     }
 
-    public String getMotDePasse() {
-        return motDePasse;
+    public String getPassword() {
+        return password;
     }
 
-    public void setMotDePasse(String motDePasse) {
-        this.motDePasse = motDePasse;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getRole() {
@@ -83,15 +114,29 @@ public class User {
         return isBlocked;
     }
 
-    public void setIsBlocked(Boolean isBlocked) {
-        this.isBlocked = isBlocked;
+    public void setIsBlocked(Boolean blocked) {
+        isBlocked = blocked;
+    }
+
+    public LocalDateTime getLastSync() {
+        return lastSync;
+    }
+
+    public void setLastSync(LocalDateTime lastSync) {
+        this.lastSync = lastSync;
     }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public Profil getProfil() {
+        return profil;
     }
+
+    public void setProfil(Profil profil) {
+        this.profil = profil;
+    }
+    
+    
 }

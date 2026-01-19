@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:17.6
+    container_name: postgres-cloud
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mimi
+      POSTGRES_DB: cloud
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./script_pg.sql:/docker-entrypoint-initdb.d/script.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - springnet
+
+  springboot:
+    build: .
+    container_name: springboot-app-cloud
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/cloud
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: mimi
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"   
+      SPRING_DEVTOOLS_LIVE_RELOAD_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    networks:
+      - springnet
+    volumes:
+      - ./src:/app/src
+      - ./pom.xml:/app/pom.xml
+
+volumes:
+  postgres_data:
+
+networks:
+  springnet:
