@@ -60,9 +60,14 @@ const DashboardPage = () => {
                             </div>
 
                             <div className="module-card">
-                                <h3>Synchronisation</h3>
-                                <p>Sync Firebase ↔ Local</p>
-                                <button className="btn-primary" disabled>Bientôt disponible</button>
+                                <h3>Gestion Signalements</h3>
+                                <p>CRUD des signalements et synchronisation Firebase</p>
+                                <button 
+                                onClick={() => navigate('/signalements')}
+                                className="btn-primary"
+                                >
+                                Gérer les signalements
+                                </button>
                             </div>
                         </>
                     )}
