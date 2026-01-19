@@ -57,40 +57,34 @@ export const login = async (email, password) => {
             const { signInWithEmailAndPassword } = await import('firebase/auth');
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             const idToken = await userCredential.user.getIdToken();
-
+            console.log("Firebase ID Token:", idToken);
             //*-- Send Firebase token to backend
             // TODO: Uncomment when backend ready
-            /*
             const response = await axios.post(AUTH_ENDPOINTS.LOGIN, {
                 email,
-                firebaseToken: idToken
+                password,
+                firebaseUid: userCredential.user.uid,
             });
+            console.log("Backend login response:", response);
             return response.data;
-            */
 
             //*-- MOCK version (remove when backend ready)
-            const response = await mockApiCall(AUTH_ENDPOINTS.LOGIN, {
-                email,
-                firebaseToken: idToken
-            });
-            return response.data;
+            // const response = await mockApiCall(AUTH_ENDPOINTS.LOGIN, {
+            //     email,
+            //     password,
+            //     firebaseToken: idToken
+            // });
         }
 
         //*-- Fallback: Local authentication
         // TODO: Uncomment when backend ready
-        /*
         const response = await axios.post(AUTH_ENDPOINTS.LOGIN, {
             email,
             password
-        });
-        return response.data;
-        */
-
-        //*-- MOCK version (remove when backend ready)
-        const response = await mockApiCall(AUTH_ENDPOINTS.LOGIN, {
-            email,
-            password
-        });
+            });
+            return response.data;
+           
+            
         return response.data;
 
     } catch (error) {
@@ -114,32 +108,34 @@ export const login = async (email, password) => {
 export const register = async (email, password) => {
     const isOnline = checkOnlineStatus();
     let firebaseUid = null;
-
+    let idToken = null;
     try {
         //*-- Try Firebase registration if online and configured
         if (isOnline && isFirebaseConfigured && auth) {
             const { createUserWithEmailAndPassword } = await import('firebase/auth');
+            console.log("auth", auth);
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             firebaseUid = userCredential.user.uid;
+            idToken = await userCredential.user.getIdToken();
         }
 
         //*-- Always register in backend (with or without Firebase UID)
         // TODO: Uncomment when backend ready
-        /*
         const response = await axios.post(AUTH_ENDPOINTS.REGISTER, {
             email,
             password,
-            firebaseUid
-        });
-        return response.data;
+            firebaseUid : idToken
+            });
+            /*
+            return response.data;
         */
 
         //*-- MOCK version (remove when backend ready)
-        const response = await mockApiCall(AUTH_ENDPOINTS.REGISTER, {
-            email,
-            password,
-            firebaseUid
-        });
+        // const response = await mockApiCall(AUTH_ENDPOINTS.REGISTER, {
+        //     email,
+        //     password,
+        //     firebaseUid
+        // });
         return response.data;
 
     } catch (error) {

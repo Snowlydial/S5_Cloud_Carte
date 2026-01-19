@@ -85,7 +85,7 @@ public class ProblemeService {
                 String uid = token.getUid();
 
                 // ici tu devrais récupérer ton User local correspondant au firebaseUid
-                user = (User) problemeRepo.findUserByFirebaseUid(uid);
+                user = (User) utilisateurRepository.findByFirebaseUid(uid).get();
                 syncFirebaseProblemes(user);
 
             } catch (Exception e) {
@@ -94,7 +94,7 @@ public class ProblemeService {
         }
 
         if (user == null) {
-            user = problemeRepo.findUserByEmail(email);
+            user = utilisateurRepository.findByEmail(email).get();
         }
 
         List<Probleme> problemes = problemeRepo.findByCompte(user);
