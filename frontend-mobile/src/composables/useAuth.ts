@@ -1,10 +1,10 @@
 // src/composables/useAuth.ts
 import { ref } from "vue";
 import type { User } from "firebase/auth";
-import { loginService, signinService } from "@/services/auth.service";
 import { ApiResponse } from "@/types/apiResponse";
-import { getErrorMessage } from "@/utils/getErrorMessage";
-import { getSuccessMessage } from "@/utils/getSuccessMessage";
+import { loginService, signinService } from "@/services/auth.service";
+import { Util } from "@/utils/util";
+import { getErrorMessage, getSuccessMessage } from "@/utils/messageUtil";
 
 const user = ref<User | null>(null);
 const error = ref<string | null>(null);
@@ -21,24 +21,25 @@ const useAuth = () => {
                 uid: response.data?.uid || '',
                 email: response.data?.email || ''
             } as User;
-            success.value = getSuccessMessage (response);
+            success.value = getSuccessMessage(response);
         } else {
-            error.value =  getErrorMessage (response);
+            error.value = getErrorMessage(response);
         }
         loading.value = false;
     };
 
     const signin = async (email: string, password: string) => {
-            loading.value = true;
+        loading.value = true;
         const response: ApiResponse = await signinService(email, password);
+        // console.log(response);
         if (response.success) {
             user.value = {
                 uid: response.data?.uid || '',
                 email: response.data?.email || ''
             } as User;
-            success.value = getSuccessMessage (response);
+            success.value = getSuccessMessage(response);
         } else {
-            error.value =  getErrorMessage (response);
+            error.value = getErrorMessage(response);
         }
         loading.value = false;
     };
@@ -47,7 +48,9 @@ const useAuth = () => {
         console.log(`Récupération de la fiche pour : ${idUtilisateur}`);
     };
 
-    return { user, login, signin, fiche, loading, error , success };
+    return { user, login, signin, fiche, loading, error, success };
 };
 
 export default useAuth;
+
+
