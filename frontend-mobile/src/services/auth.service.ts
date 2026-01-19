@@ -19,6 +19,11 @@ export async function loginService(email: string, password: string): Promise<Api
         // const userCredential = await signInWithEmailAndPassword(auth, testEmail, testPassword);
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
+        console.log("Compte trouvé lors de la connexion réussie :", compte);
+        if (compte){
+            localStorage.setItem("compteId", compte.id!);
+        }
+
         // const profil: Profil = {
         //     id: "admin",
         //     nom: "Administrateur"
