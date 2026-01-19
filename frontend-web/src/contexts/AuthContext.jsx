@@ -40,12 +40,12 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, password) => {
         try {
             const response = await loginService(email, password);
-            const userData = response.user;
+            const userData = response;
 
             setUser(userData);
             localStorage.setItem('user', JSON.stringify(userData));
-
-            return { success: true };
+            console.log("User logged in:", userData);
+            return { success: true, data: userData };
         } catch (error) {
             return { success: false, error: error.message };
         }

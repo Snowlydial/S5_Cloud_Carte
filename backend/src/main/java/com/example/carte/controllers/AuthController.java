@@ -50,9 +50,25 @@ public class AuthController {
     public ResponseEntity<LoginDTO> login(@RequestBody AuthRequest request) {
         try {
             // Utilisation du service hybride
-            var userDTO = userService.getUserHybrid(request.getFirebaseUid(), request.getUsername());
-
+            System.out.println("UserDTO: " + request.getEmail() + ", " + request.getFirebaseUid());
+            var userDTO = userService.getUserHybrid(request.getFirebaseUid(), request.getEmail());
             // Vérification mot de passe offline uniquement
+            if (!userService.checkPasswordLocal(userDTO.getEmail(), request.getPassword())) {
+                User newUser = new User();
+                newUser.setFirebaseUid(request.getFirebaseUid());
+                newUser.setEmail(request.getEmail()); // ou request.getEmail() si disponible
+                // Hasher le mot de passe pour stockage local
+                newUser.setPassword(request.getPassword());
+                newUser.setRole("USER");
+                // Assigner un profil par défaut
+                newUser.setProfil(userService.getdefaultProfil());
+
+                // Sauvegarder l'utilisateur localement
+                userService.saveUser(newUser);
+
+                // userDTO = userService.toDTO(newUser);
+
+            }
             if (!userService.isOnline() && !userService.checkPasswordLocal(userDTO.getEmail(), request.getPassword())) {
                 return ResponseEntity.status(401).body(null);
             }
@@ -75,6 +91,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<LoginDTO> register(@RequestBody AuthRegisterRequest request) {
         try {
+            System.out.println("Registering user with email: " + request.getEmail());
             UserDTO userDTO = userService.registerUser(request);
 
             // Générer JWT après inscription

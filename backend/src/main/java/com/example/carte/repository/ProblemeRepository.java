@@ -11,9 +11,10 @@ import com.example.carte.entities.User;
 @Repository
 public interface ProblemeRepository extends JpaRepository<Probleme,Integer>{
 
-    User findUserByFirebaseUid(String uid);
+    // User findUserByFirebaseUid(String uid);
+// User findByCompteFirebaseId(String firebaseId);
 
-    User findUserByEmail(String email);
+//     User findUserByEmail(String email);
 
     List<Probleme> findByCompte(User user);
     

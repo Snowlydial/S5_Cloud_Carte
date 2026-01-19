@@ -12,7 +12,7 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - springnet
+      - appnet
 
   springboot:
     build: .
@@ -26,10 +26,11 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_DEVTOOLS_RESTART_ENABLED: "true"   
       SPRING_DEVTOOLS_LIVE_RELOAD_ENABLED: "true"
+      
     ports:
       - "8080:8080"
     networks:
-      - springnet
+      - appnet
     volumes:
       - ./src:/app/src
       - ./pom.xml:/app/pom.xml
@@ -37,5 +38,7 @@ services:
 volumes:
   postgres_data:
 
+
 networks:
-  springnet:
+  appnet:
+    external: true

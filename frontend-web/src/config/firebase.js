@@ -1,12 +1,14 @@
 //?=== FIREBASE CONFIGURATION
 const firebaseConfig = {
-    apiKey: "MOCK_API_KEY",
-    authDomain: "mock-project.firebaseapp.com",
-    projectId: "mock-project",
-    storageBucket: "mock-project.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyA_uqtf0wYmmtnGuIxnQqolBUVKK2q6_MQ",
+  authDomain: "map-project-a1787.firebaseapp.com",
+  projectId: "map-project-a1787",
+  storageBucket: "map-project-a1787.firebasestorage.app",
+  messagingSenderId: "333124874397",
+  appId: "1:333124874397:web:48bbf493d60bd3e798e474",
+  measurementId: "G-ZDFPKDYRM1"
 };
+
 
 //*-- Firebase will be initialized when you add real credentials
 let app = null;

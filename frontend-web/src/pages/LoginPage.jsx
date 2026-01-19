@@ -21,7 +21,7 @@ const LoginPage = () => {
         e.preventDefault(); // Prevents page reload
         setError('');
         setIsLoading(true);
-
+        console.log("Submitting login for:", email);
         //*-- Validation
         if (!email || !password) {
             setError('Veuillez remplir tous les champs');
@@ -31,10 +31,10 @@ const LoginPage = () => {
 
         //*-- Call login from AuthContext
         const result = await login(email, password);
+        console.log("Login result:  eeee ", result);
 
-        if (result.success) {
-            // Redirect to dashboard on success
-            navigate('/dashboard');
+        if (result.success ) {
+            navigate('/dashboard'); // redirection fiable
         } else {
             setError(result.error || 'Échec de connexion');
         }

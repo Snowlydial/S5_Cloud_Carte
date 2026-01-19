@@ -24,6 +24,13 @@ public class UserService {
     public UserService(UtilisateurRepository userRepo, ProfilRepository profilRepository) {
         this.userRepo = userRepo;
         this.profilRepository = profilRepository;
+    }   
+    public Profil getdefaultProfil() {
+        Optional<Profil> profilOpt = profilRepository.findByNom("USER");
+        return profilOpt.orElseThrow(() -> new RuntimeException("Profil par défaut introuvable"));
+    }
+    public void saveUser(User user) {
+        userRepo.save(user);
     }
 
     // Login hybride
@@ -33,7 +40,7 @@ public class UserService {
             try {
                 FirebaseToken token = FirebaseAuth.getInstance().verifyIdToken(password);
                 String firebaseUid = token.getUid();
-                return syncFirebaseUser(firebaseUid, email);
+                return syncFirebaseUser(firebaseUid, email,password);
             } catch (Exception e) {
                 System.out.println("Firebase inaccessible, fallback offline");
             }
@@ -46,17 +53,28 @@ public class UserService {
     }
 
     // Synchroniser Firebase -> local
-    private User syncFirebaseUser(String firebaseUid, String email) {
-        User user = userRepo.findByFirebaseUid(firebaseUid)
-                .orElseGet(() -> {
-                    User u = new User();
-                    u.setEmail(email);
-                    u.setFirebaseUid(firebaseUid);
-                    return u;
-                });
-        user.setLastSync(LocalDateTime.now());
-        return userRepo.save(user);
-    }
+    private User syncFirebaseUser(String firebaseUid, String email, String password) {
+    User user = userRepo.findByFirebaseUid(firebaseUid)
+            .orElseGet(() -> {
+                User u = new User();
+                u.setEmail(email);
+                u.setFirebaseUid(firebaseUid);
+                u.setRole("USER");
+                
+                // Profil par défaut
+                Profil profil = profilRepository.findByNom("USER")
+                        .orElseThrow(() -> new RuntimeException("Profil par défaut introuvable"));
+                u.setProfil(profil);
+
+                // Mot de passe temporaire ou vide (offline)
+                u.setPassword(password); // ou null si accepté
+                return u;
+            });
+
+    user.setLastSync(LocalDateTime.now());
+    return userRepo.save(user);
+}
+
 
     // Méthode simple de détection d'internet
     public boolean isOnline() {
@@ -75,6 +93,7 @@ public class UserService {
 
     /** Récupère un utilisateur par email (local) */
     public UserDTO getUserByEmail(String email) {
+        System.out.println("Getting user by email: " + email);
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé (email)"));
         return mapToDTO(user);
@@ -91,16 +110,22 @@ public class UserService {
     }
 
     public UserDTO getUserHybrid(String firebaseUid, String email) {
+        System.out.println("Getting user hybrid: " + firebaseUid + ", " + email);
         if (isOnline()) {
+            System.out.println("System is online, trying Firebase UID");
             try {
-                FirebaseToken token = FirebaseAuth.getInstance().verifyIdToken(firebaseUid);
-                return getUserByFirebaseUid(token.getUid());
+                // FirebaseToken token = FirebaseAuth.getInstance().verifyIdToken(firebaseUid);
+                // System.out.println("Firebase token verified for UID: " + token.getUid());
+                User u = userRepo.findByFirebaseUid(firebaseUid).get();
+                System.out.println("Firebase online, user found: " + u.getEmail());
+                
+                return getUserByFirebaseUid(firebaseUid);
             } catch (Exception e) {
                 // fallback local
                 System.out.println("Firebase offline, fallback local");
             }
         }
-
+        System.out.println("System is offline or Firebase failed, using email");
         // fallback offline
         return getUserByEmail(email);
     }
@@ -124,13 +149,18 @@ public class UserService {
         Profil profil = profilRepository.findByNom("USER")
                 .orElseThrow(() -> new RuntimeException("Profil par défaut introuvable"));
         user.setProfil(profil);
-
+        System.out.println("Registering user: " + request.getFirebaseUid());
         if (isOnline() && request.getFirebaseUid() != null && !request.getFirebaseUid().isEmpty()) {
-            FirebaseToken token = FirebaseAuth.getInstance().verifyIdToken(request.getFirebaseUid());
-            String firebaseUid = token.getUid();
-            // Assigner Firebase UID et synchroniser
-            user.setFirebaseUid(firebaseUid);
-            user = syncFirebaseUser(user.getFirebaseUid(), user.getEmail());
+            try {
+                System.out.println("Verifying Firebase UID: " + request.getFirebaseUid());
+                FirebaseToken token = FirebaseAuth.getInstance().verifyIdToken(request.getFirebaseUid());
+                System.out.println("Firebase token verified for UID: " + token.getUid());
+                String firebaseUid = token.getUid();
+                user.setFirebaseUid(firebaseUid);
+                user = syncFirebaseUser(user.getFirebaseUid(), user.getEmail(),user.getPassword());
+            } catch (FirebaseAuthException e) {
+                throw new RuntimeException("Erreur de vérification Firebase", e);
+            }
         }
 
         // Toujours sauvegarder localement
