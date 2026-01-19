@@ -1,3 +1,6 @@
 - The endpoints in config/constant and config/firebase
 - AuthService to use the real fetch
 - Dashboard where it checks 'MANAGER' user role
+- userService to use the axios's methods
+- UserManagement where it checks 'MANAGER' user role
+- 
