@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import UserManagementPage from './pages/UserManagementPage';
 import './App.css';
 
 //*-- Protected Route: redirects to login if not authenticated
@@ -65,6 +66,16 @@ function App() {
                         </ProtectedRoute>
                         } 
                     />
+                    <Route 
+                        path="/users" 
+                        element={
+                        <ProtectedRoute>
+                            <UserManagementPage />
+                        </ProtectedRoute>
+                        } 
+                    />
+
+                    
                     
                     {/* 404 fallback */}
                     <Route path="*" element={<Navigate to="/login" />} />

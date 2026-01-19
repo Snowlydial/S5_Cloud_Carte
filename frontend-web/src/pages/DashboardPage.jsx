@@ -45,8 +45,13 @@ const DashboardPage = () => {
                         <>
                             <div className="module-card">
                                 <h3>Gestion Utilisateurs</h3>
-                                <p>Gérer les comptes bloqués</p>
-                                <button className="btn-primary" disabled>Bientôt disponible</button>
+                                <p>Gérer les comptes bloqués et synchroniser les utilisateurs</p>
+                                <button 
+                                onClick={() => navigate('/users')}
+                                className="btn-primary"
+                                >
+                                Gérer les utilisateurs
+                                </button>
                             </div>
 
                             <div className="module-card">
