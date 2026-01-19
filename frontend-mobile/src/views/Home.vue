@@ -48,8 +48,10 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import useTypeSignalement from '@/composables/useTypeSignalement';
+import useSignalement from '@/composables/useSignalement';
 
 const { typesSignalement,  getListeTypeSignalement, error, success  } = useTypeSignalement();
+const {signaler, loading  } = useSignalement();
 
 // État réactif pour le formulaire
 const form = ref({
@@ -72,6 +74,14 @@ let map: L.Map;
 let marker: L.Marker | null = null;
 
 const envoyerSignalement = () => {
+  if (form.value.lat === null || form.value.lng === null) {
+    alert('Veuillez sélectionner une position sur la carte.');
+    return;
+  }
+  // Construire coords au format Leaflet et appeler signaler
+  const coords: L.LatLngExpression = [form.value.lat!, form.value.lng!];
+  const idType = typeof form.value.type === 'string' ? Number(form.value.type) : form.value.type;
+  signaler(idType as number, coords);
   alert(`Signalement ${form.value.type} envoyé pour ${form.value.lat}, ${form.value.lng}`);
 };
 
