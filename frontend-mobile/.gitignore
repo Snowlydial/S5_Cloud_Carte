@@ -33,4 +33,5 @@ npm-debug.log*
 
 ./package-lock.json
 
-./sql
+/sql
+**/package-lock.json
