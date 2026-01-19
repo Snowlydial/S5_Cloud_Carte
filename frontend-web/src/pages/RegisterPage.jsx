@@ -97,7 +97,6 @@ const RegisterPage = () => {
                             id="confirmPassword"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="••••••••"
                             disabled={isLoading}
                         />
                     </div>
