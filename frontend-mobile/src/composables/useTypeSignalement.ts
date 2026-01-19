@@ -2,13 +2,10 @@ import { ref } from "vue";
 import type { User } from "firebase/auth";
 import { loginService, signinService } from "@/services/auth.service";
 import { ApiResponse } from "@/types/apiResponse";
-import { getErrorMessage } from "@/utils/getErrorMessage";
-import { getSuccessMessage } from "@/utils/getSuccessMessage";
+import { TypeSignalement } from "@/models/TypeSignalement";
+import { TypeSignalementService } from "@/services/TypeSignalement.service";
 
-export interface TypeSignalement {
-    idTypeSignalement: number;
-    nom: string;
-}
+
 
 const typesSignalement = ref<TypeSignalement[] | null>(null);
 const error = ref<string | null>(null);
@@ -27,11 +24,7 @@ const useTypeSignalement = () => {
         // } else {
         //     error.value =  getErrorMessage (response);
         // }
-        const result: TypeSignalement[] = [
-                { idTypeSignalement: 1, nom: "Panne d'éclairage public" },
-                { idTypeSignalement: 2, nom: "Nid de poule" },
-                { idTypeSignalement: 3, nom: "Accident" }
-            ];
+        const result: TypeSignalement[] =  await TypeSignalementService.getAll();
         typesSignalement.value = result;
         loading.value = false;
     };
