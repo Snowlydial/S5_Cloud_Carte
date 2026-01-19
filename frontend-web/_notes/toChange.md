@@ -1,0 +1,3 @@
+- The endpoints in config/constant and config/firebase
+- AuthService to use the real fetch
+- Dashboard where it checks 'MANAGER' user role
