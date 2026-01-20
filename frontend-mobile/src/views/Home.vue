@@ -63,9 +63,14 @@ import 'leaflet/dist/leaflet.css';
 import useTypeSignalement from '@/composables/useTypeSignalement';
 import useSignalement from '@/composables/useSignalement';
 import { locateOutline, logOutOutline } from 'ionicons/icons';
+import useAuth from '@/composables/useAuth';
+import { useRouter } from 'vue-router';
 
 const { typesSignalement,  getListeTypeSignalement, error, success  } = useTypeSignalement();
 const {signaler, loading  } = useSignalement();
+
+const { logout} = useAuth();
+
 
 // État réactif pour le formulaire
 const form = ref({
@@ -116,33 +121,17 @@ const getCurrentLocation = async () => {
   }
 };
 
+const router = useRouter();
+
 const handleLogout = async () => {
   try {
-    const coordinates = await Geolocation.getCurrentPosition({
-      enableHighAccuracy: true
-    });
-
-    const { latitude, longitude } = coordinates.coords;
-    const newPos = L.latLng(latitude, longitude);
-
-    // 1. Centrer la carte
-    map.setView(newPos, 16);
-
-    // 2. Mettre à jour le formulaire
-    form.value.lat = latitude;
-    form.value.lng = longitude;
-
-    // 3. Placer ou déplacer le marqueur
-    if (marker) {
-      marker.setLatLng(newPos);
-    } else {
-      marker = L.marker(newPos).addTo(map);
-    }
+    await logout();
+     router.push('/login');
   } catch (err) {
-    console.error("Erreur de localisation", err);
-    alert("Impossible de récupérer votre position. Vérifiez vos paramètres GPS.");
-  }
-};
+     router.push('/login');
+    console.error("Erreur lors de la déconnexion", err);
+  };
+}
 
 const envoyerSignalement = () => {
   if (form.value.lat === null || form.value.lng === null) {
