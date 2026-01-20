@@ -6,8 +6,7 @@ import L from 'leaflet'; // Assurez-vous d'avoir importé Leaflet pour le type
 import { TypeSignalement } from "@/models/TypeSignalement";
 import { Signalement } from "@/models/Signalement";
 import { SignalementService } from "@/services/Signalement.service";
-
-
+import { Util } from "@/utils/util";
 
 const typesSignalement = ref<TypeSignalement[] | null>(null);
 const error = ref<string | null>(null);
@@ -21,47 +20,73 @@ const useSignalement = () => {
     try {
       const result:Signalement[] = await SignalementService.getAll();
       listeSignalement.value = result;
+
     } catch (error) {
       console.error("Erreur lors de la récupération des signalements", error);
     }
   }
 
+  const getAllSignalementsMine = async () => {
+    try {
+      const result:Signalement[] = await SignalementService.getAll();
+      const myId = await Util.getCompteId();
+      console.log("Mon ID compte :", myId);
+      listeSignalement.value = result.filter(sig => String(sig.idCompte) === String(myId));
+      console.log("Mes signalements apres filtres:", listeSignalement.value.length);
+      // listeSignalement.value = result;
+    } catch (error) {
+      console.error("Erreur lors de la récupération des signalements", error);
+    }
+  }
 
+ 
   const signaler = async (idTypeSignalement: string, coords: L.LatLngExpression) => {
-    // Si vous avez besoin d'extraire les valeurs individuelles :
-    // Dans le cas d'un tableau [-18.8792, 47.5079]
     const [lat, lng] = Array.isArray(coords) ? coords : [(coords as any).lat, (coords as any).lng];
-
-    console.log(`Signalement type ${idTypeSignalement} à Lat: ${lat}, Lng: ${lng}`);
+    loading.value = true;
 
     try {
-      // Votre logique d'appel API ici
-          // const response: ApiResponse = await signalerService(idTypeSignalement, coords);
-          const auth = getAuth();
-          const currentUser = auth.currentUser;
-          if (currentUser) {
-            compteId.value = currentUser.uid; // Voici votre "BWmaezwLsI..."
-            console.log("ID utilisateur :", compteId);
-          } else {
-            throw new Error("Utilisateur non authentifié");
-          }
-          const signalement:Signalement = {
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        
+        if (!currentUser) throw new Error("Utilisateur non authentifié");
+
+        const myId = await Util.getCompteId();
+        compteId.value = myId;
+
+        // --- RECHERCHE DE L'ID IMAGE ---
+        // On cherche dans la liste des types celui qui correspond à l'ID sélectionné
+        let imageId = null;
+        if(typesSignalement.value === null) {
+        } else {
+          const typeSelectionne = typesSignalement.value.find(
+            t => String(t.idTypeSignalement) === String(idTypeSignalement)
+          );
+          imageId = typeSelectionne?.idimage || null;
+        }
+
+
+        // Si trouvé, on prend son idimage, sinon on peut mettre une valeur par défaut ou null
+        const signalement: Signalement = {
             dateSignalement: new Date(),
-            latitude: typeof lat === 'number' ? lat : lat!,
-            longitude: typeof lng === 'number' ? lng : lng!,
+            latitude: Number(lat),
+            longitude: Number(lng),
             idCompte: compteId.value,
-            idTypeSignalement: idTypeSignalement
-          };
-          console.log("Signalement créé :", signalement);
+            idTypeSignalement: idTypeSignalement,
+            idimage: imageId // <-- Affectation dynamique ici
+        };
 
-          SignalementService.create(signalement);
+        console.log("Signalement prêt à l'envoi :", signalement);
+        await SignalementService.create(signalement);
+        success.value = "Signalement envoyé avec succès";
 
-      // const response = await api.post('/signalements', { idTypeSignalement, lat, lng });
     } catch (err) {
-      console.error("Erreur lors du signalement", err);
+        console.error("Erreur lors du signalement", err);
+        error.value = "Échec de l'envoi";
+    } finally {
+        loading.value = false;
     }
-  };
-  return { signaler, loading, error , success, getAllSignalements, listeSignalement};
+  }
+  return { signaler, loading, error , success, getAllSignalements, listeSignalement, getAllSignalementsMine};
 };
 
 export default useSignalement;
