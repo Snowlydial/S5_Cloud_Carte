@@ -6,7 +6,8 @@ import {
   where,
   updateDoc,
   doc,
-  deleteDoc
+  deleteDoc,
+  getDoc
 } from "firebase/firestore";
 import { TypeSignalement } from "../models/TypeSignalement";
 import { db } from "@/firebase";
@@ -22,7 +23,7 @@ export class TypeSignalementRepository {
   static async findAll(): Promise<TypeSignalement[]> {
     const q = query(collection(db, TypeSignalementRepository.COLLECTION));
     const snap = await getDocs(q);
-    
+
     return snap.docs.map(doc => ({
       idTypeSignalement: doc.id as any,
       ...(doc.data() as Omit<TypeSignalement, "idTypeSignalement">)
@@ -30,18 +31,14 @@ export class TypeSignalementRepository {
   }
 
   static async findById(id: string): Promise<TypeSignalement | null> {
-    const q = query(
-      collection(db, TypeSignalementRepository.COLLECTION),
-      where("idTypeSignalement", "==", id)
-    );
+    const ref = doc(db, TypeSignalementRepository.COLLECTION, id);
+    const snap = await getDoc(ref);
 
-    const snap = await getDocs(q);
-    if (snap.empty) return null;
+    if (!snap.exists()) return null;
 
-    const document = snap.docs[0];
     return {
-      idTypeSignalement: document.id as any,
-      ...(document.data() as Omit<TypeSignalement, "idTypeSignalement">)
+      idTypeSignalement: snap.id as any,
+      ...(snap.data() as Omit<TypeSignalement, "idTypeSignalement">)
     };
   }
 

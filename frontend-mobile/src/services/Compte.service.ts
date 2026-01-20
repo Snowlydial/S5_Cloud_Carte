@@ -43,8 +43,8 @@ export class CompteService {
                 //         if (status && status.etat === "terminé") {
                 //             totalTermine += 1;
             }
-                    totalSurface += probleme.surfaceM2;
-                    totalBudget += probleme.budget ?? 0;
+            totalSurface += probleme.surfaceM2;
+            totalBudget += probleme.budget ?? 0;
         }
 
         // }
@@ -71,7 +71,14 @@ export class CompteService {
             throw error;
         }
     }
-
+    static async getById(id: string): Promise<Compte | null> {
+        try {
+            return await CompteRepository.findById(id);
+        } catch (error) {
+            console.error(`Erreur lors de la recherche du compte ${id}:`, error);
+            throw error;
+        }
+    }
     static async findByEmail(email: string): Promise<Compte | null> {
         try {
             return await CompteRepository.findByEmail(email);
