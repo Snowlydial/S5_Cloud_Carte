@@ -19,8 +19,8 @@ export class ProblemeRepository {
     static async getAll(): Promise<Probleme[]> {
         const snap = await getDocs(collection(db, ProblemeRepository.COLLECTION));
         return snap.docs.map(d => ({
-            id: d.id,
-            ...(d.data() as Omit<Probleme, "id">)
+            idProbleme: d.id,
+            ...(d.data() as Omit<Probleme, "idProbleme">)
         }));
     }
 
@@ -28,7 +28,7 @@ export class ProblemeRepository {
         const ref = doc(db, ProblemeRepository.COLLECTION, id);
         const snap = await getDoc(ref);
         return snap.exists()
-            ? { id: snap.id, ...(snap.data() as Omit<Probleme, "id">) }
+            ? { idProbleme: snap.id, ...(snap.data() as Omit<Probleme, "idProbleme">) }
             : null;
     }
 
@@ -39,8 +39,8 @@ export class ProblemeRepository {
         );
         const snap = await getDocs(q);
         return snap.docs.map(d => ({
-            id: d.id,
-            ...(d.data() as Omit<Probleme, "id">)
+            idProbleme: d.id,
+            ...(d.data() as Omit<Probleme, "idProbleme">)
         }));
     }
 
@@ -51,8 +51,8 @@ export class ProblemeRepository {
         );
         const snap = await getDocs(q);
         return snap.docs.map(d => ({
-            id: d.id,
-            ...(d.data() as Omit<Probleme, "id">)
+            idProbleme: d.id,
+            ...(d.data() as Omit<Probleme, "idProbleme">)
         }));
     }
 
@@ -63,17 +63,17 @@ export class ProblemeRepository {
         );
         const snap = await getDocs(q);
         return snap.docs.map(d => ({
-            id: d.id,
-            ...(d.data() as Omit<Probleme, "id">)
+            idProbleme: d.id,
+            ...(d.data() as Omit<Probleme, "idProbleme">)
         }));
     }
 
-    static async create(probleme: Omit<Probleme, "id">): Promise<string> {
+    static async create(probleme: Omit<Probleme, "idProbleme">): Promise<string> {
         const docRef = await addDoc(collection(db, ProblemeRepository.COLLECTION), probleme);
         return docRef.id;
     }
 
-    static async update(id: string, data: Partial<Omit<Probleme, "id">>): Promise<void> {
+    static async update(id: string, data: Partial<Omit<Probleme, "idProbleme">>): Promise<void> {
         const ref = doc(db, ProblemeRepository.COLLECTION, id);
         await updateDoc(ref, data);
     }

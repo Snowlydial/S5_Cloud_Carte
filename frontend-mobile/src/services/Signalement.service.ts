@@ -20,7 +20,7 @@ export class SignalementService {
     }
   }
 
-  static async getByIdCompte(idCompte: number): Promise<Signalement[]> {
+  static async getByIdCompte(idCompte: string): Promise<Signalement[]> {
     try {
       return await SignalementRepository.findByIdCompte(idCompte);
     } catch (error) {

@@ -1,5 +1,5 @@
 export interface Probleme {
-    id?: string;
+    idProbleme?: string;
     dateProbleme: Date;
     surfaceM2: number;
     budget: number;

@@ -1,4 +1,4 @@
 export interface Entreprise {
-    id?: string;
+    idEntreprise?: string;
     nom: string;
 }
