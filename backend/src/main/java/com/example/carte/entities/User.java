@@ -39,7 +39,7 @@ private String password;
 
     @Column(name = "is_blocked")
     private Boolean isBlocked = false;
-
+ 
     @Column(name = "last_sync")
     private LocalDateTime lastSync;
 

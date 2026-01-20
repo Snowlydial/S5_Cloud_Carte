@@ -1,0 +1,16 @@
+# MODE DÉVELOPPEMENT avec hot-reload
+FROM maven:3.9-eclipse-temurin-21
+
+WORKDIR /app
+
+# Copier les dépendances Maven
+COPY pom.xml .
+RUN mvn -q dependency:go-offline
+
+# Copier le code source
+COPY src ./src
+
+EXPOSE 8080
+
+# Commande par défaut - sera overridée par docker-compose
+CMD ["mvn", "spring-boot:run"]

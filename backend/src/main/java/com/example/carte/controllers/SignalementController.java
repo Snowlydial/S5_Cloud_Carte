@@ -18,11 +18,8 @@ public class SignalementController {
         this.signalementService = signalementService;
     }
 
-    /** GET : Liste de tous les signalements */
     @GetMapping
-    public ResponseEntity<List<SignalementDTO>> getAllSignalements(
-            @RequestParam(required = false) String firebaseUid,
-            @RequestParam(required = false) String email) {
+    public ResponseEntity<List<SignalementDTO>> getAllSignalements() {
 
         List<SignalementDTO> signalements = signalementService.getAllSignalements();
         return ResponseEntity.ok(signalements);

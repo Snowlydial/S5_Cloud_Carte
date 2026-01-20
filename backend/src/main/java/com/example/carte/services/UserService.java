@@ -26,7 +26,7 @@ public class UserService {
         this.profilRepository = profilRepository;
     }   
     public Profil getdefaultProfil() {
-        Optional<Profil> profilOpt = profilRepository.findByNom("USER");
+        Optional<Profil> profilOpt = profilRepository.findByNom("MANAGER");
         return profilOpt.orElseThrow(() -> new RuntimeException("Profil par défaut introuvable"));
     }
     public void saveUser(User user) {
@@ -146,7 +146,7 @@ public class UserService {
         user.setEmail(request.getEmail());
         user.setPassword(request.getPassword()); // offline
         user.setRole("USER");
-        Profil profil = profilRepository.findByNom("USER")
+        Profil profil = profilRepository.findByNom("MANAGER")
                 .orElseThrow(() -> new RuntimeException("Profil par défaut introuvable"));
         user.setProfil(profil);
         System.out.println("Registering user: " + request.getFirebaseUid());
