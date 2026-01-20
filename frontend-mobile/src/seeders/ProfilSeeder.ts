@@ -7,7 +7,7 @@ export class ProfilSeeder {
 
     static async seed() {
         const profils: Profil[] = [
-            { nom: "administrateur" },
+            // { nom: "administrateur" },
             { nom: "utilisateur" },
         ];
 
