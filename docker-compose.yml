@@ -16,7 +16,9 @@ services:
       - appnet
 
   springboot:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
     container_name: springboot-app-cloud
     depends_on:
       - postgres
@@ -32,8 +34,8 @@ services:
     networks:
       - appnet
     volumes:
-      - ./src:/app/src
-      - ./pom.xml:/app/pom.xml
+      - ./backend/src:/app/src
+      - ./backend/pom.xml:/app/pom.xml
       - ~/.m2:/root/.m2   # pour cacher le cache Maven et éviter les re-downloads
     command: mvn spring-boot:run   # Dev mode avec reload automatique
     healthcheck:
@@ -41,21 +43,20 @@ services:
       interval: 10s
       retries: 5
 
-  # -------------------------
-  # Frontend React / Nginx
-  # -------------------------
   web-frontend:
-    build:
-      context: ./frontend-web
-      dockerfile: Dockerfile
-    container_name: react-web-app
-    depends_on:
-      springboot:
-        condition: service_healthy
+    image: node:18
+    container_name: react-dev
+    working_dir: /app
+    volumes:
+      - ./frontend-web:/app
+      - ./frontend-web/node_modules:/app/node_modules
     ports:
-      - "80:80"
-    networks:
-      - appnet
+      - "3000:3000"
+    command: npm start
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+
 
 # -------------------------
 # Volumes
