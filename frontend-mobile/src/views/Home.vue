@@ -10,11 +10,17 @@
       <div class="main-wrapper">
         
         <div id="map" ref="mapContainer"></div>
-        <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin">
-          <ion-fab-button size="small" @click="getCurrentLocation" color="light">
-            <ion-icon :icon="locateOutline"></ion-icon>
-          </ion-fab-button>
-        </ion-fab>
+        <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin fab-location">
+        <ion-fab-button size="small" @click="getCurrentLocation" color="light">
+          <ion-icon :icon="locateOutline"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
+
+      <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin fab-logout">
+        <ion-fab-button size="small" @click="handleLogout" color="light">
+          <ion-icon :icon="logOutOutline"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
         <div class="form-container">
           <ion-list>
             <ion-item lines="none">
@@ -56,10 +62,15 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import useTypeSignalement from '@/composables/useTypeSignalement';
 import useSignalement from '@/composables/useSignalement';
-import { locateOutline } from 'ionicons/icons';
+import { locateOutline, logOutOutline } from 'ionicons/icons';
+import useAuth from '@/composables/useAuth';
+import { useRouter } from 'vue-router';
 
 const { typesSignalement,  getListeTypeSignalement, error, success  } = useTypeSignalement();
 const {signaler, loading  } = useSignalement();
+
+const { logout} = useAuth();
+
 
 // État réactif pour le formulaire
 const form = ref({
@@ -109,6 +120,18 @@ const getCurrentLocation = async () => {
     alert("Impossible de récupérer votre position. Vérifiez vos paramètres GPS.");
   }
 };
+
+const router = useRouter();
+
+const handleLogout = async () => {
+  try {
+    await logout();
+     router.push('/login');
+  } catch (err) {
+     router.push('/login');
+    console.error("Erreur lors de la déconnexion", err);
+  };
+}
 
 const envoyerSignalement = () => {
   if (form.value.lat === null || form.value.lng === null) {
@@ -177,6 +200,17 @@ onMounted(() => {
 ion-fab {
   margin-top: 10px;
 }
+
+/* Position the first button normally */
+.fab-location {
+  top: 10px;
+}
+
+/* Push the logout button down (40px button height + 10px spacing) */
+.fab-logout {
+  top: 60px; 
+}
+
 #map { flex: 6; width: 100%; position: relative; }
 .main-wrapper { display: flex; flex-direction: column; height: 100%; }
 .form-container { flex: 4; background: white; padding: 10px; z-index: 10; }

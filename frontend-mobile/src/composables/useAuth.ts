@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import type { User } from "firebase/auth";
 import { ApiResponse } from "@/types/apiResponse";
-import { loginService, signinService } from "@/services/auth.service";
+import { loginService, logoutService, signinService } from "@/services/auth.service";
 import { Util } from "@/utils/util";
 import { getErrorMessage, getSuccessMessage } from "@/utils/messageUtil";
 
@@ -47,8 +47,25 @@ const useAuth = () => {
     const fiche = (idUtilisateur: string | number) => {
         console.log(`Récupération de la fiche pour : ${idUtilisateur}`);
     };
+    
+    const logout = async () => {
+        loading.value = true;
+        const response = await logoutService();
+        if (response.success) {
+            user.value = null; // On vide l'utilisateur
+            success.value = "Déconnexion réussie";
+            error.value = null;
+            console.log("deconnexion reussi");
+        } else {
+            error.value = getErrorMessage(response);
+            console.log("echec de deconnexion");
 
-    return { user, login, signin, fiche, loading, error, success };
+        }
+        loading.value = false;
+    };
+
+    // N'oubliez pas d'ajouter logout au return
+    return { user, login, signin, logout, fiche, loading, error, success };
 };
 
 export default useAuth;
