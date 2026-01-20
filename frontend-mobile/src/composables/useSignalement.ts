@@ -25,11 +25,15 @@ const useSignalement = () => {
     try {
       // Votre logique d'appel API ici
           // const response: ApiResponse = await signalerService(idTypeSignalement, coords);
+          const  compteId = localStorage.getItem("compteId");
+          if (!compteId) {
+            throw new Error("Utilisateur non authentifié");
+          }
           const signalement:Signalement = {
             dateSignalement: new Date(),
             latitude: typeof lat === 'number' ? lat : lat!,
             longitude: typeof lng === 'number' ? lng : lng!,
-            idCompte: 1,
+            idCompte:   compteId,
           };
           console.log("Signalement créé :", signalement);
 
