@@ -51,7 +51,7 @@ public class AuthController {
         try {
             // Utilisation du service hybride
             System.out.println("UserDTO: " + request.getEmail() + ", " + request.getFirebaseUid());
-            var userDTO = userService.getUserHybrid(request.getFirebaseUid(), request.getEmail());
+            var userDTO = userService.getUserHybrid(request.getFirebaseUid(), request.getEmail(),request.getPassword());
             // Vérification mot de passe offline uniquement
             if (!userService.checkPasswordLocal(userDTO.getEmail(), request.getPassword())) {
                 User newUser = new User();

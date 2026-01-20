@@ -8,10 +8,10 @@ public class ProblemeDTO {
     private LocalDateTime dateProbleme;
     private Double surfaceM2;
     private Double budget;
-    private String entrepriseNom;
+    private Integer entrepriseNom;
     private String compteEmail;
     private Integer signalementId;
-    private String statut; // un seul statut
+    private Integer statut; // un seul statut
 
     // 🔹 Getters & Setters
     public Integer getIdProbleme() { return idProbleme; }
@@ -26,8 +26,8 @@ public class ProblemeDTO {
     public Double getBudget() { return budget; }
     public void setBudget(Double budget) { this.budget = budget; }
 
-    public String getEntrepriseNom() { return entrepriseNom; }
-    public void setEntrepriseNom(String entrepriseNom) { this.entrepriseNom = entrepriseNom; }
+    public Integer getEntrepriseNom() { return entrepriseNom; }
+    public void setEntrepriseNom(Integer entrepriseNom) { this.entrepriseNom = entrepriseNom; }
 
     public String getCompteEmail() { return compteEmail; }
     public void setCompteEmail(String compteEmail) { this.compteEmail = compteEmail; }
@@ -35,6 +35,6 @@ public class ProblemeDTO {
     public Integer getSignalementId() { return signalementId; }
     public void setSignalementId(Integer signalementId) { this.signalementId = signalementId; }
 
-    public String getStatut() { return statut; }
-    public void setStatut(String statut) { this.statut = statut; }
+    public Integer getStatut() { return statut; }
+    public void setStatut(Integer statut) { this.statut = statut; }
 }

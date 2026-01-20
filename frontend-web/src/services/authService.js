@@ -66,6 +66,9 @@ export const login = async (email, password) => {
                 firebaseUid: userCredential.user.uid,
             });
             console.log("Backend login response:", response);
+            const user = response.data;
+            localStorage.setItem("JWT_TOKEN", user.token);
+            console.log("User logged in:", user.token);
             return response.data;
 
             //*-- MOCK version (remove when backend ready)
@@ -82,6 +85,9 @@ export const login = async (email, password) => {
             email,
             password
             });
+            const user = response.data;
+            console.log("User logged in:", user.token);
+            localStorage.setItem("JWT_TOKEN", user.token);
             return response.data;
            
             

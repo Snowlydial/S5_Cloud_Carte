@@ -1,14 +1,18 @@
 package com.example.carte.services;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import com.example.carte.dto.SignalementDTO;
 import com.example.carte.entities.Signalement;
+import com.example.carte.entities.User;
 import com.example.carte.repository.SignalementRepository;
+import com.example.carte.repository.UtilisateurRepository;
 import com.google.firebase.cloud.FirestoreClient;
 import com.google.cloud.firestore.CollectionReference;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
@@ -17,30 +21,91 @@ import com.google.cloud.firestore.QueryDocumentSnapshot;
 public class SignalementService {
 
     private final SignalementRepository signalementRepo;
+    private final UtilisateurRepository utilisateurRepository;
 
-    public SignalementService(SignalementRepository signalementRepo) {
+    public SignalementService(SignalementRepository signalementRepo, UtilisateurRepository utilisateurRepository) {
         this.signalementRepo = signalementRepo;
+        this.utilisateurRepository = utilisateurRepository;
     }
-
 
     public List<SignalementDTO> getAllSignalements() {
         if (isOnline()) {
             try {
-                // Firestore
                 CollectionReference colRef = FirestoreClient.getFirestore().collection("signalements");
+
                 List<SignalementDTO> firebaseList = colRef.get().get().getDocuments()
                         .stream()
                         .map(this::mapFirestoreToDTO)
                         .collect(Collectors.toList());
 
-                // Synchronisation locale
                 for (SignalementDTO dto : firebaseList) {
                     signalementRepo.findByFirebaseId(dto.getFirebaseId())
-                            .orElseGet(() -> signalementRepo.save(mapDTOToEntity(dto)));
+                            .orElseGet(() -> {
+                                // Récupération du compte (exemple via email dans le DTO)
+                                User compte = utilisateurRepository.findByEmail(dto.getCompteEmail())
+                                        .orElseThrow(() -> new RuntimeException(
+                                                "Compte introuvable pour email: " + dto.getCompteEmail()));
+
+                                // Map DTO → Entity
+                                Signalement signalement = mapDTOToEntity(dto);
+
+                                // Associer le compte
+                                signalement.setCompte(compte);
+
+                                // Sauvegarder
+                                return signalementRepo.save(signalement);
+                            });
+                }
+
+                List<SignalementDTO> localList = signalementRepo.findAll()
+                        .stream()
+                        .map(this::mapToDTO)
+                        .collect(Collectors.toList());
+
+                for (Signalement signalement : signalementRepo.findAll()) {
+                    boolean existsInFirebase = firebaseList.stream()
+                            .anyMatch(fbDto -> fbDto.getFirebaseId() != null &&
+                                    fbDto.getFirebaseId().equals(signalement.getFirebaseId()));
+
+                    if (!existsInFirebase) {
+                        SignalementDTO dto = mapToDTO(signalement);
+                        String docId = signalement.getFirebaseId();
+                        if (docId == null || docId.isBlank()) {
+                            docId = FirestoreClient.getFirestore().collection("signalements").document().getId();
+                        }
+                        Map<String, Object> signalementMap = new HashMap<>();
+                        signalementMap.put("idSignalement", dto.getIdSignalement());
+                        signalementMap.put("dateSignalement", dto.getDateSignalement().toString()); // ISO String
+                        signalementMap.put("longitude", dto.getLongitude());
+                        signalementMap.put("latitude", dto.getLatitude());
+                        signalementMap.put("surfaceM2", dto.getSurfaceM2());
+                        signalementMap.put("firebaseId", dto.getFirebaseId());
+                        signalementMap.put("compteEmail", dto.getCompteEmail());
+                        FirestoreClient.getFirestore()
+                                .collection("signalements")
+                                .document(docId)
+                                .set(signalementMap);
+                        System.out.println("Ajouté à Firebase: " + dto.getFirebaseId());
+                        firebaseList.add(dto);
+                    }
+                }
+
+                // Ajouter les DTO locaux manquants
+                for (SignalementDTO localDto : localList) {
+                    boolean existsInFirebase = firebaseList.stream()
+                            .anyMatch(fbDto -> fbDto.getFirebaseId().equals(localDto.getFirebaseId()));
+                    if (!existsInFirebase) {
+                        FirestoreClient.getFirestore()
+                                .collection("signalements")
+                                .document(localDto.getFirebaseId())
+                                .set(localDto);
+                        firebaseList.add(localDto);
+                    }
                 }
 
                 return firebaseList;
             } catch (Exception e) {
+                e.printStackTrace();
                 System.out.println("Firebase inaccessible, fallback local");
             }
         }
@@ -65,11 +130,22 @@ public class SignalementService {
     private SignalementDTO mapFirestoreToDTO(QueryDocumentSnapshot doc) {
         SignalementDTO dto = new SignalementDTO();
         dto.setFirebaseId(doc.getId());
-        dto.setDateSignalement(doc.getTimestamp("date_signalement").toDate().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+
+        // Gestion safe de la date
+        if (doc.getTimestamp("date_signalement") != null) {
+            dto.setDateSignalement(
+                    doc.getTimestamp("date_signalement")
+                            .toDate()
+                            .toInstant()
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toLocalDateTime());
+        } else {
+            dto.setDateSignalement(LocalDateTime.now()); // ou LocalDateTime.now() si tu veux une valeur par défaut
+        }
+
         dto.setLatitude(doc.getDouble("latitude"));
         dto.setLongitude(doc.getDouble("longitude"));
         dto.setSurfaceM2(doc.getDouble("surfaceM2"));
-        // Le compte peut être géré par email ou firebaseUid
         dto.setCompteEmail(doc.getString("compteEmail"));
         return dto;
     }

@@ -45,29 +45,37 @@ const mockApiDelay = (data) => {
         setTimeout(() => resolve({ data }), 500);
     });
 };
-
-//?=== GET ALL SIGNALEMENTS
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+}
 export const getAllSignalements = async (filters = {}) => {
-    try {
-        // TODO: Uncomment when backend ready
-        // const response = await axios.get(SIGNALEMENT_ENDPOINTS.LIST, { params: filters });
-        // return response.data;
-
-        //*-- MOCK version
-        console.log('[MOCK API] Getting signalements', filters);
-        let filtered = [...mockSignalements];
-
-        // Apply status filter
-        if (filters.status) {
-            filtered = filtered.filter(s => s.status === filters.status);
-        }
-
-        return await mockApiDelay(filtered);
-    } catch (error) {
-        console.error('Error fetching signalements:', error);
-        throw new Error(error.response?.data?.message || 'Erreur lors de la récupération');
+  try {
+    const token = localStorage.getItem("JWT_TOKEN");
+    if (!token) {
+      // MOCK fallback
+      console.log('[MOCK API] Getting signalements', filters);
+      let filtered = [...mockSignalements];
+      if (filters.status) filtered = filtered.filter(s => s.status === filters.status);
+      return await mockApiDelay(filtered);
     }
+
+    const response = await axios.get(SIGNALEMENT_ENDPOINTS.LIST, {
+      params: filters,
+      headers: {
+        Authorization: `Bearer ${token}`, // ← ici tu envoies le token JWT
+      },
+    });
+    console.log("Fetched signalements:", response);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching signalements:', error);
+    throw new Error(error.response?.data?.message || 'Erreur lors de la récupération');
+  }
 };
+
 
 //?=== GET RECAP STATS
 export const getRecapStats = async () => {

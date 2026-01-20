@@ -32,7 +32,8 @@ const SignalementPage = () => {
     const [problemeForm, setProblemeForm] = useState({
         dateProbleme: '',
         surface: '',
-        budget: ''
+        budget: '',
+        entrepriseId: ''
     });
 
     useEffect(() => {
@@ -123,7 +124,8 @@ const SignalementPage = () => {
         setProblemeForm({
             dateProbleme: new Date().toISOString().split('T')[0], // Today's date
             surface: '',
-            budget: ''
+            budget: '',
+            entrepriseId: ''
         });
         setIsModalOpen(true);
     };
@@ -157,7 +159,8 @@ const SignalementPage = () => {
             await createProbleme(selectedSignalementId, {
                 dateProbleme: problemeForm.dateProbleme,
                 surface: Number(problemeForm.surface),
-                budget: Number(problemeForm.budget)
+                budget: Number(problemeForm.budget),
+                entrepriseId: Number(problemeForm.entrepriseId)
             });
             setSuccess('Problème ajouté avec succès');
             handleCloseModal();
@@ -211,17 +214,17 @@ const SignalementPage = () => {
                                     <th>Date</th>
                                     <th>Statut</th>
                                     <th>Surface (m²)</th>
-                                    <th>Budget (Ar)</th>
-                                    <th>Entreprise</th>
+                                    {/* <th>Budget (Ar)</th>
+                                    <th>Entreprise</th> */}
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {signalements.map((sig) => (
-                                    <tr key={sig.id}>
-                                        <td>{sig.id}</td>
+                                    <tr key={sig.idSignalement}>
+                                        <td>{sig.idSignalement}</td>
                                         <td>
-                                            {editingId === sig.id ? (
+                                            {editingId === sig.idSignalement ? (
                                                 <input
                                                     type="text"
                                                     value={editForm.description}
@@ -232,9 +235,9 @@ const SignalementPage = () => {
                                                 sig.description
                                             )}
                                         </td>
-                                        <td>{sig.date}</td>
+                                        <td>{sig.dateSignalement}</td>
                                         <td>
-                                            {editingId === sig.id ? (
+                                            {editingId === sig.idSignalement ? (
                                                 <select
                                                     value={editForm.status}
                                                     onChange={(e) => handleInputChange('status', e.target.value)}
@@ -251,7 +254,7 @@ const SignalementPage = () => {
                                             )}
                                         </td>
                                         <td>
-                                            {editingId === sig.id ? (
+                                            {editingId === sig.idSignalement ? (
                                                 <input
                                                     type="number"
                                                     value={editForm.surface}
@@ -259,11 +262,11 @@ const SignalementPage = () => {
                                                     className="edit-input"
                                                 />
                                             ) : (
-                                                sig.surface
+                                                sig.surfaceM2
                                             )}
                                         </td>
-                                        <td>
-                                            {editingId === sig.id ? (
+                                        {/* <td>
+                                            {editingId === sig.idSignalement ? (
                                                 <input
                                                     type="number"
                                                     value={editForm.budget}
@@ -271,11 +274,11 @@ const SignalementPage = () => {
                                                     className="edit-input"
                                                 />
                                             ) : (
-                                                sig.budget.toLocaleString()
+                                                sig.budget
                                             )}
                                         </td>
                                         <td>
-                                            {editingId === sig.id ? (
+                                            {editingId === sig.idSignalement ? (
                                                 <input
                                                     type="text"
                                                     value={editForm.entreprise}
@@ -285,10 +288,10 @@ const SignalementPage = () => {
                                             ) : (
                                                 sig.entreprise
                                             )}
-                                        </td>
+                                        </td> */}
                                         <td>
                                             <div className="action-buttons">
-                                                {editingId === sig.id ? (
+                                                {editingId === sig.idSignalement ? (
                                                     <>
                                                         <button onClick={handleSaveEdit} className="btn-save">
                                                             Sauver
@@ -303,12 +306,12 @@ const SignalementPage = () => {
                                                             Modifier
                                                         </button>
                                                         <button
-                                                            onClick={() => handleOpenModal(sig.id)}
+                                                            onClick={() => handleOpenModal(sig.idSignalement)}
                                                             className="btn-add-probleme"
                                                         >
                                                             Ajouter Problème
                                                         </button>
-                                                        <button onClick={() => handleDelete(sig.id)} className="btn-delete">
+                                                        <button onClick={() => handleDelete(sig.idSignalement)} className="btn-delete">
                                                             Supprimer
                                                         </button>
                                                     </>
@@ -365,7 +368,16 @@ const SignalementPage = () => {
                             required
                         />
                     </div>
-
+                    <div className="form-group">
+                        <label htmlFor="budget">Entreprise Id</label>
+                        <input
+                            type="number"
+                            id="entrepriseId"
+                            onChange={(e) => handleProblemeInputChange('entrepriseId', e.target.value)}
+                            min="0"
+                            required
+                        />
+                    </div>
                     <div className="modal-actions">
                         <button type="button" onClick={handleCloseModal} className="btn-cancel">
                             Annuler
