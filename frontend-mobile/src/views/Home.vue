@@ -269,11 +269,12 @@ const renderSignalementMarkers = (signalements: Signalement[]) => {
       // On récupère l'idTypeSignalement du modèle
       const typeId = String(sig.idTypeSignalement);
       const typeSignalement = await TypeSignalementService.getById (typeId);
+      const image =   sig.idimage?.toString() || '';
 
 
       console.log ("typeSignalement = ", typeSignalement);
       const  compte = await CompteService.getById (sig.idCompte  || '' );
-      const markerInstance = L.marker([sig.latitude, sig.longitude], { icon: createCustomIcon(typeId) })
+      const markerInstance = L.marker([sig.latitude, sig.longitude], { icon: createCustomIcon(image) })
         .addTo(markersLayer);
 
       markerInstance
