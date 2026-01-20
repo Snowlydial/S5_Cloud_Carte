@@ -3,12 +3,14 @@ import { Signalement } from "../models/Signalement";
 import { Util } from "@/utils/util";
 import { CompteService } from "@/services/Compte.service";
 import { TypeSignalementService } from "@/services/TypeSignalement.service";
+import { CompteRepository } from "@/repositories/CompteRepository";
 
 export class SignalementSeeder {
   static async seed() {
     await Util.clearCollection(SignalementRepository.COLLECTION);
 
-    const comptes = await CompteService.getAll();
+    const comptes = await CompteRepository.findAll();
+    console.log ("Comptes disponibles pour les signalements:", comptes);
     const typeSignalements = await TypeSignalementService.getAll();
 
     if (comptes.length === 0 || typeSignalements.length === 0) {
