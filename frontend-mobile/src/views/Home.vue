@@ -124,6 +124,7 @@ const format = (value?: number) => {
   return value.toFixed(2);
 };
 import { Signalement } from '@/models/Signalement';
+import { TypeSignalementService } from '@/services/TypeSignalement.service';
 
 const { typesSignalement,  getListeTypeSignalement, error, success} = useTypeSignalement();
 const {signaler, loading , getAllSignalements, listeSignalement, getAllSignalementsMine} = useSignalement();
@@ -263,20 +264,35 @@ const renderSignalementMarkers = (signalements: Signalement[]) => {
   // console.log("signalements = " + JSON.stringify(signalements));
   markersLayer.clearLayers(); 
 
-  signalements.forEach((sig) => {
+  signalements.forEach(async (sig) => {
     if (sig.latitude && sig.longitude) {
       // On récupère l'idTypeSignalement du modèle
       const typeId = String(sig.idTypeSignalement);
-      
-      L.marker([sig.latitude, sig.longitude], { icon: createCustomIcon(typeId) })
-        .addTo(markersLayer)
-        .bindPopup(`
-          <div style="font-family: sans-serif;">
-            <strong>Signalement #${sig.idSignalement}</strong><br>
-            Type ID: ${typeId}<br>
-            Posté par: ${sig.idCompte}
-          </div>
-        `);
+      const typeSignalement = await TypeSignalementService.getById (typeId);
+
+
+      console.log ("typeSignalement = ", typeSignalement);
+      const  compte = await CompteService.getById (sig.idCompte  || '' );
+      const markerInstance = L.marker([sig.latitude, sig.longitude], { icon: createCustomIcon(typeId) })
+        .addTo(markersLayer);
+
+      markerInstance
+        .bindTooltip(
+          `
+            <div style="font-family: sans-serif;">
+              <strong>Signalement #${sig.idSignalement}</strong><br>
+              Type: ${typeSignalement?.nom}<br>
+              Posté par: ${compte?.email}
+            </div>
+          `,
+          { direction: "top", sticky: true, opacity: 0.9 }
+        )
+        .on("mouseover", () => {
+          markerInstance.openTooltip();
+        })
+        .on("mouseout", () => {
+          markerInstance.closeTooltip();
+        });
     }
   });
   markersLayer.addTo(map);
