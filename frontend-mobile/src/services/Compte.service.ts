@@ -36,7 +36,7 @@ export class CompteService {
         totalProbleme = problemes.length;
         nbrPoint = totalProbleme;
         for (const probleme of problemes) {
-            console.log("Problème ID:", probleme);
+            // console.log("Problème ID:", probleme);
             if (probleme.idProbleme) {
 
                 const status: ProblemeStatus | null = await ProblemeStatusService.getLastByIdProbleme(probleme.idProbleme);

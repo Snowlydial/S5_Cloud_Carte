@@ -57,11 +57,11 @@
                 </ion-row>
                 <ion-row>
                   <ion-col size="6"><strong>Surface totale :</strong></ion-col>
-                  <ion-col size="6">{{ recapView.totalSurface }}</ion-col>
+                  <ion-col size="6">{{ format(recapView.totalSurface) }}</ion-col>
                 </ion-row>
                 <ion-row>
                   <ion-col size="6"><strong>Budget total :</strong></ion-col>
-                  <ion-col size="6">{{ formatBudget(recapView.totalBudget) }}</ion-col>
+                  <ion-col size="6">{{ format(recapView.totalBudget) }}</ion-col>
                 </ion-row>
                 <ion-row>
                   <ion-col size="6"><strong>Avancement :</strong></ion-col>
@@ -101,11 +101,10 @@ const recap = ref<Recap | null>(null);
 const { logout   } = useAuth();
 const recapView = computed(() => recap.value);
 
-const formatBudget = (value?: number) => {
+const format = (value?: number) => {
   if (value === undefined || value === null) return "0.00";
   return value.toFixed(2);
 };
-
 
 // État réactif pour le formulaire
 const form = ref({

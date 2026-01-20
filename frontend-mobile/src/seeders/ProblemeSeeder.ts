@@ -14,7 +14,7 @@ export class ProblemeSeeder {
         console.log("Entreprise pour les problèmes:", entreprise);
 
         for (const signalement of signalements) {
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 1; i++) {
                 const probleme: Omit<Probleme, "idProbleme"> = {
                     dateProbleme: new Date(),
                     surfaceM2: Math.random() * 1000 + 50,
