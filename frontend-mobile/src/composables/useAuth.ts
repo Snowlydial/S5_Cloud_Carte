@@ -47,8 +47,22 @@ const useAuth = () => {
     const fiche = (idUtilisateur: string | number) => {
         console.log(`Récupération de la fiche pour : ${idUtilisateur}`);
     };
+    
+    const logout = async () => {
+        loading.value = true;
+        const response = await logoutService();
+        if (response.success) {
+            user.value = null; // On vide l'utilisateur
+            success.value = "Déconnexion réussie";
+            error.value = null;
+        } else {
+            error.value = getErrorMessage(response);
+        }
+        loading.value = false;
+    };
 
-    return { user, login, signin, fiche, loading, error, success };
+    // N'oubliez pas d'ajouter logout au return
+    return { user, login, signin, logout, fiche, loading, error, success };
 };
 
 export default useAuth;
