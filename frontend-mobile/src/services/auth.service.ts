@@ -1,5 +1,5 @@
 
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "@firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "@firebase/auth";
 import { ApiResponse } from "@/types/apiResponse";
 import { Profil } from "@/models/Profil";
 import { ProfilRepository } from "@/repositories/ProfilRepository";
@@ -105,6 +105,31 @@ export async function signinService(email: string, password: string): Promise<Ap
             success: false,
             code: 400,
             message: "Échec de l'inscription",
+            error: {
+                type: "AUTH_ERROR",
+                details: err.message
+            }
+        };
+    }
+}
+
+export async function logoutService(): Promise<ApiResponse> {
+    try {
+        await signOut(auth);
+        
+        localStorage.removeItem("compteId");
+        localStorage.removeItem("loginTime");
+        
+        return {
+            success: true,
+            code: 200,
+            message: "Déconnexion réussie"
+        };
+    } catch (err: any) {
+        return {
+            success: false,
+            code: 400,
+            message: "Échec de la déconnexion",
             error: {
                 type: "AUTH_ERROR",
                 details: err.message
