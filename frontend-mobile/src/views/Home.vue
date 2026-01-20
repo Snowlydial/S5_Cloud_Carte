@@ -97,7 +97,7 @@
 // Icône par défaut
 const defaultIconConfig = { icon: '📍', color: '#2ecc71' };
 
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { 
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, 
   IonList, IonItem, IonLabel, IonSelect, IonSelectOption, IonButton,
@@ -114,8 +114,7 @@ import { useRouter } from 'vue-router';
 import { Recap } from '@/types/Recap';
 import { CompteService } from '@/services/Compte.service';
 
-const { typesSignalement,  getListeTypeSignalement, error, success  } = useTypeSignalement();
-const {signaler, loading  } = useSignalement();
+
 const recap = ref<Recap | null>(null);
 const { logout   } = useAuth();
 const recapView = computed(() => recap.value);
@@ -130,7 +129,6 @@ const { typesSignalement,  getListeTypeSignalement, error, success} = useTypeSig
 const {signaler, loading , getAllSignalements, listeSignalement, getAllSignalementsMine} = useSignalement();
 
 // getAllSignalements();
-const { logout} = useAuth();
 const listeSignalementEffectif = ref<Signalement[]>([]);
 
 // État réactif pour le formulaire
