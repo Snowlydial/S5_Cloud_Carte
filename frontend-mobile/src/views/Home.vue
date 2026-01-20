@@ -70,7 +70,7 @@ import { Signalement } from '@/models/Signalement';
 const { typesSignalement,  getListeTypeSignalement, error, success} = useTypeSignalement();
 const {signaler, loading , getAllSignalements, listeSignalement} = useSignalement();
 
-getAllSignalements();
+await getAllSignalements();
 const { logout} = useAuth();
 
 // État réactif pour le formulaire
