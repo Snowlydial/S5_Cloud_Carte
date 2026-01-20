@@ -18,7 +18,7 @@ const useAuth = () => {
         success.value = null;
         error.value = null;
         const response: ApiResponse = await loginService(email, password);
-        console.log("Erreur de login :", response);
+        console.log("LOGIN :", response);
         if (response.success) {
             user.value = {
                 uid: response.data?.uid || '',

@@ -21,6 +21,12 @@
           <ion-icon :icon="logOutOutline"></ion-icon>
         </ion-fab-button>
       </ion-fab>
+       <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin fab-filter">
+        <ion-fab-button size="small" @click="filterMySignalement" color="light">
+          <ion-icon :icon="filterOutline"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
+      
         <div class="form-container">
           <ion-list>
             <ion-item lines="none">
@@ -52,6 +58,19 @@
 </template>
 
 <script setup lang="ts">
+  const iconConfigs: Record<string, { icon: string, color: string }> = {
+  '2': { icon: '🚧', color: '#e67e22' }, // Route endommagée - Orange
+  '7': { icon: '⚠️', color: '#e74c3c' }, // Conducteur en danger - Rouge
+  '3': { icon: '💡', color: '#f1c40f' }, // Éclairage défaillant - Jaune
+  '1': { icon: '🕳️', color: '#7f8c8d' }, // Nid de poule - Gris
+  '5': { icon: '🪵', color: '#a04000' }, // Débris - Marron
+  '6': { icon: '🚗', color: '#c0392b' }, // Accident - Rouge foncé
+  '4': { icon: '🚫', color: '#2980b9' }, // Signalisation - Bleu
+};
+
+// Icône par défaut
+const defaultIconConfig = { icon: '📍', color: '#2ecc71' };
+
 import { onMounted, ref } from 'vue';
 import { 
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, 
@@ -62,15 +81,17 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import useTypeSignalement from '@/composables/useTypeSignalement';
 import useSignalement from '@/composables/useSignalement';
-import { locateOutline, logOutOutline } from 'ionicons/icons';
+import { filterOutline, locateOutline, logOutOutline } from 'ionicons/icons';
 import useAuth from '@/composables/useAuth';
 import { useRouter } from 'vue-router';
+import { Signalement } from '@/models/Signalement';
 
-const { typesSignalement,  getListeTypeSignalement, error, success  } = useTypeSignalement();
-const {signaler, loading  } = useSignalement();
+const { typesSignalement,  getListeTypeSignalement, error, success} = useTypeSignalement();
+const {signaler, loading , getAllSignalements, listeSignalement, getAllSignalementsMine} = useSignalement();
 
+// getAllSignalements();
 const { logout} = useAuth();
-
+const listeSignalementEffectif = ref<Signalement[]>([]);
 
 // État réactif pour le formulaire
 const form = ref({
@@ -133,6 +154,18 @@ const handleLogout = async () => {
   };
 }
 
+const filterMySignalement = async () => {
+  try {
+    await getAllSignalementsMine();
+
+    console.log("Filtre applique avec succes");
+      renderSignalementMarkers(listeSignalement.value);
+    
+  } catch (err) {
+    console.error("Erreur lors de l'obtention avec filtres", err);
+  };
+}
+
 const envoyerSignalement = () => {
   if (form.value.lat === null || form.value.lng === null) {
     alert('Veuillez sélectionner une position sur la carte.');
@@ -146,10 +179,11 @@ const envoyerSignalement = () => {
     coords: coords
   });
   signaler(idType, coords);
+  loadMapData();
   // alert(`Signalement ${form.value.type} envoyé pour ${form.value.lat}, ${form.value.lng}`);
 };
 
-onMounted(() => {
+onMounted(async () => {
   const tanaCoords: L.LatLngExpression = [-18.8792, 47.5079];
 
   // Initialisation
@@ -172,12 +206,87 @@ onMounted(() => {
     }
   });
 
+  await loadMapData();
+
   // Forcer le rendu
   setTimeout(() => {
     map.invalidateSize();
   }, 500);
   getCurrentLocation();
 });
+// Fonction pour ajouter les marqueurs
+const markersLayer = L.layerGroup(); // Pour éviter l'empilement
+
+const renderSignalementMarkers = (signalements: Signalement[]) => {
+  console.log("nombre signalements = " + signalements.length);
+  // console.log("signalements = " + JSON.stringify(signalements));
+  markersLayer.clearLayers(); 
+
+  signalements.forEach((sig) => {
+    if (sig.latitude && sig.longitude) {
+      // On récupère l'idTypeSignalement du modèle
+      const typeId = String(sig.idTypeSignalement);
+      
+      L.marker([sig.latitude, sig.longitude], { icon: createCustomIcon(typeId) })
+        .addTo(markersLayer)
+        .bindPopup(`
+          <div style="font-family: sans-serif;">
+            <strong>Signalement #${sig.idSignalement}</strong><br>
+            Type ID: ${typeId}<br>
+            Posté par: ${sig.idCompte}
+          </div>
+        `);
+    }
+  });
+  markersLayer.addTo(map);
+};
+
+const createCustomIcon = (typeId: string) => {
+  const config = iconConfigs[typeId] || defaultIconConfig;
+  
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `
+      <div style="
+        background-color: ${config.color};
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      ">
+        <span style="transform: rotate(45deg); font-size: 20px;">${config.icon}</span>
+      </div>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 40], // Pointe du marqueur
+    popupAnchor: [0, -40]
+  });
+};
+
+// Fonction pour charger toutes les données et les afficher sur la carte
+const loadMapData = async () => {
+  try {
+    // On attend que les deux appels API soient terminés
+    await Promise.all([
+      getAllSignalements(),
+      getListeTypeSignalement()
+    ]);
+    listeSignalementEffectif.value = listeSignalement.value;
+    // Une fois les données reçues, on dessine les marqueurs
+    if (listeSignalement.value && listeSignalement.value.length > 0) {
+      console.log("Signalements chargés :", listeSignalement.value);
+      renderSignalementMarkers(listeSignalement.value);
+    }
+  } catch (err) {
+    console.error("Erreur lors du chargement des données de la carte :", err);
+    // Optionnel : afficher une alerte utilisateur ici
+  }
+};
 </script>
 
 <style scoped>
@@ -215,7 +324,15 @@ ion-fab {
   top: 60px; 
 }
 
+.fab-filter {
+  top: 120px; 
+}
 #map { flex: 6; width: 100%; position: relative; }
 .main-wrapper { display: flex; flex-direction: column; height: 100%; }
 .form-container { flex: 4; background: white; padding: 10px; z-index: 10; }
+
+:deep(.custom-marker) {
+  background: transparent;
+  border: none;
+}
 </style>
