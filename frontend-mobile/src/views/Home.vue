@@ -65,12 +65,13 @@ import useSignalement from '@/composables/useSignalement';
 import { locateOutline, logOutOutline } from 'ionicons/icons';
 import useAuth from '@/composables/useAuth';
 import { useRouter } from 'vue-router';
+import { Signalement } from '@/models/Signalement';
 
-const { typesSignalement,  getListeTypeSignalement, error, success  } = useTypeSignalement();
-const {signaler, loading  } = useSignalement();
+const { typesSignalement,  getListeTypeSignalement, error, success} = useTypeSignalement();
+const {signaler, loading , getAllSignalements, listeSignalement} = useSignalement();
 
+getAllSignalements();
 const { logout} = useAuth();
-
 
 // État réactif pour le formulaire
 const form = ref({
@@ -168,12 +169,27 @@ onMounted(() => {
     }
   });
 
+  getAllSignalements();
+  
+  // 3. Ajouter les marqueurs initiaux
+  renderSignalementMarkers(listeSignalement.value);
+
   // Forcer le rendu
   setTimeout(() => {
     map.invalidateSize();
   }, 500);
   getCurrentLocation();
 });
+// Fonction pour ajouter les marqueurs
+const renderSignalementMarkers = (signalements: Signalement[]) => {
+  signalements.forEach((sig) => {
+    if (sig.latitude && sig.longitude) {
+      L.marker([sig.latitude, sig.longitude])
+        .addTo(map)
+        .bindPopup(`Signalement #${sig.idSignalement}<br>Posté par: ${sig.idCompte}`);
+    }
+  });
+};
 </script>
 
 <style scoped>
