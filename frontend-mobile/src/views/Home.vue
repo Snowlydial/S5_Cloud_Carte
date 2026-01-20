@@ -119,7 +119,7 @@ const envoyerSignalement = () => {
   const coords: L.LatLngExpression = [form.value.lat!, form.value.lng!];
   const idType = typeof form.value.type === 'string' ? Number(form.value.type) : form.value.type;
   signaler(idType as number, coords);
-  alert(`Signalement ${form.value.type} envoyé pour ${form.value.lat}, ${form.value.lng}`);
+  // alert(`Signalement ${form.value.type} envoyé pour ${form.value.lat}, ${form.value.lng}`);
 };
 
 onMounted(() => {
