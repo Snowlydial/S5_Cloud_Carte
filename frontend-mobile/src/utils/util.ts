@@ -19,8 +19,8 @@ export class Util {
 
 
     static async checkSession() {
-        // const SESSION_DURATION_MS = 4 * 60 * 60 * 1000; // 4 heures
-        const SESSION_DURATION_MS = 5 * 1000; // 10s
+        const SESSION_DURATION_MS = 4 * 60 * 60 * 1000; // 4 heures
+        // const SESSION_DURATION_MS = 5 * 1000; // 10s
         const loginTime = Number(localStorage.getItem("loginTime"));
         if (!loginTime) return false; // pas de session
 
