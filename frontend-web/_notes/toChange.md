@@ -10,3 +10,5 @@
 - mapPage, in map-wrapper, replace with offline tile server
 - mapPage, change the colors of the pins according to their states
 
+- problemeService to use the axio's methods
+- 
