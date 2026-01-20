@@ -10,6 +10,7 @@ import com.example.carte.services.SignalementService;
 
 @RestController
 @RequestMapping("/api/signalements")
+@CrossOrigin(origins = "*")
 public class SignalementController {
 
     private final SignalementService signalementService;

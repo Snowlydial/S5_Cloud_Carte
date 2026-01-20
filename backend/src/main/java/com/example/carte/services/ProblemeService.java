@@ -10,11 +10,16 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.example.carte.dto.ProblemeDTO;
+import com.example.carte.entities.Entreprise;
 import com.example.carte.entities.Probleme;
+import com.example.carte.entities.ProblemeStatus;
 import com.example.carte.entities.Signalement;
+import com.example.carte.entities.Status;
 import com.example.carte.entities.User;
+import com.example.carte.repository.EntrepriseRepository;
 import com.example.carte.repository.ProblemeRepository;
 import com.example.carte.repository.SignalementRepository;
+import com.example.carte.repository.StatutRepository;
 import com.example.carte.repository.UtilisateurRepository;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentReference;
@@ -25,17 +30,26 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import com.google.firebase.cloud.FirestoreClient;
 
+
+import jakarta.transaction.Transactional;
+
 @Service
 public class ProblemeService {
 
     private final ProblemeRepository problemeRepo;
     private final SignalementRepository signalementRepo;
     private final UtilisateurRepository utilisateurRepository;
-
-    public ProblemeService(ProblemeRepository problemeRepo, SignalementRepository signalementRepo,UtilisateurRepository utilisateurRepository) {
+ private final EntrepriseRepository entrepriseRepo;
+    private final StatutRepository statutRepo;
+    public ProblemeService(ProblemeRepository problemeRepo, SignalementRepository signalementRepo,
+            UtilisateurRepository utilisateurRepository,
+         EntrepriseRepository entrepriseRepo,
+            StatutRepository statutRepo) {
         this.problemeRepo = problemeRepo;
         this.signalementRepo = signalementRepo;
         this.utilisateurRepository = utilisateurRepository;
+        this.entrepriseRepo = entrepriseRepo;
+        this.statutRepo = statutRepo;
     }
 
     public List<Probleme> getAllProblemesRaw() {
@@ -179,12 +193,10 @@ public class ProblemeService {
         dto.setDateProbleme(probleme.getDateProbleme());
         dto.setSurfaceM2(probleme.getSurfaceM2());
         dto.setBudget(probleme.getBudget());
-        dto.setEntrepriseNom(probleme.getEntreprise() != null ? probleme.getEntreprise().getNom() : null);
+        dto.setEntrepriseNom(probleme.getEntreprise() != null ? probleme.getEntreprise().getIdEntreprise() : null);
         dto.setCompteEmail(probleme.getCompte() != null ? probleme.getCompte().getEmail() : null);
         dto.setSignalementId(probleme.getSignalement() != null ? probleme.getSignalement().getIdSignalement() : null);
-        dto.setStatut(probleme.getStatusList() != null && !probleme.getStatusList().isEmpty()
-                ? probleme.getStatusList().get(0).getEtat()
-                : "OUVERT"); // premier statut ou "OUVERT" par défaut
+        dto.setStatut(probleme.getStatusList().getLast().getStatus().getIdStatus());
         return dto;
     }
 
@@ -240,5 +252,49 @@ public class ProblemeService {
         } catch (Exception e) {
             System.out.println("Erreur synchronisation Firebase : " + e.getMessage());
         }
+    }
+
+    @Transactional
+    public ProblemeDTO createProbleme(ProblemeDTO dto) {
+
+        Signalement signalement = signalementRepo.findById(dto.getSignalementId())
+                .orElseThrow(() -> new RuntimeException("Signalement introuvable"));
+
+        User compte = utilisateurRepository.findByEmail(dto.getCompteEmail()).get();
+
+        Entreprise entreprise = null;
+        if (dto.getEntrepriseNom() != null) {
+            entreprise = entrepriseRepo.findById(Integer.valueOf(dto.getEntrepriseNom()))
+                    .orElseThrow(() -> new RuntimeException("Entreprise introuvable"));
+        }
+
+        // 🔹 Vérifier que le statut existe, sinon utiliser EN_ATTENTE par défaut
+        Integer statutValue = dto.getStatut() != null ? dto.getStatut() : 1;
+        Status statut = statutRepo.findById(statutValue).get();
+
+        
+        Probleme probleme = new Probleme();
+        probleme.setDateProbleme(LocalDateTime.now());
+        probleme.setSurfaceM2(dto.getSurfaceM2());
+        probleme.setBudget(dto.getBudget());
+        probleme.setEntreprise(entreprise != null ? entreprise : null);
+        probleme.setCompte(compte);
+        probleme.setSignalement(signalement);
+
+        ProblemeStatus problemeStatus = new ProblemeStatus();
+        problemeStatus.setEtat(statut.getNom());
+        problemeStatus.setStatus(statut);
+        problemeStatus.setDateStatus(LocalDateTime.now());
+        problemeStatus.setProbleme(probleme);
+        if(probleme.getStatusList() == null) {
+            probleme.setStatusList(new java.util.LinkedList<>());
+        }
+        probleme.getStatusList().add(problemeStatus);
+        Probleme saved = problemeRepo.save(probleme);
+
+        dto.setIdProbleme(saved.getIdProbleme());
+        dto.setDateProbleme(saved.getDateProbleme());
+        dto.setStatut(saved.getStatusList().getLast().getStatus().getIdStatus());
+        return dto;
     }
 }

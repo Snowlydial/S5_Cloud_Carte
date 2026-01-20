@@ -23,27 +23,42 @@ const mockApiDelay = (data) => {
 //?=== CREATE PROBLEME (Link to signalement)
 export const createProbleme = async (signalementId, problemeData) => {
     try {
-        // TODO: Uncomment when backend ready
-        // const response = await axios.post(PROBLEME_ENDPOINTS.CREATE, {
-        //   signalementId,
-        //   ...problemeData
-        // });
-        // return response.data;
+        // TODO: Décommenter quand le backend sera prêt
 
         //*-- MOCK version
+        const token = localStorage.getItem("JWT_TOKEN");
+
         console.log(`[MOCK API] Creating probleme for signalement ${signalementId}`, problemeData);
+
         const newProbleme = {
-            id: mockProblemes.length + 1,
-            signalementId,
-            ...problemeData
+            idProbleme: mockProblemes.length + 1,          // id auto-incrémenté
+            dateProbleme: problemeData.dateProbleme
+                ? problemeData.dateProbleme + "T00:00:00"   // si juste une date
+                : new Date().toISOString().split('.')[0] ,  // retire les millisecondes et Z
+            surfaceM2: problemeData.surfaceM2 || 0,
+            budget: problemeData.budget || 0,
+            entrepriseNom: problemeData.entrepriseNom || null,
+            compteEmail: problemeData.compteEmail || null,
+            signalementId: signalementId,
+            statut: problemeData.statut || 1                 // statut par défaut
         };
+        console.log('New probleme to be created:', newProbleme);
         mockProblemes.push(newProbleme);
+        const response = await axios.post(PROBLEME_ENDPOINTS.CREATE, newProbleme, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        return response.data;
+
         return await mockApiDelay(newProbleme);
+
     } catch (error) {
         console.error('Error creating probleme:', error);
         throw new Error(error.response?.data?.message || 'Erreur lors de la création du problème');
     }
 };
+
 
 //?=== GET PROBLEMES FOR SIGNALEMENT
 export const getProblemesBySignalement = async (signalementId) => {
