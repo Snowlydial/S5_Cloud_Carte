@@ -48,7 +48,7 @@ export class SignalementRepository {
     };
   }
 
-  static async findByIdCompte(idCompte: number): Promise<Signalement[]> {
+  static async findByIdCompte(idCompte : string): Promise<Signalement[]> {
     const q = query(
       collection(db, SignalementRepository.COLLECTION),
       where("idCompte", "==", idCompte),

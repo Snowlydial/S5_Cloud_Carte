@@ -6,6 +6,7 @@ import { ProfilRepository } from "@/repositories/ProfilRepository";
 import { Compte } from "@/models/Compte";
 import { CompteRepository } from "@/repositories/CompteRepository";
 import { auth } from "@/firebase";
+import { CompteService } from "./Compte.service";
 
 export async function loginService(email: string, password: string): Promise<ApiResponse> {
     const compte = await CompteRepository.findByEmail(email);
@@ -21,8 +22,11 @@ export async function loginService(email: string, password: string): Promise<Api
 
         console.log("Compte trouvé lors de la connexion réussie :", compte);
         if (compte){
-            localStorage.setItem("compteId", compte.id!);
+            localStorage.setItem("compteId", compte.idCompte!);
         }
+
+        // const recap = await CompteService.getRecap();
+        // console.log ("Récapitulatif utilisateur après connexion :", recap);
 
         // const profil: Profil = {
         //     id: "admin",
@@ -47,7 +51,7 @@ export async function loginService(email: string, password: string): Promise<Api
         if (compte && compte.mdp !== password) {
             const tentative = compte.tentative || 0;
 
-            await CompteRepository.update(compte.id!, { tentative: tentative + 1 });
+            await CompteRepository.update(compte.idCompte!, { tentative: tentative + 1 });
 
         }
 

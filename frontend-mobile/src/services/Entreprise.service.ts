@@ -4,6 +4,7 @@ import { Entreprise } from "@/models/Entreprise";
 export class EntrepriseService {
   static async getAll(): Promise<Entreprise[]> {
     try {
+        console.log ("Fetching all entreprises..." ,   EntrepriseRepository.getAll ());
       return await EntrepriseRepository.getAll();
     } catch (error) {
       console.error("Erreur lors de la récupération des entreprises:", error);

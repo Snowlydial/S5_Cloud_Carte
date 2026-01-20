@@ -7,7 +7,10 @@ import {
     updateDoc,
     deleteDoc,
     query,
-    where
+    where,
+    orderBy,
+    limit,
+    Timestamp
 } from "firebase/firestore";
 
 import { ProblemeStatus } from "../models/ProblemeStatus";
@@ -19,8 +22,8 @@ export class ProblemeStatusRepository {
     static async getAll(): Promise<ProblemeStatus[]> {
         const snap = await getDocs(collection(db, ProblemeStatusRepository.COLLECTION));
         return snap.docs.map(d => ({
-            id: d.id,
-            ...(d.data() as Omit<ProblemeStatus, "id">)
+            idProblemeStatus: d.id,
+            ...(d.data() as Omit<ProblemeStatus, "idProblemeStatus">)
         }));
     }
 
@@ -28,7 +31,7 @@ export class ProblemeStatusRepository {
         const ref = doc(db, ProblemeStatusRepository.COLLECTION, id);
         const snap = await getDoc(ref);
         return snap.exists()
-            ? { id: snap.id, ...(snap.data() as Omit<ProblemeStatus, "id">) }
+            ? { idProblemeStatus: snap.id, ...(snap.data() as Omit<ProblemeStatus, "idProblemeStatus">) }
             : null;
     }
 
@@ -51,17 +54,19 @@ export class ProblemeStatusRepository {
         );
         const snap = await getDocs(q);
         return snap.docs.map(d => ({
-            id: d.id,
-            ...(d.data() as Omit<ProblemeStatus, "id">)
+            idProblemeStatus: d.id,
+            ...(d.data() as Omit<ProblemeStatus, "idProblemeStatus">)
         }));
     }
 
-    static async create(problemeStatus: Omit<ProblemeStatus, "id">): Promise<string> {
+   
+
+    static async create(problemeStatus: Omit<ProblemeStatus, "idProblemeStatus">): Promise<string> {
         const docRef = await addDoc(collection(db, ProblemeStatusRepository.COLLECTION), problemeStatus);
         return docRef.id;
     }
 
-    static async update(id: string, data: Partial<Omit<ProblemeStatus, "id">>): Promise<void> {
+    static async update(id: string, data: Partial<Omit<ProblemeStatus, "idProblemeStatus">>): Promise<void> {
         const ref = doc(db, ProblemeStatusRepository.COLLECTION, id);
         await updateDoc(ref, data);
     }
