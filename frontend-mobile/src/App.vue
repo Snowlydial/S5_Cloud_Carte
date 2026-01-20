@@ -19,8 +19,9 @@ onMounted(() => {
   onAuthStateChanged(auth, async (u) => {
     if (u && await Util.checkSession()) {
       user.value = u;
+      console.log("Utilisateur connecté :", u);
     } else {
-
+      console.log("Session expirée ou utilisateur non connecté.");
       const expired = localStorage.getItem("expired");
       if (expired) {
 

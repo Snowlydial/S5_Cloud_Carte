@@ -52,6 +52,19 @@
 </template>
 
 <script setup lang="ts">
+  const iconConfigs: Record<string, { icon: string, color: string }> = {
+  'NdxNpQNuZwaqVMcBE1wX': { icon: '🚧', color: '#e67e22' }, // Route endommagée - Orange
+  'OwUuQTwYfWvnaHZOEyHx': { icon: '⚠️', color: '#e74c3c' }, // Conducteur en danger - Rouge
+  'SV6eN1sMcIPUR6V7QdwJ': { icon: '💡', color: '#f1c40f' }, // Éclairage défaillant - Jaune
+  'UQk0A9QYWAcNRXB8kzow': { icon: '🕳️', color: '#7f8c8d' }, // Nid de poule - Gris
+  'gUpX0tZZRprCX7xaNDSY': { icon: '🪵', color: '#a04000' }, // Débris - Marron
+  'kNxRIN9frluA80ojjw4x': { icon: '🚗', color: '#c0392b' }, // Accident - Rouge foncé
+  'zVu1ZoALH4cTg8qTGMsF': { icon: '🚫', color: '#2980b9' }, // Signalisation - Bleu
+};
+
+// Icône par défaut
+const defaultIconConfig = { icon: '📍', color: '#2ecc71' };
+
 import { onMounted, ref } from 'vue';
 import { 
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, 
@@ -70,7 +83,7 @@ import { Signalement } from '@/models/Signalement';
 const { typesSignalement,  getListeTypeSignalement, error, success} = useTypeSignalement();
 const {signaler, loading , getAllSignalements, listeSignalement} = useSignalement();
 
-await getAllSignalements();
+// getAllSignalements();
 const { logout} = useAuth();
 
 // État réactif pour le formulaire
@@ -147,10 +160,11 @@ const envoyerSignalement = () => {
     coords: coords
   });
   signaler(idType, coords);
+  loadMapData();
   // alert(`Signalement ${form.value.type} envoyé pour ${form.value.lat}, ${form.value.lng}`);
 };
 
-onMounted(() => {
+onMounted(async () => {
   const tanaCoords: L.LatLngExpression = [-18.8792, 47.5079];
 
   // Initialisation
@@ -173,10 +187,7 @@ onMounted(() => {
     }
   });
 
-  getAllSignalements();
-  
-  // 3. Ajouter les marqueurs initiaux
-  renderSignalementMarkers(listeSignalement.value);
+  await loadMapData();
 
   // Forcer le rendu
   setTimeout(() => {
@@ -185,14 +196,74 @@ onMounted(() => {
   getCurrentLocation();
 });
 // Fonction pour ajouter les marqueurs
+const markersLayer = L.layerGroup(); // Pour éviter l'empilement
+
 const renderSignalementMarkers = (signalements: Signalement[]) => {
+  markersLayer.clearLayers(); 
+
   signalements.forEach((sig) => {
     if (sig.latitude && sig.longitude) {
-      L.marker([sig.latitude, sig.longitude])
-        .addTo(map)
-        .bindPopup(`Signalement #${sig.idSignalement}<br>Posté par: ${sig.idCompte}`);
+      // On récupère l'idTypeSignalement du modèle
+      const typeId = String(sig.idTypeSignalement);
+      
+      L.marker([sig.latitude, sig.longitude], { icon: createCustomIcon(typeId) })
+        .addTo(markersLayer)
+        .bindPopup(`
+          <div style="font-family: sans-serif;">
+            <strong>Signalement #${sig.idSignalement}</strong><br>
+            Type ID: ${typeId}<br>
+            Posté par: ${sig.idCompte}
+          </div>
+        `);
     }
   });
+  markersLayer.addTo(map);
+};
+
+const createCustomIcon = (typeId: string) => {
+  const config = iconConfigs[typeId] || defaultIconConfig;
+  
+  return L.divIcon({
+    className: 'custom-marker',
+    html: `
+      <div style="
+        background-color: ${config.color};
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      ">
+        <span style="transform: rotate(45deg); font-size: 20px;">${config.icon}</span>
+      </div>
+    `,
+    iconSize: [40, 40],
+    iconAnchor: [20, 40], // Pointe du marqueur
+    popupAnchor: [0, -40]
+  });
+};
+
+// Fonction pour charger toutes les données et les afficher sur la carte
+const loadMapData = async () => {
+  try {
+    // On attend que les deux appels API soient terminés
+    await Promise.all([
+      getAllSignalements(),
+      getListeTypeSignalement()
+    ]);
+    // Une fois les données reçues, on dessine les marqueurs
+    if (listeSignalement.value && listeSignalement.value.length > 0) {
+      console.log("Signalements chargés :", listeSignalement.value);
+      renderSignalementMarkers(listeSignalement.value);
+    }
+  } catch (err) {
+    console.error("Erreur lors du chargement des données de la carte :", err);
+    // Optionnel : afficher une alerte utilisateur ici
+  }
 };
 </script>
 
@@ -234,4 +305,9 @@ ion-fab {
 #map { flex: 6; width: 100%; position: relative; }
 .main-wrapper { display: flex; flex-direction: column; height: 100%; }
 .form-container { flex: 4; background: white; padding: 10px; z-index: 10; }
+
+:deep(.custom-marker) {
+  background: transparent;
+  border: none;
+}
 </style>
