@@ -48,4 +48,12 @@ export class CompteRepository {
     const ref = doc(db, this.COLLECTION, id);
     await updateDoc(ref, data);
   }
+
+  static async findAll(): Promise<Compte[]> {
+    const snap = await getDocs(collection(db, CompteRepository.COLLECTION));
+    return snap.docs.map(d => ({
+      idCompte: d.id,
+      ...(d.data() as Omit<Compte, "idCompte">)
+    }));
+  }
 }
