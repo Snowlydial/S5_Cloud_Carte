@@ -15,7 +15,10 @@ const useAuth = () => {
 
     const login = async (email: string, password: string) => {
         loading.value = true;
+        success.value = null;
+        error.value = null;
         const response: ApiResponse = await loginService(email, password);
+        console.log("Erreur de login :", response);
         if (response.success) {
             user.value = {
                 uid: response.data?.uid || '',
@@ -47,7 +50,7 @@ const useAuth = () => {
     const fiche = (idUtilisateur: string | number) => {
         console.log(`Récupération de la fiche pour : ${idUtilisateur}`);
     };
-    
+
     const logout = async () => {
         loading.value = true;
         const response = await logoutService();

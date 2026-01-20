@@ -11,7 +11,7 @@ export async function loginService(email: string, password: string): Promise<Api
     const compte = await CompteRepository.findByEmail(email);
 
     try {
-        if (compte && compte.tentative && compte.tentative >= 3) {
+        if (compte && compte.tentative && compte.tentative >= 10) {
             throw new Error("Compte verrouillé en raison de trop nombreuses tentatives de connexion échouées.");
         }
         // const testEmail = "testuser123@example.com";
