@@ -21,6 +21,12 @@
           <ion-icon :icon="logOutOutline"></ion-icon>
         </ion-fab-button>
       </ion-fab>
+       <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin fab-filter">
+        <ion-fab-button size="small" @click="filterMySignalement" color="light">
+          <ion-icon :icon="filterOutline"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
+      
         <div class="form-container">
           <ion-list>
             <ion-item lines="none">
@@ -53,13 +59,13 @@
 
 <script setup lang="ts">
   const iconConfigs: Record<string, { icon: string, color: string }> = {
-  'NdxNpQNuZwaqVMcBE1wX': { icon: '🚧', color: '#e67e22' }, // Route endommagée - Orange
-  'OwUuQTwYfWvnaHZOEyHx': { icon: '⚠️', color: '#e74c3c' }, // Conducteur en danger - Rouge
-  'SV6eN1sMcIPUR6V7QdwJ': { icon: '💡', color: '#f1c40f' }, // Éclairage défaillant - Jaune
-  'UQk0A9QYWAcNRXB8kzow': { icon: '🕳️', color: '#7f8c8d' }, // Nid de poule - Gris
-  'gUpX0tZZRprCX7xaNDSY': { icon: '🪵', color: '#a04000' }, // Débris - Marron
-  'kNxRIN9frluA80ojjw4x': { icon: '🚗', color: '#c0392b' }, // Accident - Rouge foncé
-  'zVu1ZoALH4cTg8qTGMsF': { icon: '🚫', color: '#2980b9' }, // Signalisation - Bleu
+  '2': { icon: '🚧', color: '#e67e22' }, // Route endommagée - Orange
+  '7': { icon: '⚠️', color: '#e74c3c' }, // Conducteur en danger - Rouge
+  '3': { icon: '💡', color: '#f1c40f' }, // Éclairage défaillant - Jaune
+  '1': { icon: '🕳️', color: '#7f8c8d' }, // Nid de poule - Gris
+  '5': { icon: '🪵', color: '#a04000' }, // Débris - Marron
+  '6': { icon: '🚗', color: '#c0392b' }, // Accident - Rouge foncé
+  '4': { icon: '🚫', color: '#2980b9' }, // Signalisation - Bleu
 };
 
 // Icône par défaut
@@ -75,16 +81,17 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import useTypeSignalement from '@/composables/useTypeSignalement';
 import useSignalement from '@/composables/useSignalement';
-import { locateOutline, logOutOutline } from 'ionicons/icons';
+import { filterOutline, locateOutline, logOutOutline } from 'ionicons/icons';
 import useAuth from '@/composables/useAuth';
 import { useRouter } from 'vue-router';
 import { Signalement } from '@/models/Signalement';
 
 const { typesSignalement,  getListeTypeSignalement, error, success} = useTypeSignalement();
-const {signaler, loading , getAllSignalements, listeSignalement} = useSignalement();
+const {signaler, loading , getAllSignalements, listeSignalement, getAllSignalementsMine} = useSignalement();
 
 // getAllSignalements();
 const { logout} = useAuth();
+const listeSignalementEffectif = ref<Signalement[]>([]);
 
 // État réactif pour le formulaire
 const form = ref({
@@ -147,6 +154,18 @@ const handleLogout = async () => {
   };
 }
 
+const filterMySignalement = async () => {
+  try {
+    await getAllSignalementsMine();
+
+    console.log("Filtre applique avec succes");
+      renderSignalementMarkers(listeSignalement.value);
+    
+  } catch (err) {
+    console.error("Erreur lors de l'obtention avec filtres", err);
+  };
+}
+
 const envoyerSignalement = () => {
   if (form.value.lat === null || form.value.lng === null) {
     alert('Veuillez sélectionner une position sur la carte.');
@@ -199,6 +218,8 @@ onMounted(async () => {
 const markersLayer = L.layerGroup(); // Pour éviter l'empilement
 
 const renderSignalementMarkers = (signalements: Signalement[]) => {
+  console.log("nombre signalements = " + signalements.length);
+  // console.log("signalements = " + JSON.stringify(signalements));
   markersLayer.clearLayers(); 
 
   signalements.forEach((sig) => {
@@ -255,6 +276,7 @@ const loadMapData = async () => {
       getAllSignalements(),
       getListeTypeSignalement()
     ]);
+    listeSignalementEffectif.value = listeSignalement.value;
     // Une fois les données reçues, on dessine les marqueurs
     if (listeSignalement.value && listeSignalement.value.length > 0) {
       console.log("Signalements chargés :", listeSignalement.value);
@@ -302,6 +324,9 @@ ion-fab {
   top: 60px; 
 }
 
+.fab-filter {
+  top: 120px; 
+}
 #map { flex: 6; width: 100%; position: relative; }
 .main-wrapper { display: flex; flex-direction: column; height: 100%; }
 .form-container { flex: 4; background: white; padding: 10px; z-index: 10; }
