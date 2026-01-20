@@ -9,6 +9,8 @@ import {
     deleteSignalement,
     syncSignalements
 } from '../services/signalementService';
+import { createProbleme } from '../services/problemeService';
+import Modal from '../components/Modal';
 import { SIGNALEMENT_STATUS } from '../config/constants';
 import '../styles/Signalement.css';
 
@@ -23,6 +25,15 @@ const SignalementPage = () => {
     const [editForm, setEditForm] = useState({});
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+
+    //*-- Modal state for adding probleme
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedSignalementId, setSelectedSignalementId] = useState(null);
+    const [problemeForm, setProblemeForm] = useState({
+        dateProbleme: '',
+        surface: '',
+        budget: ''
+    });
 
     useEffect(() => {
         if (!hasRole('MANAGER')) {
@@ -106,6 +117,56 @@ const SignalementPage = () => {
         setEditForm(prev => ({ ...prev, [field]: value }));
     };
 
+    //?=== PROBLEME MODAL HANDLERS
+    const handleOpenModal = (signalementId) => {
+        setSelectedSignalementId(signalementId);
+        setProblemeForm({
+            dateProbleme: new Date().toISOString().split('T')[0], // Today's date
+            surface: '',
+            budget: ''
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setSelectedSignalementId(null);
+        setProblemeForm({
+            dateProbleme: '',
+            surface: '',
+            budget: ''
+        });
+    };
+
+    const handleProblemeInputChange = (field, value) => {
+        setProblemeForm(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSubmitProbleme = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        //*-- Validation
+        if (!problemeForm.dateProbleme || !problemeForm.surface || !problemeForm.budget) {
+            setError('Veuillez remplir tous les champs');
+            return;
+        }
+
+        try {
+            await createProbleme(selectedSignalementId, {
+                dateProbleme: problemeForm.dateProbleme,
+                surface: Number(problemeForm.surface),
+                budget: Number(problemeForm.budget)
+            });
+            setSuccess('Problème ajouté avec succès');
+            handleCloseModal();
+            loadSignalements(); // Reload to show updated data
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
     return (
         <div className="page-container">
             <div className="page-header">
@@ -119,7 +180,7 @@ const SignalementPage = () => {
                         className="btn-primary"
                         disabled={syncing}
                     >
-                    {syncing ? 'Synchronisation...' : 'Synchroniser'}
+                        {syncing ? 'Synchronisation...' : '🔄 Synchroniser'}
                     </button>
                     <button onClick={() => navigate('/map')} className="btn-secondary">
                         Voir la carte
@@ -241,6 +302,12 @@ const SignalementPage = () => {
                                                         <button onClick={() => handleEdit(sig)} className="btn-edit">
                                                             Modifier
                                                         </button>
+                                                        <button
+                                                            onClick={() => handleOpenModal(sig.id)}
+                                                            className="btn-add-probleme"
+                                                        >
+                                                            Ajouter Problème
+                                                        </button>
                                                         <button onClick={() => handleDelete(sig.id)} className="btn-delete">
                                                             Supprimer
                                                         </button>
@@ -255,6 +322,62 @@ const SignalementPage = () => {
                     </div>
                 )}
             </div>
+
+            {/* Modal for adding probleme */}
+            <Modal
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                title="Ajouter un Problème"
+            >
+                <form onSubmit={handleSubmitProbleme} className="modal-form">
+                    <div className="form-group">
+                        <label htmlFor="dateProbleme">Date du problème</label>
+                        <input
+                            type="date"
+                            id="dateProbleme"
+                            value={problemeForm.dateProbleme}
+                            onChange={(e) => handleProblemeInputChange('dateProbleme', e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="surface">Surface (m²)</label>
+                        <input
+                            type="number"
+                            id="surface"
+                            value={problemeForm.surface}
+                            onChange={(e) => handleProblemeInputChange('surface', e.target.value)}
+                            placeholder="Ex: 25"
+                            min="0"
+                            step="0.01"
+                            required
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="budget">Budget (Ar)</label>
+                        <input
+                            type="number"
+                            id="budget"
+                            value={problemeForm.budget}
+                            onChange={(e) => handleProblemeInputChange('budget', e.target.value)}
+                            placeholder="Ex: 500000"
+                            min="0"
+                            required
+                        />
+                    </div>
+
+                    <div className="modal-actions">
+                        <button type="button" onClick={handleCloseModal} className="btn-cancel">
+                            Annuler
+                        </button>
+                        <button type="submit" className="btn-submit">
+                            Ajouter
+                        </button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 };
