@@ -140,8 +140,12 @@ const envoyerSignalement = () => {
   }
   // Construire coords au format Leaflet et appeler signaler
   const coords: L.LatLngExpression = [form.value.lat!, form.value.lng!];
-  const idType = typeof form.value.type === 'string' ? Number(form.value.type) : form.value.type;
-  signaler(idType as number, coords);
+  const idType =  form.value.type;
+  console.log  ("Envoi du signalement :", {
+    type: idType,
+    coords: coords
+  });
+  signaler(idType, coords);
   // alert(`Signalement ${form.value.type} envoyé pour ${form.value.lat}, ${form.value.lng}`);
 };
 
