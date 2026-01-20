@@ -69,18 +69,6 @@ const DashboardPage = () => {
                                 Gérer les signalements
                                 </button>
                             </div>
-
-                            <div className="module-card">
-                                <h3>Gestion Problèmes</h3>
-                                <p>CRUD complet des problèmes avec statuts et entreprises</p>
-                                <button 
-                                onClick={() => navigate('/problemes')}
-                                className="btn-primary"
-                                >
-                                Gérer les problèmes
-                                </button>
-                            </div>
-
                         </>
                     )}
                 </div>

@@ -156,15 +156,11 @@ const SignalementPage = () => {
         }
 
         try {
-            //*-- Quick create with minimal fields (entreprise will be set later in full CRUD)
-            await createProbleme({
+            await createProbleme(selectedSignalementId, {
                 dateProbleme: problemeForm.dateProbleme,
-                surfaceM2: Number(problemeForm.surface),
+                surface: Number(problemeForm.surface),
                 budget: Number(problemeForm.budget),
-                entrepriseId: Number(problemeForm.entrepriseId),
-                idSignalement: selectedSignalementId,
-                idCompte: user.id || 1,
-                idEntreprise: null // Will be set in Probleme management page
+                entrepriseId: Number(problemeForm.entrepriseId)
             });
             setSuccess('Problème ajouté avec succès');
             handleCloseModal();

@@ -9,7 +9,6 @@ import DashboardPage from './pages/DashboardPage';
 import UserManagementPage from './pages/UserManagementPage';
 import MapPage from './pages/MapPage';
 import SignalementPage from './pages/SignalementPage';
-import ProblemePage from './pages/ProblemePage';
 import './App.css';
 
 //*-- Protected Route: redirects to login if not authenticated
@@ -92,15 +91,6 @@ function App() {
                         element={
                         <ProtectedRoute>
                             <SignalementPage />
-                        </ProtectedRoute>
-                        } 
-                    />
-
-                    <Route 
-                        path="/problemes" 
-                        element={
-                        <ProtectedRoute>
-                            <ProblemePage />
                         </ProtectedRoute>
                         } 
                     />
