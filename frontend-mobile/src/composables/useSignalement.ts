@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import type { User } from "firebase/auth";
+import { getAuth, type User } from "firebase/auth";
 import { loginService, signinService } from "@/services/auth.service";
 import { ApiResponse } from "@/types/apiResponse";
 import L from 'leaflet'; // Assurez-vous d'avoir importé Leaflet pour le type
@@ -14,7 +14,7 @@ const error = ref<string | null>(null);
 const success = ref<string | null>(null);
 const loading = ref(false);
 const listeSignalement = ref<Signalement[]>([]);
-
+const compteId = ref<string | null>(null);
 const useSignalement = () => {
 
   const getAllSignalements = async () => {
@@ -37,15 +37,19 @@ const useSignalement = () => {
     try {
       // Votre logique d'appel API ici
           // const response: ApiResponse = await signalerService(idTypeSignalement, coords);
-          const  compteId = localStorage.getItem("compteId");
-          if (!compteId) {
+          const auth = getAuth();
+          const currentUser = auth.currentUser;
+          if (currentUser) {
+            compteId.value = currentUser.uid; // Voici votre "BWmaezwLsI..."
+            console.log("ID utilisateur :", compteId);
+          } else {
             throw new Error("Utilisateur non authentifié");
           }
           const signalement:Signalement = {
             dateSignalement: new Date(),
             latitude: typeof lat === 'number' ? lat : lat!,
             longitude: typeof lng === 'number' ? lng : lng!,
-            idCompte:   compteId,
+            idCompte: compteId.value,
           };
           console.log("Signalement créé :", signalement);
 
