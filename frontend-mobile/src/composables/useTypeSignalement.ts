@@ -5,8 +5,6 @@ import { ApiResponse } from "@/types/apiResponse";
 import { TypeSignalement } from "@/models/TypeSignalement";
 import { TypeSignalementService } from "@/services/TypeSignalement.service";
 
-
-
 const typesSignalement = ref<TypeSignalement[] | null>(null);
 const error = ref<string | null>(null);
 const success = ref<string | null>(null);

@@ -13,8 +13,20 @@ const typesSignalement = ref<TypeSignalement[] | null>(null);
 const error = ref<string | null>(null);
 const success = ref<string | null>(null);
 const loading = ref(false);
+const listeSignalement = ref<Signalement[]>([]);
 
 const useSignalement = () => {
+
+  const getAllSignalements = async () => {
+    try {
+      const result:Signalement[] = await SignalementService.getAll();
+      listeSignalement.value = result;
+    } catch (error) {
+      console.error("Erreur lors de la récupération des signalements", error);
+    }
+  }
+
+
   const signaler = async (idTypeSignalement: number, coords: L.LatLngExpression) => {
     // Si vous avez besoin d'extraire les valeurs individuelles :
     // Dans le cas d'un tableau [-18.8792, 47.5079]
@@ -44,7 +56,7 @@ const useSignalement = () => {
       console.error("Erreur lors du signalement", err);
     }
   };
-  return { signaler, loading, error , success };
+  return { signaler, loading, error , success, getAllSignalements, listeSignalement};
 };
 
 export default useSignalement;
