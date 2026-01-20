@@ -10,11 +10,17 @@
       <div class="main-wrapper">
         
         <div id="map" ref="mapContainer"></div>
-        <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin">
-          <ion-fab-button size="small" @click="getCurrentLocation" color="light">
-            <ion-icon :icon="locateOutline"></ion-icon>
-          </ion-fab-button>
-        </ion-fab>
+        <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin fab-location">
+        <ion-fab-button size="small" @click="getCurrentLocation" color="light">
+          <ion-icon :icon="locateOutline"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
+
+      <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin fab-logout">
+        <ion-fab-button size="small" @click="handleLogout" color="light">
+          <ion-icon :icon="logOutOutline"></ion-icon>
+        </ion-fab-button>
+      </ion-fab>
         <div class="form-container">
           <ion-list>
             <ion-item lines="none">
@@ -56,7 +62,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import useTypeSignalement from '@/composables/useTypeSignalement';
 import useSignalement from '@/composables/useSignalement';
-import { locateOutline } from 'ionicons/icons';
+import { locateOutline, logOutOutline } from 'ionicons/icons';
 
 const { typesSignalement,  getListeTypeSignalement, error, success  } = useTypeSignalement();
 const {signaler, loading  } = useSignalement();
@@ -83,6 +89,34 @@ let marker: L.Marker | null = null;
 
 // --- NOUVELLE FONCTION DE GÉOLOCALISATION ---
 const getCurrentLocation = async () => {
+  try {
+    const coordinates = await Geolocation.getCurrentPosition({
+      enableHighAccuracy: true
+    });
+
+    const { latitude, longitude } = coordinates.coords;
+    const newPos = L.latLng(latitude, longitude);
+
+    // 1. Centrer la carte
+    map.setView(newPos, 16);
+
+    // 2. Mettre à jour le formulaire
+    form.value.lat = latitude;
+    form.value.lng = longitude;
+
+    // 3. Placer ou déplacer le marqueur
+    if (marker) {
+      marker.setLatLng(newPos);
+    } else {
+      marker = L.marker(newPos).addTo(map);
+    }
+  } catch (err) {
+    console.error("Erreur de localisation", err);
+    alert("Impossible de récupérer votre position. Vérifiez vos paramètres GPS.");
+  }
+};
+
+const handleLogout = async () => {
   try {
     const coordinates = await Geolocation.getCurrentPosition({
       enableHighAccuracy: true
@@ -177,6 +211,17 @@ onMounted(() => {
 ion-fab {
   margin-top: 10px;
 }
+
+/* Position the first button normally */
+.fab-location {
+  top: 10px;
+}
+
+/* Push the logout button down (40px button height + 10px spacing) */
+.fab-logout {
+  top: 60px; 
+}
+
 #map { flex: 6; width: 100%; position: relative; }
 .main-wrapper { display: flex; flex-direction: column; height: 100%; }
 .form-container { flex: 4; background: white; padding: 10px; z-index: 10; }
