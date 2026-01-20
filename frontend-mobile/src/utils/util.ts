@@ -4,6 +4,11 @@ import { auth } from "../firebase";
 // import { alertController } from "@ionic/vue";
 
 export class Util {
+    static async getCompteId() {
+        const result = localStorage.getItem("compteId");
+        return result;
+    }
+
     static async clearCollection(collectionName: string) {
         const colRef = collection(db, collectionName); // référence correcte
         const snapshot = await getDocs(colRef);

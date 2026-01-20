@@ -73,8 +73,10 @@ const handlelogin = async () => {
     await login(username.value, password.value);
 
     if (success.value) {
+      console.log("success de login :", success.value);
       router.push('/home');
     } else {
+      console.log("error de login :", error.value);
       const alert = await alertController.create({
         header: 'Échec de connexion',
         message: error.value || 'Nom d\'utilisateur ou mot de passe incorrect.',
