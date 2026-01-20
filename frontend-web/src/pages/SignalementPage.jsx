@@ -180,7 +180,7 @@ const SignalementPage = () => {
                         className="btn-primary"
                         disabled={syncing}
                     >
-                        {syncing ? 'Synchronisation...' : '🔄 Synchroniser'}
+                        {syncing ? 'Synchronisation...' : 'Synchroniser'}
                     </button>
                     <button onClick={() => navigate('/map')} className="btn-secondary">
                         Voir la carte
@@ -348,7 +348,6 @@ const SignalementPage = () => {
                             id="surface"
                             value={problemeForm.surface}
                             onChange={(e) => handleProblemeInputChange('surface', e.target.value)}
-                            placeholder="Ex: 25"
                             min="0"
                             step="0.01"
                             required
@@ -362,7 +361,6 @@ const SignalementPage = () => {
                             id="budget"
                             value={problemeForm.budget}
                             onChange={(e) => handleProblemeInputChange('budget', e.target.value)}
-                            placeholder="Ex: 500000"
                             min="0"
                             required
                         />
