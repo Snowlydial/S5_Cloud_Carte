@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import type { User } from "firebase/auth";
 import { ApiResponse } from "@/types/apiResponse";
-import { loginService, signinService } from "@/services/auth.service";
+import { loginService, logoutService, signinService } from "@/services/auth.service";
 import { Util } from "@/utils/util";
 import { getErrorMessage, getSuccessMessage } from "@/utils/messageUtil";
 
@@ -55,8 +55,11 @@ const useAuth = () => {
             user.value = null; // On vide l'utilisateur
             success.value = "Déconnexion réussie";
             error.value = null;
+            console.log("deconnexion reussi");
         } else {
             error.value = getErrorMessage(response);
+            console.log("echec de deconnexion");
+
         }
         loading.value = false;
     };
