@@ -97,3 +97,12 @@
 .data-table td {
   vertical-align: middle;
 }
+
+.btn-add-probleme {
+  background-color: #27ae60;
+  color: white;
+}
+
+.btn-add-probleme:hover {
+  background-color: #229954;
+}
