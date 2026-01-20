@@ -204,7 +204,7 @@ const filterMySignalement = async () => {
   };
 }
 
-const envoyerSignalement = () => {
+const  envoyerSignalement = async () => {
   if (form.value.lat === null || form.value.lng === null) {
     alert('Veuillez sélectionner une position sur la carte.');
     return;
@@ -216,7 +216,7 @@ const envoyerSignalement = () => {
     type: idType,
     coords: coords
   });
-  signaler(idType, coords);
+  await signaler(idType, coords);
   loadMapData();
   // alert(`Signalement ${form.value.type} envoyé pour ${form.value.lat}, ${form.value.lng}`);
 };
@@ -266,7 +266,7 @@ const renderSignalementMarkers = (signalements: Signalement[]) => {
   signalements.forEach((sig) => {
     if (sig.latitude && sig.longitude) {
       // On récupère l'idTypeSignalement du modèle
-      const typeId = String(sig.idTypeSignalement);
+      const typeId = String(sig.idimage);
       
       L.marker([sig.latitude, sig.longitude], { icon: createCustomIcon(typeId) })
         .addTo(markersLayer)
@@ -283,6 +283,7 @@ const renderSignalementMarkers = (signalements: Signalement[]) => {
 };
 
 const createCustomIcon = (typeId: string) => {
+  console.log("typeId = " + typeId);
   const config = iconConfigs[typeId] || defaultIconConfig;
   
   return L.divIcon({

@@ -16,6 +16,7 @@ export class SignalementRepository {
   static COLLECTION = "signalements";
 
   static async create(data: Omit<Signalement, "idSignalement">) {
+    console.log("Données envoyées à Firestore:", data);
     return await addDoc(collection(db, SignalementRepository.COLLECTION), data);
   }
 

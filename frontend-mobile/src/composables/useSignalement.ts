@@ -7,6 +7,7 @@ import { TypeSignalement } from "@/models/TypeSignalement";
 import { Signalement } from "@/models/Signalement";
 import { SignalementService } from "@/services/Signalement.service";
 import { Util } from "@/utils/util";
+import { TypeSignalementService } from "@/services/TypeSignalement.service";
 
 const typesSignalement = ref<TypeSignalement[] | null>(null);
 const error = ref<string | null>(null);
@@ -56,15 +57,22 @@ const useSignalement = () => {
         // --- RECHERCHE DE L'ID IMAGE ---
         // On cherche dans la liste des types celui qui correspond à l'ID sélectionné
         let imageId = null;
+        typesSignalement.value =  await TypeSignalementService.getAll();
+
         if(typesSignalement.value === null) {
+          console.log("value type signalement nullll= " + typesSignalement.value);
         } else {
+          console.log("value type signalement okkkk= " + typesSignalement.value.length);
+          console.log("cible = " + idTypeSignalement);
           const typeSelectionne = typesSignalement.value.find(
-            t => String(t.idTypeSignalement) === String(idTypeSignalement)
+            ts => String(ts.idTypeSignalement) === String(idTypeSignalement)
           );
-          imageId = typeSelectionne?.idimage || null;
+          console.log("Type sélectionné :", typeSelectionne);
+          imageId = typeSelectionne?.idimage ?? null;
+          console.log("ID image trouvé :", imageId);
         }
 
-
+        console.log("IMAGE = ===== " + imageId);
         // Si trouvé, on prend son idimage, sinon on peut mettre une valeur par défaut ou null
         const signalement: Signalement = {
             dateSignalement: new Date(),

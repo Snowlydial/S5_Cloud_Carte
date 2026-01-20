@@ -26,6 +26,7 @@ export class SignalementSeeder {
         longitude: 2.3522,
         idCompte: firstCompte.idCompte || "",
         idTypeSignalement: firstTypeSignalement.idTypeSignalement || "",
+        
       },
       {
         dateSignalement: new Date(),
