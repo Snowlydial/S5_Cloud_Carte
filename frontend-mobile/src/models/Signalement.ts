@@ -1,5 +1,5 @@
 export interface Signalement {
-    idSignalement?: number;
+    idSignalement?: string;
     dateSignalement: Date;
     longitude: number;
     latitude: number;

@@ -1,6 +1,20 @@
 import { ProblemeStatusRepository } from "@/repositories/ProblemeStatusRepository";
 import { ProblemeStatus } from "@/models/ProblemeStatus";
 
+type ProblemeStatusWithDate = ProblemeStatus & { dateStatus?: Date | string };
+
+export function getLastStatusLocal(statusList: ProblemeStatusWithDate[]): ProblemeStatus | null {
+  if (!statusList.length) return null;
+
+  return statusList
+    .slice()
+    .sort((a, b) => {
+      const da = a.dateStatus ? new Date(a.dateStatus).getTime() : 0;
+      const db = b.dateStatus ? new Date(b.dateStatus).getTime() : 0;
+      return db - da;
+    })[0];
+}
+
 export class ProblemeStatusService {
   static async getAll(): Promise<ProblemeStatus[]> {
     try {
@@ -28,6 +42,19 @@ export class ProblemeStatusService {
       throw error;
     }
   }
+
+  static async getLastByIdProbleme(idProbleme: string): Promise<ProblemeStatus | null> {
+    try {
+      const allStatus = await ProblemeStatusRepository.getAll();
+      const filtered = allStatus.filter(status => status.idProbleme === idProbleme);
+      return getLastStatusLocal(filtered);
+    } catch (error) {
+      console.error(`Erreur lors de la récupération du dernier status (local) du problème ${idProbleme}:`, error);
+      throw error;
+    }
+  }
+
+ 
 
   static async getByIdStatus(idStatus: string): Promise<ProblemeStatus[]> {
     try {

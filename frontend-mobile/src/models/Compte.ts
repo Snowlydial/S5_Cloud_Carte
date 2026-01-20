@@ -1,5 +1,5 @@
 export interface Compte {
-    id?: string;
+    idCompte?: string;
     nom: string;
     email: string;
     mdp: string;

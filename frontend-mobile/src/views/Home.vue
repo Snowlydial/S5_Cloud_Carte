@@ -44,6 +44,32 @@
               Confirmer le signalement
             </ion-button>
           </ion-list>
+
+          <ion-card v-if="recapView">
+            <ion-card-header>
+              <ion-card-title>Récapitulatif</ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <ion-grid>
+                <ion-row>
+                  <ion-col size="6"><strong>Points :</strong></ion-col>
+                  <ion-col size="6">{{ recapView.nbrPoint }}</ion-col>
+                </ion-row>
+                <ion-row>
+                  <ion-col size="6"><strong>Surface totale :</strong></ion-col>
+                  <ion-col size="6">{{ recapView.totalSurface }}</ion-col>
+                </ion-row>
+                <ion-row>
+                  <ion-col size="6"><strong>Budget total :</strong></ion-col>
+                  <ion-col size="6">{{ formatBudget(recapView.totalBudget) }}</ion-col>
+                </ion-row>
+                <ion-row>
+                  <ion-col size="6"><strong>Avancement :</strong></ion-col>
+                  <ion-col size="6">{{ recapView.avancement }} %</ion-col>
+                </ion-row>
+              </ion-grid>
+            </ion-card-content>
+          </ion-card>
         </div>
         
       </div>
@@ -52,10 +78,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { 
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, 
-  IonList, IonItem, IonLabel, IonSelect, IonSelectOption, IonButton 
+  IonList, IonItem, IonLabel, IonSelect, IonSelectOption, IonButton,
+  IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonGrid, IonRow, IonCol
 } from '@ionic/vue';
 import { Geolocation } from '@capacitor/geolocation'; // Importation du plugin
 import L from 'leaflet';
@@ -65,11 +92,19 @@ import useSignalement from '@/composables/useSignalement';
 import { locateOutline, logOutOutline } from 'ionicons/icons';
 import useAuth from '@/composables/useAuth';
 import { useRouter } from 'vue-router';
+import { Recap } from '@/types/Recap';
+import { CompteService } from '@/services/Compte.service';
 
 const { typesSignalement,  getListeTypeSignalement, error, success  } = useTypeSignalement();
 const {signaler, loading  } = useSignalement();
+const recap = ref<Recap | null>(null);
+const { logout   } = useAuth();
+const recapView = computed(() => recap.value);
 
-const { logout} = useAuth();
+const formatBudget = (value?: number) => {
+  if (value === undefined || value === null) return "0.00";
+  return value.toFixed(2);
+};
 
 
 // État réactif pour le formulaire
@@ -149,8 +184,11 @@ const envoyerSignalement = () => {
   // alert(`Signalement ${form.value.type} envoyé pour ${form.value.lat}, ${form.value.lng}`);
 };
 
-onMounted(() => {
+onMounted(async () => {
   const tanaCoords: L.LatLngExpression = [-18.8792, 47.5079];
+  recap.value = await CompteService.getRecap  ();
+
+
 
   // Initialisation
   map = L.map('map').setView(tanaCoords, 13);

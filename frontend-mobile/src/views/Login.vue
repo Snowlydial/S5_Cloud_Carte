@@ -55,8 +55,8 @@ import { personCircleOutline } from 'ionicons/icons';
 import useAuth from '@/composables/useAuth';
 
 // Data
-const username = ref('testuser123@example.com');
-const password = ref('123456');
+const username = ref('a@gmail.com');
+const password = ref('aaaaaa');
 const isLoading = ref(false); // État de chargement
 const router = useRouter();
 const { login, error, success } = useAuth();
