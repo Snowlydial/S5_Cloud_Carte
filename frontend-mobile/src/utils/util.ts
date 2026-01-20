@@ -29,6 +29,7 @@ export class Util {
         if (expired) {
             auth.signOut();
             localStorage.removeItem("loginTime");
+            localStorage.setItem ("expired", "true");
             // const alert = await alertController.create({
             //     header: 'Échec de connexion',
             //     message: 'Votre session a expiré. Veuillez vous reconnecter.',

@@ -3,5 +3,5 @@ export interface Signalement {
     dateSignalement: Date;
     longitude: number;
     latitude: number;
-    idCompte: number;
+    idCompte: string  |  number;
 }
