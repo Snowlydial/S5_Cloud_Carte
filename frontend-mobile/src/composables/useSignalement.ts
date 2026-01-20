@@ -27,7 +27,7 @@ const useSignalement = () => {
   }
 
 
-  const signaler = async (idTypeSignalement: number, coords: L.LatLngExpression) => {
+  const signaler = async (idTypeSignalement: string, coords: L.LatLngExpression) => {
     // Si vous avez besoin d'extraire les valeurs individuelles :
     // Dans le cas d'un tableau [-18.8792, 47.5079]
     const [lat, lng] = Array.isArray(coords) ? coords : [(coords as any).lat, (coords as any).lng];
@@ -50,6 +50,7 @@ const useSignalement = () => {
             latitude: typeof lat === 'number' ? lat : lat!,
             longitude: typeof lng === 'number' ? lng : lng!,
             idCompte: compteId.value,
+            idTypeSignalement: idTypeSignalement
           };
           console.log("Signalement créé :", signalement);
 

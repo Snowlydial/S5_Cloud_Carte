@@ -4,4 +4,5 @@ export interface Signalement {
     longitude: number;
     latitude: number;
     idCompte: string  |  number;
+    idTypeSignalement: number | string;
 }
