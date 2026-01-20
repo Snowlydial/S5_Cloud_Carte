@@ -12,7 +12,6 @@ import {
 import { Signalement } from "../models/Signalement";
 import { db } from "@/firebase";
 
-
 export class SignalementRepository {
   static COLLECTION = "signalements";
 

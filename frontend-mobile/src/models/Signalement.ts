@@ -3,6 +3,7 @@ export interface Signalement {
     dateSignalement: Date;
     longitude: number;
     latitude: number;
-    idCompte: string  |  number;
+    idCompte: string  |  null;
     idTypeSignalement: number | string;
+    idimage: string | null;
 }
