@@ -1,5 +1,5 @@
 export interface ProblemeStatus {
-    id?: string;
+    idProblemeStatus?: string;
     etat: string;
     dateStatus?: Date;
     idProbleme: string;

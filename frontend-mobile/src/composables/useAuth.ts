@@ -5,11 +5,14 @@ import { ApiResponse } from "@/types/apiResponse";
 import { loginService, logoutService, signinService } from "@/services/auth.service";
 import { Util } from "@/utils/util";
 import { getErrorMessage, getSuccessMessage } from "@/utils/messageUtil";
+import { Recap } from "@/types/Recap";
+import { CompteService } from "@/services/Compte.service";
 
 const user = ref<User | null>(null);
 const error = ref<string | null>(null);
 const success = ref<string | null>(null);
 const loading = ref(false);
+
 
 const useAuth = () => {
 

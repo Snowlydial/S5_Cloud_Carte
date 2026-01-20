@@ -18,8 +18,8 @@ export class EntrepriseRepository {
     static async getAll(): Promise<Entreprise[]> {
         const snap = await getDocs(collection(db, EntrepriseRepository.COLLECTION));
         return snap.docs.map(d => ({
-            id: d.id,
-            ...(d.data() as Omit<Entreprise, "id">)
+            idEntreprise: d.id,
+            ...(d.data() as Omit<Entreprise, "idEntreprise">)
         }));
     }
 
@@ -27,7 +27,7 @@ export class EntrepriseRepository {
         const ref = doc(db, EntrepriseRepository.COLLECTION, id);
         const snap = await getDoc(ref);
         return snap.exists()
-            ? { id: snap.id, ...(snap.data() as Omit<Entreprise, "id">) }
+            ? { idEntreprise: snap.id, ...(snap.data() as Omit<Entreprise, "idEntreprise">) }
             : null;
     }
 
@@ -37,12 +37,12 @@ export class EntrepriseRepository {
         return entreprise || null;
     }
 
-    static async create(entreprise: Omit<Entreprise, "id">): Promise<string> {
+    static async create(entreprise: Omit<Entreprise, "idEntreprise">): Promise<string> {
         const docRef = await addDoc(collection(db, EntrepriseRepository.COLLECTION), entreprise);
         return docRef.id;
     }
 
-    static async update(id: string, data: Partial<Omit<Entreprise, "id">>): Promise<void> {
+    static async update(id: string, data: Partial<Omit<Entreprise, "idEntreprise">>): Promise<void> {
         const ref = doc(db, EntrepriseRepository.COLLECTION, id);
         await updateDoc(ref, data);
     }
