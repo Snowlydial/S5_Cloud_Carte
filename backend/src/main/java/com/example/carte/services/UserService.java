@@ -16,6 +16,8 @@ import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import com.google.firebase.auth.UserRecord;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class UserService {
 
@@ -79,34 +81,55 @@ public class UserService {
         return false;
     }
 
+    @Transactional
     public void enregistrerUser(String email, String password, String role) {
         // verifier si l'utilisateur existe deja
         Optional<User> userOpt = userRepo.findByEmail(email);
+        String fbuid = null;
+        System.out.println("kjhgfd");
         if (userOpt.isPresent()) {
             throw new RuntimeException("Utilisateur deja existant");
         }
         // enregistrer vers firebase si en ligne
-        if (isOnline()) {
+        boolean firebaseUserExists = false;
+        if(isOnline()){
+
             try {
+                FirebaseAuth.getInstance().getUserByEmail(email);
+                firebaseUserExists = true;
+            } catch (FirebaseAuthException e) {
+                if (!"USER_NOT_FOUND".equals(e.getAuthErrorCode().name())) {
+                    throw new RuntimeException("Erreur Firebase", e);
+                }
+            }
+        }
+
+        try {
+            if (isOnline() && !firebaseUserExists) {
                 UserRecord.CreateRequest request = new UserRecord.CreateRequest()
                         .setEmail(email)
                         .setPassword(password);
+                System.out.println("lskvn");
                 UserRecord userRecord = FirebaseAuth.getInstance().createUser(request);
                 System.out.println("Successfully created new user: " + userRecord.getUid());
+                fbuid = userRecord.getUid();
 
-            } catch (FirebaseAuthException e) {
-                throw new RuntimeException("Erreur lors de la création de l'utilisateur Firebase", e);
             }
+            // enregistrer localement
+            System.out.println("lolllll  -----" + role);
+            User newUser = new User();
+            newUser.setEmail(email);
+            newUser.setPassword(password);
+            newUser.setRole(role);
+            newUser.setFirebaseUid(fbuid);
+            Profil profil = profilRepository.findByNom("USER")
+                    .orElseThrow(() -> new RuntimeException("Profil introuvable pour le rôle: " + role));
+            newUser.setProfil(profil);
+            userRepo.save(newUser);
+        } catch (FirebaseAuthException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Erreur lors de la création de l'utilisateur Firebase", e);
         }
-        // enregistrer localement
-        User newUser = new User();
-        newUser.setEmail(email);
-        newUser.setPassword(password);
-        newUser.setRole(role);
-        Profil profil = profilRepository.findByNom(role)
-                .orElseThrow(() -> new RuntimeException("Profil introuvable pour le rôle: " + role));
-        newUser.setProfil(profil);
-        userRepo.save(newUser);
     }
 
     public boolean isAccountLocked(String email) {

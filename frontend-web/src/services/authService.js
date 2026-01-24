@@ -54,7 +54,7 @@ export const login = async (email, password) => {
     try {
         //*-- Try Firebase authentication if online and configured
         // if (isOnline && isFirebaseConfigured && auth) {
-        const { signInWithEmailAndPassword } = await import('firebase/auth');
+        // const { signInWithEmailAndPassword } = await import('firebase/auth');
         // const userCredential = await signInWithEmailAndPassword(auth, email, password);
         // const idToken = await userCredential.user.getIdToken();
         // console.log("Firebase ID Token:", idToken);
@@ -71,7 +71,7 @@ export const login = async (email, password) => {
         console.log("error "+response.data.error);
         // }
         if (response.data.error == null) {
-            return response.data;
+            return response.data.data;
         }
         else {
             throw new Error(response.data.error);
@@ -95,37 +95,27 @@ export const login = async (email, password) => {
 };
 
 //?=== REGISTER FUNCTION (Hybrid: Firebase + Backend)
-export const register = async (email, password) => {
+export const register = async (email, password,roleValue) => {
+        console.log("role ato "+roleValue)
+
     const isOnline = checkOnlineStatus();
     let firebaseUid = null;
     let idToken = null;
     try {
         //*-- Try Firebase registration if online and configured
-        if (isOnline && isFirebaseConfigured && auth) {
-            const { createUserWithEmailAndPassword } = await import('firebase/auth');
-            console.log("auth", auth);
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            firebaseUid = userCredential.user.uid;
-            idToken = await userCredential.user.getIdToken();
-        }
-
-        //*-- Always register in backend (with or without Firebase UID)
-        // TODO: Uncomment when backend ready
+        // if (isOnline && isFirebaseConfigured && auth) {
+        //     const { createUserWithEmailAndPassword } = await import('firebase/auth');
+        //     console.log("auth", auth);
+        //     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        //     firebaseUid = userCredential.user.uid;
+        //     idToken = await userCredential.user.getIdToken();
+        // }
         const response = await axios.post(AUTH_ENDPOINTS.REGISTER, {
             email,
             password,
+            role: roleValue,
             firebaseUid: idToken
         });
-        /*
-        return response.data;
-    */
-
-        //*-- MOCK version (remove when backend ready)
-        // const response = await mockApiCall(AUTH_ENDPOINTS.REGISTER, {
-        //     email,
-        //     password,
-        //     firebaseUid
-        // });
         return response.data;
 
     } catch (error) {

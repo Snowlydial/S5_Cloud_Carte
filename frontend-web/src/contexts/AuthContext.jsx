@@ -52,9 +52,9 @@ export const AuthProvider = ({ children }) => {
     };
 
     //*-- Register function
-    const register = async (email, password) => {
+    const register = async (email, password,roleValue) => {
         try {
-            const response = await registerService(email, password);
+            const response = await registerService(email, password,roleValue);
             // Don't auto-login after register, let user login manually
             return { success: true };
         } catch (error) {
