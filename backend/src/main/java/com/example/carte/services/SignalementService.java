@@ -86,7 +86,7 @@ public class SignalementService {
                     localByFirebaseId.put(fbId, newLocal);
                 }
             }
-
+            // localSignalements = new ArrayList<>(localByFirebaseId.values());
             // 🔹 Mettre à jour la liste locale après sync Firebase
 
             System.out.println("Local signalements after Firebase sync: " + localByFirebaseId.size());
@@ -100,21 +100,26 @@ public class SignalementService {
                             "Generated new fbId for local signalement id " + local.getIdSignalement() + ": " + fbId);
                 }
 
-                if (!firebaseById.containsKey(fbId)) {
+                // if (!firebaseById.containsKey(fbId)) {
                     Map<String, Object> signalementMap = new HashMap<>();
                     signalementMap.put("idSignalement", local.getIdSignalement());
                     signalementMap.put("dateSignalement", local.getDateSignalement().toString());
                     signalementMap.put("longitude", local.getLongitude());
                     signalementMap.put("latitude", local.getLatitude());
                     signalementMap.put("surfaceM2", local.getSurfaceM2());
+                    signalementMap.put("description", local.getDescription());
                     signalementMap.put("firebaseId", fbId);
                     signalementMap.put("compteEmail", local.getCompte() != null ? local.getCompte().getEmail() : null);
-
                     db.collection("signalements").document(fbId).set(signalementMap);
-                }
+                // }
+                // // update firebaseList
+                // if (firebaseById.containsKey(fbId)) {
+                //     firebaseById.put(fbId, mapToDTO(local));
+                //     //enregistrer les changements locaux dans firebase aussi
+                   
+                // }
             }
 
-            // 5️⃣ Retourner la liste finale des signalements synchronisés
             return signalementRepo.findAll().stream()
                     .map(this::mapToDTO)
                     .collect(Collectors.toList());
