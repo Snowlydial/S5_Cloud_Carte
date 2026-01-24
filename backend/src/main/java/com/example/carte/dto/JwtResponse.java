@@ -1,23 +1,23 @@
 package com.example.carte.dto;
 
-public class ApiResponse<T> {
+public class JwtResponse<T> {
 
     private String status;
     private T data;
     private String error;
 
-    public ApiResponse(String status, T data, String error) {
+    public JwtResponse(String status, T data, String error) {
         this.status = status;
         this.data = data;
         this.error = error;
     }
 
-    public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>("success", data, null);
+    public static <T> JwtResponse<T> success(T data) {
+        return new JwtResponse<>("success", data, null);
     }
 
-    public static <T> ApiResponse<T> error(String msg) {
-        return new ApiResponse<>("error", null, msg);
+    public static <T> JwtResponse<T> error(String msg) {
+        return new JwtResponse<>("error", null, msg);
     }
 
     public String getStatus() {

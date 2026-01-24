@@ -14,16 +14,109 @@ import com.example.carte.request.AuthRegisterRequest;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import com.google.firebase.auth.UserRecord;
 
 @Service
 public class UserService {
 
     private final UtilisateurRepository userRepo;
     private final ProfilRepository profilRepository;
+    private final FirebaseAuthService firebaseAuthService;
 
-    public UserService(UtilisateurRepository userRepo, ProfilRepository profilRepository) {
+    public UserService(UtilisateurRepository userRepo, ProfilRepository profilRepository,
+            FirebaseAuthService firebaseAuthService) {
         this.userRepo = userRepo;
         this.profilRepository = profilRepository;
+        this.firebaseAuthService = firebaseAuthService;
+    }
+
+    // fonction pour reinitialiser les tentatives de connexion
+    public void resetLoginAttempts(String email) {
+        Optional<User> userOpt = userRepo.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            user.setLoginAttempts(0);
+            user.setIsBlocked(false);
+            userRepo.save(user);
+        } else {
+            throw new RuntimeException("Utilisateur non trouvé pour réinitialisation des tentatives de connexion");
+        }
+    }
+
+    // fonction pour verifier un user
+    // si c en ligne on verifie avec firebase
+    // sinon on verifie en local
+    public boolean verifyUser(String email, String password) {
+        User u = userRepo.findByEmail(email).orElse(null);
+        boolean accepted = false;
+        try {
+            if (isOnline()) {
+                accepted = firebaseAuthService.verifyPassword(email, password);
+
+            } else {
+                // verifier le password en local
+                accepted = checkPasswordLocal(email, password);
+            }
+            if (accepted) {
+                return true;
+            } else {
+                System.out.println("User found for login attempts: " + (u != null));
+                if (u != null) {
+                    int tentatives = u.getLoginAttempts();
+                    tentatives++;
+                    u.setLoginAttempts(tentatives);
+                    if (u.getLoginAttempts() > 3) {
+                        u.setIsBlocked(true);
+                    }
+                    userRepo.save(u);
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Firebase inaccessible, fallback offline");
+        }
+        return false;
+    }
+
+    public void enregistrerUser(String email, String password, String role) {
+        // verifier si l'utilisateur existe deja
+        Optional<User> userOpt = userRepo.findByEmail(email);
+        if (userOpt.isPresent()) {
+            throw new RuntimeException("Utilisateur deja existant");
+        }
+        // enregistrer vers firebase si en ligne
+        if (isOnline()) {
+            try {
+                UserRecord.CreateRequest request = new UserRecord.CreateRequest()
+                        .setEmail(email)
+                        .setPassword(password);
+                UserRecord userRecord = FirebaseAuth.getInstance().createUser(request);
+                System.out.println("Successfully created new user: " + userRecord.getUid());
+
+            } catch (FirebaseAuthException e) {
+                throw new RuntimeException("Erreur lors de la création de l'utilisateur Firebase", e);
+            }
+        }
+        // enregistrer localement
+        User newUser = new User();
+        newUser.setEmail(email);
+        newUser.setPassword(password);
+        newUser.setRole(role);
+        Profil profil = profilRepository.findByNom(role)
+                .orElseThrow(() -> new RuntimeException("Profil introuvable pour le rôle: " + role));
+        newUser.setProfil(profil);
+        userRepo.save(newUser);
+    }
+
+    public boolean isAccountLocked(String email) {
+        Optional<User> userOpt = userRepo.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            return user.getIsBlocked();
+        } else {
+            throw new RuntimeException("Utilisateur non trouvé pour vérification du compte bloqué");
+        }
     }
 
     public Profil getdefaultProfil() {
@@ -124,7 +217,7 @@ public class UserService {
                 if (u.getIsBlocked()) {
                     throw new Exception("user bloque");
                 }
-                if (u.getPassword() != password && u.getLoginAttempts() <= 3) {
+                if (!u.getPassword().equals(password) && u.getLoginAttempts() <= 3) {
                     int tentatives = u.getLoginAttempts();
                     tentatives++;
                     u.setLoginAttempts(tentatives);
@@ -132,6 +225,7 @@ public class UserService {
                 if (u.getLoginAttempts() > 3) {
                     u.setIsBlocked(true);
                 }
+                userRepo.save(u);
                 return getUserByFirebaseUid(firebaseUid);
             } catch (Exception e) {
                 // fallback local
@@ -145,7 +239,7 @@ public class UserService {
             if (u.getIsBlocked()) {
                 throw new Exception("user bloque");
             }
-            if (u.getPassword() != password && u.getLoginAttempts() <= 3) {
+            if (!u.getPassword().equals(password) && u.getLoginAttempts() <= 3) {
                 int tentatives = u.getLoginAttempts();
                 tentatives++;
                 u.setLoginAttempts(tentatives);
@@ -153,6 +247,8 @@ public class UserService {
             if (u.getLoginAttempts() > 3) {
                 u.setIsBlocked(true);
             }
+            userRepo.save(u);
+
         } catch (Exception e) {
             // TODO: handle exception
         }

@@ -53,45 +53,29 @@ export const login = async (email, password) => {
 
     try {
         //*-- Try Firebase authentication if online and configured
-        if (isOnline && isFirebaseConfigured && auth) {
-            const { signInWithEmailAndPassword } = await import('firebase/auth');
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const idToken = await userCredential.user.getIdToken();
-            console.log("Firebase ID Token:", idToken);
-            //*-- Send Firebase token to backend
-            // TODO: Uncomment when backend ready
-            const response = await axios.post(AUTH_ENDPOINTS.LOGIN, {
-                email,
-                password,
-                firebaseUid: userCredential.user.uid,
-            });
-            console.log("Backend login response:", response);
-            const user = response.data;
-            localStorage.setItem("JWT_TOKEN", user.token);
-            console.log("User logged in:", user.token);
-            return response.data;
-
-            //*-- MOCK version (remove when backend ready)
-            // const response = await mockApiCall(AUTH_ENDPOINTS.LOGIN, {
-            //     email,
-            //     password,
-            //     firebaseToken: idToken
-            // });
-        }
-
-        //*-- Fallback: Local authentication
+        // if (isOnline && isFirebaseConfigured && auth) {
+        const { signInWithEmailAndPassword } = await import('firebase/auth');
+        // const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        // const idToken = await userCredential.user.getIdToken();
+        // console.log("Firebase ID Token:", idToken);
+        //*-- Send Firebase token to backend
         // TODO: Uncomment when backend ready
         const response = await axios.post(AUTH_ENDPOINTS.LOGIN, {
             email,
             password
-            });
-            const user = response.data;
-            console.log("User logged in:", user.token);
-            localStorage.setItem("JWT_TOKEN", user.token);
+            // firebaseUid: userCredential.user.uid,
+        });
+        console.log("Backend login response:", response);
+        const user = response.data;
+        localStorage.setItem("JWT_TOKEN", user.token);
+        console.log("error "+response.data.error);
+        // }
+        if (response.data.error == null) {
             return response.data;
-           
-            
-        return response.data;
+        }
+        else {
+            throw new Error(response.data.error);
+        }
 
     } catch (error) {
         console.error('Login error:', error);
@@ -102,7 +86,7 @@ export const login = async (email, password) => {
             throw new Error(error.response.data.message || 'Échec de connexion');
         } else if (error.request) {
             // Request made but no response (network issue)
-            throw new Error('Erreur réseau. Vérifiez votre connexion.');
+            throw new Error('Erreur réseau. Vérifiez votre connexion.' + error.request);
         } else {
             // Firebase or other error
             throw new Error(error.message || 'Échec de connexion');
@@ -130,11 +114,11 @@ export const register = async (email, password) => {
         const response = await axios.post(AUTH_ENDPOINTS.REGISTER, {
             email,
             password,
-            firebaseUid : idToken
-            });
-            /*
-            return response.data;
-        */
+            firebaseUid: idToken
+        });
+        /*
+        return response.data;
+    */
 
         //*-- MOCK version (remove when backend ready)
         // const response = await mockApiCall(AUTH_ENDPOINTS.REGISTER, {
