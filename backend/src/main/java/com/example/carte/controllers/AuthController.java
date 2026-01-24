@@ -140,7 +140,7 @@ public class AuthController {
     @PostMapping("/register")
     public JwtResponse<?> register(@RequestBody AuthRegisterRequest request) {
         try {
-            System.out.println("Registering user with email: " + request.getEmail());
+            System.out.println("Registering user with email: " + request.getRole());
             userService.enregistrerUser(request.getEmail(), request.getPassword(), request.getRole());
 
             return JwtResponse.success("Utilisateur enregistré avec succès");

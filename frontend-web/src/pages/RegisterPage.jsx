@@ -12,7 +12,7 @@ const RegisterPage = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-
+    const [role, setRole] = useState('USER'); // nouvel état pour le rôle
     const { register } = useAuth();
     const navigate = useNavigate();
 
@@ -42,9 +42,10 @@ const RegisterPage = () => {
             return;
         }
 
+        const roleValue = role === 'MANAGER' ? 'MANAGER' : 'USER';
         //*-- Call register from AuthContext
-        const result = await register(email, password);
-
+        const result = await register(email, password,roleValue);
+        console.log("role "+roleValue)
         if (result.success) {
             setSuccess('Inscription réussie ! Redirection...');
             setTimeout(() => {
@@ -100,7 +101,19 @@ const RegisterPage = () => {
                             disabled={isLoading}
                         />
                     </div>
-
+                    {/* Sélecteur de rôle */}
+                    <div className="form-group">
+                        <label htmlFor="role">Rôle</label>
+                        <select
+                            id="role"
+                            value={role}
+                            onChange={(e) => setRole(e.target.value)}
+                            disabled={isLoading}
+                        >
+                            <option value="USER">Utilisateur</option>
+                            <option value="MANAGER">Manager</option>
+                        </select>
+                    </div>
                     <button
                         type="submit"
                         className="btn-primary"

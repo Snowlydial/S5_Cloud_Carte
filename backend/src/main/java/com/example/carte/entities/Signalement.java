@@ -1,9 +1,12 @@
 package com.example.carte.entities;
 
 import jakarta.persistence.*;
+import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Entity
+@Data
 @Table(name = "signalement")
 public class Signalement implements Syncable {
 
@@ -35,6 +38,8 @@ public class Signalement implements Syncable {
     @Column(name = "last_sync")
     private LocalDateTime lastSync;
 
+    @Column(name="description")
+    private String description;
     // Constructors
     public Signalement() {
     }
