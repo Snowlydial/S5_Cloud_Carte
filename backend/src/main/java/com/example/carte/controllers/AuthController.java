@@ -1,5 +1,6 @@
 package com.example.carte.controllers;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.carte.dto.BlockedUserDTO;
 import com.example.carte.dto.JwtResponse;
 import com.example.carte.dto.LoginDTO;
 import com.example.carte.dto.UserDTO;
@@ -22,6 +24,8 @@ import com.google.firebase.auth.UserRecord;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.extern.java.Log;
@@ -58,7 +62,7 @@ public class AuthController {
             if (!passwordValid) {
                 return JwtResponse.error("Email ou mot de passe incorrect");
             }
-            if(userService.isAccountLocked(req.getEmail())) {
+            if (userService.isAccountLocked(req.getEmail())) {
                 return JwtResponse.error("Compte bloqué en raison de trop nombreuses tentatives de connexion échouées");
             }
             UserDTO userDTO = userService.getUserByEmail(req.getEmail());
@@ -148,6 +152,13 @@ public class AuthController {
         } catch (Exception e) {
             return JwtResponse.error("Erreur lors de l'inscription: " + e.getMessage());
         }
+    }
+
+    @Operation(summary = "Lister les utilisateurs bloqués", description = "Retourne la liste des comptes bloqués suite à trop de tentatives de connexion")
+    @ApiResponse(responseCode = "200", description = "Liste des utilisateurs bloqués", content = @Content(schema = @Schema(implementation = BlockedUserDTO.class)))
+    @GetMapping("/blocked")
+    public ResponseEntity<List<BlockedUserDTO>> getBlockedUsers() {
+        return ResponseEntity.ok(userService.getBlockedUsers());
     }
 
 }

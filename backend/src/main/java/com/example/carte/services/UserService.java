@@ -1,20 +1,29 @@
 package com.example.carte.services;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.example.carte.dto.BlockedUserDTO;
 import com.example.carte.dto.UserDTO;
 import com.example.carte.entities.Profil;
 import com.example.carte.entities.User;
 import com.example.carte.repository.ProfilRepository;
 import com.example.carte.repository.UtilisateurRepository;
 import com.example.carte.request.AuthRegisterRequest;
+import com.google.cloud.firestore.CollectionReference;
+import com.google.cloud.firestore.DocumentSnapshot;
+import com.google.cloud.firestore.Firestore;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import com.google.firebase.auth.UserRecord;
+import com.google.firebase.cloud.FirestoreClient;
 
 import jakarta.transaction.Transactional;
 
@@ -33,6 +42,7 @@ public class UserService {
     }
 
     // fonction pour reinitialiser les tentatives de connexion
+    // debloquer le user
     public void resetLoginAttempts(String email) {
         Optional<User> userOpt = userRepo.findByEmail(email);
         if (userOpt.isPresent()) {
@@ -51,15 +61,29 @@ public class UserService {
     public boolean verifyUser(String email, String password) {
         User u = userRepo.findByEmail(email).orElse(null);
         boolean accepted = false;
+        boolean existInFirebase = false;
+        boolean existLocal = false;
+        Firestore db = FirestoreClient.getFirestore();
+        CollectionReference colRef = db.collection("compte");
+
         try {
             if (isOnline()) {
                 accepted = firebaseAuthService.verifyPassword(email, password);
-
+                existInFirebase = true;
             } else {
                 // verifier le password en local
                 accepted = checkPasswordLocal(email, password);
+                existLocal = true;
             }
             if (accepted) {
+                // synchronisation avec firebase si exist
+                if (existInFirebase && !existLocal) {
+                    // envoyer le firebase dans le local
+                    syncCompteFirebaseToLocal(email);
+                } else if (!existInFirebase && existLocal) {
+                    // envoyer le local vers firebase
+                    syncCompteLocalToFirebase(u);
+                }
                 return true;
             } else {
                 System.out.println("User found for login attempts: " + (u != null));
@@ -81,6 +105,34 @@ public class UserService {
         return false;
     }
 
+    private void syncCompteFirebaseToLocal(String email) throws Exception {
+        Firestore db = FirestoreClient.getFirestore();
+        DocumentSnapshot doc = db.collection("compte").document(email).get().get();
+
+        if (!doc.exists())
+            return;
+
+        User user = new User();
+        user.setEmail(email);
+        user.setRole(doc.getString("role"));
+        user.setFirebaseUid(doc.getString("firebaseUid"));
+        user.setLoginAttempts(0);
+        user.setIsBlocked(false);
+
+        userRepo.save(user);
+    }
+
+    private void syncCompteLocalToFirebase(User u) throws Exception {
+        Firestore db = FirestoreClient.getFirestore();
+
+        Map<String, Object> compteMap = new HashMap<>();
+        compteMap.put("email", u.getEmail());
+        compteMap.put("role", u.getRole());
+        compteMap.put("firebaseUid", u.getFirebaseUid());
+
+        db.collection("compte").document(u.getEmail()).set(compteMap);
+    }
+
     @Transactional
     public void enregistrerUser(String email, String password, String role) {
         // verifier si l'utilisateur existe deja
@@ -92,7 +144,7 @@ public class UserService {
         }
         // enregistrer vers firebase si en ligne
         boolean firebaseUserExists = false;
-        if(isOnline()){
+        if (isOnline()) {
 
             try {
                 FirebaseAuth.getInstance().getUserByEmail(email);
@@ -276,6 +328,21 @@ public class UserService {
             // TODO: handle exception
         }
         return getUserByEmail(email);
+    }
+
+    public List<BlockedUserDTO> getBlockedUsers() {
+
+        return userRepo.findByIsBlockedTrue()
+                .stream()
+                .map(user -> {
+                    BlockedUserDTO dto = new BlockedUserDTO();
+                    dto.setId(user.getId());
+                    dto.setEmail(user.getEmail());
+                    dto.setRole(user.getRole());
+                    dto.setLoginAttempts(user.getLoginAttempts());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     public boolean checkPasswordLocal(String email, String password) {
