@@ -1,10 +1,13 @@
 package com.example.carte.entities;
 
 import jakarta.persistence.*;
+import lombok.Data;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
+@Data
 @Table(name = "probleme")
 public class Probleme implements Syncable {
 
@@ -21,6 +24,8 @@ public class Probleme implements Syncable {
 
     @Column(nullable = false)
     private Double budget;
+
+    private Double avancement;
 
     @ManyToOne
     @JoinColumn(name = "id_entreprise")

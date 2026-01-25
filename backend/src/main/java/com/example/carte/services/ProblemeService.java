@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.example.carte.dto.ProblemeDTO;
+import com.example.carte.dto.RecapDashboardDTO;
 import com.example.carte.entities.Entreprise;
 import com.example.carte.entities.Probleme;
 import com.example.carte.entities.ProblemeStatus;
@@ -30,7 +31,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import com.google.firebase.cloud.FirestoreClient;
 
-
 import jakarta.transaction.Transactional;
 
 @Service
@@ -39,11 +39,12 @@ public class ProblemeService {
     private final ProblemeRepository problemeRepo;
     private final SignalementRepository signalementRepo;
     private final UtilisateurRepository utilisateurRepository;
- private final EntrepriseRepository entrepriseRepo;
+    private final EntrepriseRepository entrepriseRepo;
     private final StatutRepository statutRepo;
+
     public ProblemeService(ProblemeRepository problemeRepo, SignalementRepository signalementRepo,
             UtilisateurRepository utilisateurRepository,
-         EntrepriseRepository entrepriseRepo,
+            EntrepriseRepository entrepriseRepo,
             StatutRepository statutRepo) {
         this.problemeRepo = problemeRepo;
         this.signalementRepo = signalementRepo;
@@ -272,7 +273,6 @@ public class ProblemeService {
         Integer statutValue = dto.getStatut() != null ? dto.getStatut() : 1;
         Status statut = statutRepo.findById(statutValue).get();
 
-        
         Probleme probleme = new Probleme();
         probleme.setDateProbleme(LocalDateTime.now());
         probleme.setSurfaceM2(dto.getSurfaceM2());
@@ -286,7 +286,7 @@ public class ProblemeService {
         problemeStatus.setStatus(statut);
         problemeStatus.setDateStatus(LocalDateTime.now());
         problemeStatus.setProbleme(probleme);
-        if(probleme.getStatusList() == null) {
+        if (probleme.getStatusList() == null) {
             probleme.setStatusList(new java.util.LinkedList<>());
         }
         probleme.getStatusList().add(problemeStatus);
@@ -296,5 +296,31 @@ public class ProblemeService {
         dto.setDateProbleme(saved.getDateProbleme());
         dto.setStatut(saved.getStatusList().getLast().getStatus().getIdStatus());
         return dto;
+    }
+
+    @Transactional
+    public RecapDashboardDTO getRecapActuel() {
+        RecapDashboardDTO recapDashboardDTO = new RecapDashboardDTO();
+        //get nb de points total 
+        //get total surface
+        //% d'avancement 
+        //total budget
+        List<Probleme> problemes = problemeRepo.findAll();
+        double surface_total=0;
+        int nb_points = problemes.size();
+        double avancement =0;
+        double total_budget =0;
+        for (Probleme probleme : problemes) {
+            surface_total+=probleme.getSurfaceM2();
+            avancement+=probleme.getAvancement();
+            total_budget+=probleme.getBudget();
+        }
+        avancement=avancement/nb_points;
+        recapDashboardDTO.setAvancementPercent(avancement);
+        recapDashboardDTO.setNbPoints(nb_points);
+        recapDashboardDTO.setTotalBudget(total_budget);
+        recapDashboardDTO.setTotalSurface(total_budget);
+        recapDashboardDTO.setTotalSurface(surface_total);
+        return recapDashboardDTO;
     }
 }

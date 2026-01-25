@@ -20,34 +20,18 @@ public class ProblemeController {
         this.problemeService = problemeService;
     }
 
-    /**
-     * GET : Récupère tous les problèmes pour un utilisateur (hybride
-     * Firebase/local)
-     */
-    // @GetMapping
-    // public ResponseEntity<List<ProblemeDTO>> getAllProblemes(
-    // @RequestParam(required = false) String firebaseUid,
-    // @RequestParam(required = false) String email) {
-
-    // List<ProblemeDTO> liste = problemeService.getProblemesHybrid(firebaseUid,
-    // email);
-    // return ResponseEntity.ok(liste);
-    // }
 
     @GetMapping
     public ResponseEntity<List<Probleme>> getAllProblemesRaw() {
         List<Probleme> liste = problemeService.getAllProblemesRaw();
         return ResponseEntity.ok(liste);
     }
-
-    /** GET : Problème par ID (local) */
     @GetMapping("/{id}")
     public ResponseEntity<Probleme> getProblemeById(@PathVariable Integer id) {
         Probleme p = problemeService.findProblemeById(id)
                 .orElseThrow(() -> new RuntimeException("Problème introuvable"));
         return ResponseEntity.ok(p);
     }
-
    @PostMapping
     public ResponseEntity<ProblemeDTO> createProbleme(@RequestBody ProblemeDTO dto) {
 
