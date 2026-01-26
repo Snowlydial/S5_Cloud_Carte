@@ -47,9 +47,9 @@ public class Status implements Serializable,Syncable {
     @Column(name = "last_sync")
     private LocalDateTime lastSync;
 
-    // Relation inverse (optionnelle mais recommandée)
-    @OneToMany(mappedBy = "typeSignalement")
-    private List<Signalement> signalements;
+    // // Relation inverse (optionnelle mais recommandée)
+    // @OneToMany(mappedBy = "typeSignalement")
+    // private List<Signalement> signalements;
 
    @Override
     public String getFirebaseId() {

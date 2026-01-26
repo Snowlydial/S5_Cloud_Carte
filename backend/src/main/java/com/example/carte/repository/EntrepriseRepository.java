@@ -11,4 +11,5 @@ import ch.qos.logback.core.status.Status;
 @Repository
 public interface EntrepriseRepository extends JpaRepository<Entreprise, Integer> {
      Optional<Entreprise> findByNom(String nom);
+     Optional<Entreprise> findByFirebaseId(String firebaseId);
 }

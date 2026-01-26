@@ -18,15 +18,16 @@ public class TypeSignalement implements Serializable,Syncable{
 
     @Column(name = "nom", nullable = false, length = 50)
     private String nom;
+    
+    // Relation inverse (optionnelle mais recommandée)
+    @OneToMany(mappedBy = "typeSignalement")
+    private List<Signalement> signalements;
+
     @Column(name = "firebase_id")
     private String firebaseId;
 
     @Column(name = "last_sync")
     private LocalDateTime lastSync;
-
-    // Relation inverse (optionnelle mais recommandée)
-    @OneToMany(mappedBy = "typeSignalement")
-    private List<Signalement> signalements;
 
    @Override
     public String getFirebaseId() {

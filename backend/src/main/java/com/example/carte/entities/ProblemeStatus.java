@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "probleme_status")
-public class ProblemeStatus implements Serializable {
+public class ProblemeStatus implements Serializable, Syncable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +29,8 @@ public class ProblemeStatus implements Serializable {
     private Status status;
 
     // Constructors
-    public ProblemeStatus() {}
+    public ProblemeStatus() {
+    }
 
     public ProblemeStatus(String etat, LocalDateTime dateStatus, Probleme probleme, Status status) {
         this.etat = etat;
@@ -77,5 +78,36 @@ public class ProblemeStatus implements Serializable {
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    @Column(name = "firebase_id")
+    private String firebaseId;
+
+    @Column(name = "last_sync")
+    private LocalDateTime lastSync;
+
+    @Override
+    public String getFirebaseId() {
+        return firebaseId;
+    }
+
+    @Override
+    public void setFirebaseId(String firebaseId) {
+        this.firebaseId = firebaseId;
+    }
+
+    @Override
+    public LocalDateTime getLastSync() {
+        return lastSync;
+    }
+
+    @Override
+    public void setLastSync(LocalDateTime lastSync) {
+        this.lastSync = lastSync;
+    }
+
+    @Override
+    public String getCollectionName() {
+        return "probleme_status"; // nom de la collection Firestore
     }
 }
