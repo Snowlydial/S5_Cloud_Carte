@@ -14,9 +14,11 @@ export class ProblemeStatusSeeder {
     static async seed() {
         await Util.clearCollection(ProblemeStatusRepository.COLLECTION);
 
+
+
         const problems = await ProblemeService.getAll();
 
-        const status  = (await StatusService.getAll())[0];
+        const status  = (await StatusService.getByName ("nouveau"));
 
 
         // console.log("Entreprise pour les problèmes:", entreprise);
@@ -27,7 +29,7 @@ export class ProblemeStatusSeeder {
             }
             const problemeStatus: Omit<ProblemeStatus, "idProblemeStatus"> = {
                 idProbleme: probleme.idProbleme?.toString() || "",
-                etat: "Nouveau",
+                etat: "nouveau",
                 dateStatus: new Date(),
                 idStatus: status.idStatus || "",
             };
