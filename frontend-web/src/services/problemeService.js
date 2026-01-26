@@ -134,20 +134,19 @@ export const getProblemesBySignalement = async (signalementId) => {
 export const updateProbleme = async (id, data) => {
     try {
         const token = localStorage.getItem("JWT_TOKEN");
-
-        // TODO: Uncomment when backend ready
-        // const response = await axios.put(`${PROBLEME_ENDPOINTS.UPDATE}/${id}`, data, {
-        //     headers: { Authorization: `Bearer ${token}` }
-        // });
-        // return response.data;
+        console.log("data ",data)
+        const response = await axios.put(`${PROBLEME_ENDPOINTS.UPDATE}/${id}`, data, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
 
         //*-- MOCK version
-        console.log(`[MOCK API] Updating probleme ${id}`, data);
-        const index = mockProblemes.findIndex(p => p.idProbleme === id || p.id === id);
-        if (index !== -1) {
-            mockProblemes[index] = { ...mockProblemes[index], ...data };
-        }
-        return await mockApiDelay(mockProblemes[index]);
+        // console.log(`[MOCK API] Updating probleme ${id}`, data);
+        // const index = mockProblemes.findIndex(p => p.idProbleme === id || p.id === id);
+        // if (index !== -1) {
+        //     mockProblemes[index] = { ...mockProblemes[index], ...data };
+        // }
+        // return await mockApiDelay(mockProblemes[index]);
     } catch (error) {
         console.error('Error updating probleme:', error);
         throw new Error(error.response?.data?.message || 'Erreur lors de la mise à jour');

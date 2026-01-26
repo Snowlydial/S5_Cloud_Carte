@@ -161,4 +161,13 @@ public class AuthController {
         return ResponseEntity.ok(userService.getBlockedUsers());
     }
 
+    @Operation(summary = "Lister tous les utilisateurs")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Liste des utilisateurs")
+    })
+    @GetMapping("/users")
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+
 }

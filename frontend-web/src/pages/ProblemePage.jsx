@@ -324,7 +324,8 @@ const ProblemePage = () => {
                             onChange={(e) => handleEditInputChange('entrepriseNom', e.target.value)}
                             placeholder="Nom de l'entreprise"
                         /> */}
-                        <select name="entrepriseNom" id="entrepriseNom">
+                        <select name="entrepriseNom" id="entrepriseNom" value={editForm.entrepriseNom}
+                            onChange={(e) => handleEditInputChange('entrepriseNom', e.target.value)}>
                             <option value="">-- Sélectionner une entreprise --</option>
 
                             {entreprises.map((entreprise) => (

@@ -213,7 +213,7 @@ const UserManagementPage = () => {
                                     <td>{u.id}</td>
                                     <td>{u.email}</td>
                                     <td><span className="role-badge">{u.role}</span></td>
-                                    <td>{u.loginAttempts || 0}</td>
+                                    <td>{u.tentative || 0}</td>
                                     <td>
                                         <span className={`status-badge ${u.isBlocked ? 'status-blocked' : 'status-active'}`}>
                                             {u.isBlocked ? 'Bloqué' : 'Actif'}
