@@ -10,7 +10,7 @@ export class SignalementSeeder {
     await Util.clearCollection(SignalementRepository.COLLECTION);
 
     const comptes = await CompteRepository.findAll();
-    console.log ("Comptes disponibles pour les signalements:", comptes);
+    console.log("Comptes disponibles pour les signalements:", comptes);
     const typeSignalements = await TypeSignalementService.getAll();
 
     if (comptes.length === 0 || typeSignalements.length === 0) {
@@ -24,26 +24,28 @@ export class SignalementSeeder {
     const signalements: Omit<Signalement, "idSignalement">[] = [
       {
         dateSignalement: new Date(),
-        latitude: 48.8566,
-        longitude: 2.3522,
+        latitude: -18.8792,
+        longitude: 47.5079,
         idCompte: firstCompte.idCompte || "",
         idTypeSignalement: firstTypeSignalement.idTypeSignalement || "",
       },
       {
         dateSignalement: new Date(),
-        latitude: 48.8606,
-        longitude: 2.2936,
+        latitude: -18.8725,
+        longitude: 47.5204,
         idCompte: firstCompte.idCompte || "",
         idTypeSignalement: firstTypeSignalement.idTypeSignalement || "",
       },
       {
         dateSignalement: new Date(),
-        latitude: 48.8530,
-        longitude: 2.3499,
+        latitude: -18.9156,
+        longitude: 47.5252,
         idCompte: firstCompte.idCompte || "",
         idTypeSignalement: firstTypeSignalement.idTypeSignalement || "",
       },
     ];
+
+
 
     for (const signalement of signalements) {
       try {
