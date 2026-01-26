@@ -10,12 +10,16 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.carte.dto.ProblemeDTO;
 import com.example.carte.dto.SignalementDTO;
 import com.example.carte.entities.Signalement;
+import com.example.carte.entities.TypeSignalement;
 import com.example.carte.entities.User;
 import com.example.carte.repository.SignalementRepository;
+import com.example.carte.repository.TypeSignalementRepository;
 import com.example.carte.repository.UtilisateurRepository;
 import com.google.firebase.cloud.FirestoreClient;
 
@@ -31,6 +35,12 @@ public class SignalementService {
     private final SignalementRepository signalementRepo;
     private final UtilisateurRepository utilisateurRepository;
 
+    @Autowired
+    private TypeSignalementRepository typeSignalementRepository;
+
+    @Autowired
+    private ProblemeService problemeService;
+
     public SignalementService(SignalementRepository signalementRepo, UtilisateurRepository utilisateurRepository) {
         this.signalementRepo = signalementRepo;
         this.utilisateurRepository = utilisateurRepository;
@@ -41,7 +51,6 @@ public class SignalementService {
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference colRef = db.collection("signalements");
 
-        // 1️⃣ Récupérer tous les signalements locaux
         List<Signalement> localSignalements = signalementRepo.findAll();
 
         if (isOnline()) {
@@ -99,25 +108,17 @@ public class SignalementService {
                     System.out.println(
                             "Generated new fbId for local signalement id " + local.getIdSignalement() + ": " + fbId);
                 }
-
-                // if (!firebaseById.containsKey(fbId)) {
-                    Map<String, Object> signalementMap = new HashMap<>();
-                    signalementMap.put("idSignalement", local.getIdSignalement());
-                    signalementMap.put("dateSignalement", local.getDateSignalement().toString());
-                    signalementMap.put("longitude", local.getLongitude());
-                    signalementMap.put("latitude", local.getLatitude());
-                    signalementMap.put("surfaceM2", local.getSurfaceM2());
-                    signalementMap.put("description", local.getDescription());
-                    signalementMap.put("firebaseId", fbId);
-                    signalementMap.put("compteEmail", local.getCompte() != null ? local.getCompte().getEmail() : null);
-                    db.collection("signalements").document(fbId).set(signalementMap);
-                // }
-                // // update firebaseList
-                // if (firebaseById.containsKey(fbId)) {
-                //     firebaseById.put(fbId, mapToDTO(local));
-                //     //enregistrer les changements locaux dans firebase aussi
-                   
-                // }
+                Map<String, Object> signalementMap = new HashMap<>();
+                signalementMap.put("idSignalement", local.getIdSignalement());
+                signalementMap.put("dateSignalement", local.getDateSignalement().toString());
+                signalementMap.put("longitude", local.getLongitude());
+                signalementMap.put("latitude", local.getLatitude());
+                signalementMap.put("surfaceM2", local.getSurfaceM2());
+                signalementMap.put("description", local.getDescription());
+                signalementMap.put("firebaseId", fbId);
+                signalementMap.put("idTypeSignalement", local.getTypeSignalement().getFirebaseId());
+                signalementMap.put("compteEmail", local.getCompte() != null ? local.getCompte().getEmail() : null);
+                db.collection("signalements").document(fbId).set(signalementMap);
             }
 
             return signalementRepo.findAll().stream()
@@ -262,7 +263,13 @@ public class SignalementService {
         dto.setLongitude(s.getLongitude());
         dto.setSurfaceM2(s.getSurfaceM2());
         dto.setFirebaseId(s.getFirebaseId());
+        dto.setDescription(s.getDescription());
         dto.setCompteEmail(s.getCompte().getEmail());
+        dto.setIdTypeSignalement(s.getTypeSignalement().getIdType());
+        if (s.getProbleme() != null) {
+            ProblemeDTO pDto = problemeService.mapToDTO(s.getProbleme());
+            dto.setProblemeDTO(pDto);
+        }
         return dto;
     }
 
@@ -274,6 +281,9 @@ public class SignalementService {
         s.setLatitude(dto.getLatitude());
         s.setLongitude(dto.getLongitude());
         s.setSurfaceM2(dto.getSurfaceM2());
+        s.setDescription(dto.getDescription());
+        TypeSignalement type = typeSignalementRepository.findById(dto.getIdTypeSignalement()).get();
+        s.setTypeSignalement(type);
         // Compte à résoudre via email localement
         // s.setCompte(userRepo.findByEmail(dto.getCompteEmail()).orElseThrow(...));
         return s;

@@ -171,10 +171,10 @@ const MapPage = () => {
                                     <Popup>
                                         <div className="marker-popup">
                                             <h4>{signalement.description}</h4>
-                                            <p><strong>Date:</strong> {signalement.date}</p>
+                                            <p><strong>Date:</strong> {signalement.dateSignalement}</p>
                                             <p><strong>Statut:</strong> {signalement.status}</p>
-                                            <p><strong>Surface:</strong> {signalement.surface} m²</p>
-                                            <p><strong>Budget:</strong> {signalement.budget?.toLocaleString()} Ar</p>
+                                            <p><strong>Surface:</strong> {signalement.problemeDTO?.surfaceM2} m²</p>
+                                            <p><strong>Budget:</strong> {signalement.problemeDTO?.budget?.toLocaleString()} Ar</p>
                                             <p><strong>Entreprise:</strong> {signalement.entreprise}</p>
                                         </div>
                                     </Popup>

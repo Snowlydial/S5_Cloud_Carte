@@ -2,6 +2,11 @@ package com.example.carte.dto;
 
 import java.time.LocalDateTime;
 
+import com.example.carte.entities.Probleme;
+
+import lombok.Data;
+
+@Data
 public class SignalementDTO {
 
     private Integer idSignalement;
@@ -11,7 +16,9 @@ public class SignalementDTO {
     private Double surfaceM2;
     private String firebaseId;
     private String compteEmail; // pour identifier le user associé
-
+    private String description;
+    private Integer idTypeSignalement;
+    private ProblemeDTO problemeDTO;
     // Getters et Setters
     public Integer getIdSignalement() {
         return idSignalement;

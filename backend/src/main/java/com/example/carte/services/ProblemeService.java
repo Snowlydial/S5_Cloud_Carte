@@ -2,9 +2,11 @@ package com.example.carte.services;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ import com.example.carte.repository.SignalementRepository;
 import com.example.carte.repository.StatutRepository;
 import com.example.carte.repository.UtilisateurRepository;
 import com.google.cloud.Timestamp;
+import com.google.cloud.firestore.CollectionReference;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
@@ -55,6 +58,139 @@ public class ProblemeService {
 
     public List<Probleme> getAllProblemesRaw() {
         return problemeRepo.findAll();
+    }
+    public void syncFireBaseProbleme() throws InterruptedException, ExecutionException{
+        List<ProblemeDTO> dtos = getListSyncProblemes();
+    }
+    @Transactional
+    public List<ProblemeDTO> getListSyncProblemes() throws InterruptedException, ExecutionException {
+
+        Firestore db = FirestoreClient.getFirestore();
+        CollectionReference colRef = db.collection("problemes");
+
+        List<Probleme> localProblemes = problemeRepo.findAll();
+
+        if (isOnline()) {
+
+            Map<String, Probleme> localByFirebaseId = localProblemes.stream()
+                    .filter(p -> p.getFirebaseId() != null && !p.getFirebaseId().isBlank())
+                    .collect(Collectors.toMap(Probleme::getFirebaseId, p -> p));
+
+            List<ProblemeDTO> firebaseList = colRef.get().get().getDocuments()
+                    .stream()
+                    .map(this::mapFirestoreToProblemeDTO)
+                    .collect(Collectors.toList());
+
+            for (ProblemeDTO dto : firebaseList) {
+                String fbId = dto.getFirebaseId();
+                if (fbId == null || fbId.isBlank())
+                    continue;
+
+                Probleme local = problemeRepo.findByFirebaseId(fbId).orElse(null);
+
+                if (local != null) {
+                    // UPDATE
+                    local.setSurfaceM2(dto.getSurfaceM2());
+                    local.setBudget(dto.getBudget());
+                    local.setDateProbleme(dto.getDateProbleme());
+
+                    if (dto.getCompteEmail() != null) {
+                        User compte = utilisateurRepository.findByEmail(dto.getCompteEmail())
+                                .orElseThrow(() -> new RuntimeException("Compte introuvable"));
+                        local.setCompte(compte);
+                    }
+
+                    if (dto.getSignalementId() != null) {
+                        Signalement s = signalementRepo.findById(dto.getSignalementId())
+                                .orElseThrow(() -> new RuntimeException("Signalement introuvable"));
+                        local.setSignalement(s);
+                    }
+
+                    local.setLastSync(LocalDateTime.now());
+                    problemeRepo.save(local);
+                    localByFirebaseId.put(fbId, local);
+
+                } else {
+                    // INSERT
+                    Probleme p = mapDTOToProbleme(dto);
+                    p.setFirebaseId(fbId);
+                    p.setLastSync(LocalDateTime.now());
+                    problemeRepo.save(p);
+                    localByFirebaseId.put(fbId, p);
+                }
+            }
+
+            for (Probleme local : localProblemes) {
+
+                String fbId = local.getFirebaseId();
+                if (fbId == null || fbId.isBlank()) {
+                    fbId = db.collection("problemes").document().getId();
+                    local.setFirebaseId(fbId);
+                    problemeRepo.save(local);
+                }
+
+                Map<String, Object> data = new HashMap<>();
+                data.put("idProbleme", local.getIdProbleme());
+                data.put("dateProbleme", local.getDateProbleme().toString());
+                data.put("surfaceM2", local.getSurfaceM2());
+                data.put("budget", local.getBudget());
+                data.put("firebaseId", fbId);
+                data.put("compteEmail", local.getCompte() != null ? local.getCompte().getEmail() : null);
+                data.put("signalementId",
+                        local.getSignalement() != null ? local.getSignalement().getIdSignalement() : null);
+
+                db.collection("problemes").document(fbId).set(data);
+            }
+        }
+
+        return problemeRepo.findAll().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private ProblemeDTO mapFirestoreToProblemeDTO(QueryDocumentSnapshot doc) {
+
+        ProblemeDTO dto = new ProblemeDTO();
+
+        dto.setIdProbleme(doc.contains("idProbleme") ? doc.getLong("idProbleme").intValue() : null);
+
+        if (doc.contains("dateProbleme")) {
+            dto.setDateProbleme(
+                    doc.getTimestamp("dateProbleme").toDate()
+                            .toInstant()
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDateTime());
+        }
+
+        dto.setSurfaceM2(doc.contains("surfaceM2") ? doc.getDouble("surfaceM2") : 0.0);
+        dto.setBudget(doc.contains("budget") ? doc.getDouble("budget") : 0.0);
+        dto.setCompteEmail(doc.getString("compteEmail"));
+        dto.setSignalementId(doc.contains("signalementId") ? doc.getLong("signalementId").intValue() : null);
+        dto.setFirebaseId(doc.getId());
+
+        return dto;
+    }
+
+    private Probleme mapDTOToProbleme(ProblemeDTO dto) {
+
+        Probleme p = new Probleme();
+        p.setDateProbleme(dto.getDateProbleme() != null ? dto.getDateProbleme() : LocalDateTime.now());
+        p.setSurfaceM2(dto.getSurfaceM2());
+        p.setBudget(dto.getBudget());
+
+        if (dto.getCompteEmail() != null) {
+            User compte = utilisateurRepository.findByEmail(dto.getCompteEmail())
+                    .orElseThrow(() -> new RuntimeException("Compte introuvable"));
+            p.setCompte(compte);
+        }
+
+        if (dto.getSignalementId() != null) {
+            Signalement s = signalementRepo.findById(dto.getSignalementId())
+                    .orElseThrow(() -> new RuntimeException("Signalement introuvable"));
+            p.setSignalement(s);
+        }
+
+        return p;
     }
 
     public Probleme createProbleme(Probleme probleme) {
@@ -188,7 +324,7 @@ public class ProblemeService {
                 .collect(Collectors.toList());
     }
 
-    private ProblemeDTO mapToDTO(Probleme probleme) {
+    public ProblemeDTO mapToDTO(Probleme probleme) {
         ProblemeDTO dto = new ProblemeDTO();
         dto.setIdProbleme(probleme.getIdProbleme());
         dto.setDateProbleme(probleme.getDateProbleme());
@@ -301,21 +437,21 @@ public class ProblemeService {
     @Transactional
     public RecapDashboardDTO getRecapActuel() {
         RecapDashboardDTO recapDashboardDTO = new RecapDashboardDTO();
-        //get nb de points total 
-        //get total surface
-        //% d'avancement 
-        //total budget
+        // get nb de points total
+        // get total surface
+        // % d'avancement
+        // total budget
         List<Probleme> problemes = problemeRepo.findAll();
-        double surface_total=0;
+        double surface_total = 0;
         int nb_points = problemes.size();
-        double avancement =0;
-        double total_budget =0;
+        double avancement = 0;
+        double total_budget = 0;
         for (Probleme probleme : problemes) {
-            surface_total+=probleme.getSurfaceM2();
-            avancement+=probleme.getAvancement();
-            total_budget+=probleme.getBudget();
+            surface_total += probleme.getSurfaceM2();
+            avancement += probleme.getAvancement();
+            total_budget += probleme.getBudget();
         }
-        avancement=avancement/nb_points;
+        avancement = avancement / nb_points;
         recapDashboardDTO.setAvancementPercent(avancement);
         recapDashboardDTO.setNbPoints(nb_points);
         recapDashboardDTO.setTotalBudget(total_budget);

@@ -3,12 +3,13 @@ package com.example.carte.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
 @Data
 @Table(name = "signalement")
-public class Signalement implements Syncable {
+public class Signalement implements Syncable, Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,16 +31,20 @@ public class Signalement implements Syncable {
     @ManyToOne
     @JoinColumn(name = "id_compte", nullable = false)
     private User compte;
-
-    // 🔹 Attributs Firestore
+    @ManyToOne
+    @JoinColumn(name = "id_type", nullable = false)
+    private TypeSignalement typeSignalement;
+    @OneToOne(mappedBy = "signalement")
+    private Probleme probleme;
     @Column(name = "firebase_id")
     private String firebaseId;
 
     @Column(name = "last_sync")
     private LocalDateTime lastSync;
 
-    @Column(name="description")
+    @Column(name = "description")
     private String description;
+
     // Constructors
     public Signalement() {
     }

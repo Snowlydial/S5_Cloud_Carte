@@ -1,11 +1,13 @@
 package com.example.carte.entities;
 
 import jakarta.persistence.*;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "probleme_status")
-public class ProblemeStatus {
+public class ProblemeStatus implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
