@@ -63,7 +63,6 @@ public class SignalementService {
                     .map(this::mapFirestoreToDTO)
                     .collect(Collectors.toList());
 
-            // 🔹 Créer un map Firebase rapide par firebaseId
             Map<String, SignalementDTO> firebaseById = firebaseList.stream()
                     .filter(dto -> dto.getFirebaseId() != null && !dto.getFirebaseId().isBlank())
                     .collect(Collectors.toMap(SignalementDTO::getFirebaseId, dto -> dto));
@@ -96,7 +95,6 @@ public class SignalementService {
                 }
             }
             // localSignalements = new ArrayList<>(localByFirebaseId.values());
-            // 🔹 Mettre à jour la liste locale après sync Firebase
 
             System.out.println("Local signalements after Firebase sync: " + localByFirebaseId.size());
             for (Signalement local : localSignalements) {
@@ -119,6 +117,7 @@ public class SignalementService {
                 signalementMap.put("idTypeSignalement", local.getTypeSignalement().getFirebaseId());
                 signalementMap.put("compteEmail", local.getCompte() != null ? local.getCompte().getEmail() : null);
                 db.collection("signalements").document(fbId).set(signalementMap);
+                //si le typeSignalement ne possede pas de fbid on le sync vers firebase 
             }
 
             return signalementRepo.findAll().stream()
