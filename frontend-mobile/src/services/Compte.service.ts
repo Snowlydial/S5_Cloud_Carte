@@ -41,6 +41,7 @@ export class CompteService {
             if (probleme.idProbleme) {
 
                 const problemeStatus: ProblemeStatus | null = await ProblemeStatusService.getLastByIdProbleme(probleme.idProbleme);
+                console.log ("Problème terminé ID:", problemeStatus);  
                 const status = problemeStatus ? await StatusService.getById(problemeStatus.idStatus) : null;
 
                 if (status && status.nom === "termine") {
