@@ -13,10 +13,10 @@ import { UserSeeder } from "./seeders/UserSeed";
   await UserSeeder.seed();
   await ProfilSeeder.seed();
   // await CompteSeeder.seed();
+  await TypeSignalementSeeder.seed();
   await SignalementSeeder.seed();
   await StatusSeeder.seed();
   await EntrepriseSeeder.seed();
-  await TypeSignalementSeeder.seed();
   await ProblemeSeeder.seed();
   await ProblemeStatusSeeder.seed();  
 
