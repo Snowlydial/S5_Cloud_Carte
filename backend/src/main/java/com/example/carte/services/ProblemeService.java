@@ -487,7 +487,7 @@ public class ProblemeService {
             ProblemeStatus lastStatus = problemeStatusRepository.findTopByProblemeOrderByDateStatusDesc(probleme);
 
             if (lastStatus != null) {
-                switch (lastStatus.getEtat().toLowerCase()) {
+                switch (lastStatus.getStatus().getNom().toLowerCase()) {
                     case "termine" -> avancementTotal += 100;
                     case "en_cours" -> avancementTotal += 50;
                     case "nouveau" -> avancementTotal += 0;
