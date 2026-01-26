@@ -16,6 +16,7 @@ const listeSignalement = ref<Signalement[]>([]);
 const compteId = ref<string | null>(null);
 const useSignalement = () => {
 
+  // Rajouter les problemes
   const getAllSignalements = async () => {
     try {
       const result:Signalement[] = await SignalementService.getAll();

@@ -8,24 +8,27 @@
 
     <ion-content :scroll-y="false">
       <div class="main-wrapper">
-        
         <div id="map" ref="mapContainer"></div>
-        <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin fab-location">
-        <ion-fab-button size="small" @click="getCurrentLocation" color="light">
-          <ion-icon :icon="locateOutline"></ion-icon>
-        </ion-fab-button>
-      </ion-fab>
+          <div class="fab-container fab-location">
+          <span class="fab-label">Ma position</span>
+          <ion-fab-button size="small" @click="getCurrentLocation" color="light">
+            <ion-icon :icon="locateOutline"></ion-icon>
+          </ion-fab-button>
+        </div>
 
-      <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin fab-logout">
-        <ion-fab-button size="small" @click="handleLogout" color="light">
-          <ion-icon :icon="logOutOutline"></ion-icon>
-        </ion-fab-button>
-      </ion-fab>
-       <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin fab-filter">
-        <ion-fab-button size="small" @click="filterMySignalement" color="light">
-          <ion-icon :icon="filterOutline"></ion-icon>
-        </ion-fab-button>
-      </ion-fab>
+        <div class="fab-container fab-logout">
+          <span class="fab-label">Déconnexion</span>
+          <ion-fab-button size="small" @click="handleLogout" color="light">
+            <ion-icon :icon="logOutOutline"></ion-icon>
+          </ion-fab-button>
+        </div>
+
+        <div class="fab-container fab-filter">
+          <span class="fab-label">Mes signalements</span>
+          <ion-fab-button size="small" @click="filterMySignalement" color="light">
+            <ion-icon :icon="filterOutline"></ion-icon>
+          </ion-fab-button>
+        </div>
       
         <div class="form-container">
           <ion-list>
@@ -114,6 +117,9 @@ import { useRouter } from 'vue-router';
 import { Recap } from '@/types/Recap';
 import { CompteService } from '@/services/Compte.service';
 
+import { SignalementProbleme } from "@/models/SignalementProbleme";
+
+import useSignalementProbleme from '@/composables/useSignalementProbleme' 
 
 const recap = ref<Recap | null>(null);
 const { logout   } = useAuth();
@@ -123,12 +129,14 @@ const format = (value?: number) => {
   if (value === undefined || value === null) return "0.00";
   return value.toFixed(2);
 };
+
 import { Signalement } from '@/models/Signalement';
 import { TypeSignalementService } from '@/services/TypeSignalement.service';
 
 const { typesSignalement,  getListeTypeSignalement, error, success} = useTypeSignalement();
 const {signaler, loading , getAllSignalements, listeSignalement, getAllSignalementsMine} = useSignalement();
 
+const {listeSignalementProbleme, fetchAllData} = useSignalementProbleme();
 // getAllSignalements();
 const listeSignalementEffectif = ref<Signalement[]>([]);
 
@@ -224,7 +232,7 @@ const envoyerSignalement = () => {
 
 onMounted(async () => {
   const tanaCoords: L.LatLngExpression = [-18.8792, 47.5079];
-  recap.value = await CompteService.getRecap  ();
+  recap.value = await CompteService.getRecap();
 
 
 
@@ -259,53 +267,77 @@ onMounted(async () => {
 // Fonction pour ajouter les marqueurs
 const markersLayer = L.layerGroup(); // Pour éviter l'empilement
 
-const renderSignalementMarkers = (signalements: Signalement[]) => {
-  console.log("nombre signalements = " + signalements.length);
-  // console.log("signalements = " + JSON.stringify(signalements));
-  markersLayer.clearLayers(); 
+const renderSignalementMarkers = (signalements: SignalementProbleme[]) => {
+  markersLayer.clearLayers();
 
-  signalements.forEach(async (sig) => {
-    if (sig.latitude && sig.longitude) {
-      // On récupère l'idTypeSignalement du modèle
-      const typeId = String(sig.idTypeSignalement);
-      const typeSignalement = await TypeSignalementService.getById (typeId);
-      const image =   sig.idimage?.toString() || '';
+  signalements.forEach((sig) => {
+    if (!sig.latitude || !sig.longitude) return;
 
+    const hasProbleme = !!sig.idProbleme;
 
-      console.log ("typeSignalement = ", typeSignalement);
-      const  compte = await CompteService.getById (sig.idCompte  || '' );
-      const markerInstance = L.marker([sig.latitude, sig.longitude], { icon: createCustomIcon(image) })
-        .addTo(markersLayer);
-
-      markerInstance
-        .bindTooltip(
-          `
-            <div style="font-family: sans-serif;">
-              <strong>Signalement #${sig.idSignalement}</strong><br>
-              Type: ${typeSignalement?.nom}<br>
-              Posté par: ${compte?.email}
-            </div>
-          `,
-          { direction: "top", sticky: true, opacity: 0.9 }
+    const markerInstance = L.marker(
+      [sig.latitude, sig.longitude],
+      {
+        icon: createCustomIcon(
+          String(sig.idTypeSignalement),
+          hasProbleme
         )
-        .on("mouseover", () => {
-          markerInstance.openTooltip();
-        })
-        .on("mouseout", () => {
-          markerInstance.closeTooltip();
-        });
-    }
+      }
+    ).addTo(markersLayer);
+
+    const tooltipHtml = `
+      <div style="font-family: sans-serif; min-width: 240px;">
+        <strong>Signalement #${sig.idSignalement}</strong><br>
+
+        <strong>Type :</strong> ${sig.typeNom ?? "—"}<br>
+
+        <hr style="margin:6px 0"/>
+
+        ${
+          hasProbleme
+            ? `
+              <strong>🛠 Problème associé</strong><br>
+              Surface : ${sig.surfaceM2 ?? 0} m²<br>
+              Budget : ${sig.budget ?? 0} Ar<br>
+              Entreprise : ${sig.nomEntreprise ?? "Non précisée"}<br>
+              Statut : ${sig.statusActuel ?? "—"}<br>
+              <small>
+                ${sig.statusDate
+                  ? new Date(sig.statusDate).toLocaleDateString()
+                  : ""}
+              </small>
+            `
+            : `
+              <em style="color:#e67e22;">
+                ⚠️ Le signalement n’a pas encore été traité
+              </em>
+            `
+        }
+      </div>
+    `;
+
+    markerInstance
+      .bindTooltip(tooltipHtml, {
+        direction: "top",
+        sticky: true,
+        opacity: 0.95
+      })
+      .on("mouseover", () => markerInstance.openTooltip())
+      .on("mouseout", () => markerInstance.closeTooltip());
   });
+
   markersLayer.addTo(map);
 };
 
-const createCustomIcon = (typeId: string) => {
+
+const createCustomIcon = (typeId: string, hasProbleme: boolean) => {
   const config = iconConfigs[typeId] || defaultIconConfig;
-  
+
   return L.divIcon({
     className: 'custom-marker',
     html: `
       <div style="
+        position: relative;
         background-color: ${config.color};
         width: 40px;
         height: 40px;
@@ -317,34 +349,73 @@ const createCustomIcon = (typeId: string) => {
         border: 3px solid white;
         box-shadow: 0 2px 5px rgba(0,0,0,0.3);
       ">
-        <span style="transform: rotate(45deg); font-size: 20px;">${config.icon}</span>
+        <span style="transform: rotate(45deg); font-size: 20px;">
+          ${config.icon}
+        </span>
+
+        ${
+          hasProbleme
+            ? `
+              <span style="
+                position: absolute;
+                top: -6px;
+                right: -6px;
+                background: #e74c3c;
+                color: white;
+                font-size: 12px;
+                font-weight: bold;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transform: rotate(45deg);
+              ">!</span>
+            `
+            : ''
+        }
       </div>
     `,
     iconSize: [40, 40],
-    iconAnchor: [20, 40], // Pointe du marqueur
+    iconAnchor: [20, 40],
     popupAnchor: [0, -40]
   });
 };
 
+
 // Fonction pour charger toutes les données et les afficher sur la carte
+// const loadMapData = async () => {
+//   try {
+//     // On attend que les deux appels API soient terminés
+//     await Promise.all([
+//       getAllSignalements(),
+//       getListeTypeSignalement()
+//     ]);
+//     listeSignalementEffectif.value = listeSignalement.value;
+//     // Une fois les données reçues, on dessine les marqueurs
+//     if (listeSignalement.value && listeSignalement.value.length > 0) {
+//       console.log("Signalements chargés :", listeSignalement.value);
+//       renderSignalementMarkers(listeSignalement.value);
+//     }
+//   } catch (err) {
+//     console.error("Erreur lors du chargement des données de la carte :", err);
+//     // Optionnel : afficher une alerte utilisateur ici
+//   }
+// };
+
 const loadMapData = async () => {
   try {
-    // On attend que les deux appels API soient terminés
-    await Promise.all([
-      getAllSignalements(),
-      getListeTypeSignalement()
-    ]);
-    listeSignalementEffectif.value = listeSignalement.value;
-    // Une fois les données reçues, on dessine les marqueurs
-    if (listeSignalement.value && listeSignalement.value.length > 0) {
-      console.log("Signalements chargés :", listeSignalement.value);
-      renderSignalementMarkers(listeSignalement.value);
+    await fetchAllData();
+
+    if (listeSignalementProbleme.value.length > 0) {
+      renderSignalementMarkers(listeSignalementProbleme.value);
     }
   } catch (err) {
-    console.error("Erreur lors du chargement des données de la carte :", err);
-    // Optionnel : afficher une alerte utilisateur ici
+    console.error("Erreur chargement signalements avec problèmes", err);
   }
 };
+
 </script>
 
 <style scoped>
@@ -360,12 +431,30 @@ const loadMapData = async () => {
   width: 100%;
 }
 
-.form-container {
-  flex: 4; /* Prend 40% de l'espace disponible */
-  background: white;
-  padding: 10px;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-  overflow-y: auto;
+.fab-container {
+  position: absolute;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  z-index: 1000; /* Pour passer au dessus de la carte Leaflet */
+}
+
+.fab-label {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-right: 10px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  pointer-events: none; /* Le clic traverse le texte vers le bouton si besoin */
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.fab-container:hover .fab-label {
+  opacity: 1;
 }
 
 ion-fab {
@@ -373,24 +462,19 @@ ion-fab {
 }
 
 /* Position the first button normally */
-.fab-location {
-  top: 10px;
-}
+.fab-location { top: 10px; }
+.fab-logout   { top: 60px; }
+.fab-filter   { top: 110px; }
 
-/* Push the logout button down (40px button height + 10px spacing) */
-.fab-logout {
-  top: 60px; 
-}
 
-.fab-filter {
-  top: 120px; 
-}
 #map { flex: 6; width: 100%; position: relative; }
 .main-wrapper { display: flex; flex-direction: column; height: 100%; }
-.form-container { flex: 4; background: white; padding: 10px; z-index: 10; }
+.form-container { flex: 4; background: white; padding: 10px; z-index: 10; overflow-y: auto;}
 
 :deep(.custom-marker) {
   background: transparent;
   border: none;
 }
+
+
 </style>
