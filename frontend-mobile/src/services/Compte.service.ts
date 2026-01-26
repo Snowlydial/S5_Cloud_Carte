@@ -13,6 +13,7 @@ import { ProblemeRepository } from "@/repositories/ProblemeRepository";
 import { ProblemeStatus } from "@/models/ProblemeStatus";
 import { ProblemeStatusRepository } from "@/repositories/ProblemeStatusRepository";
 import { ProblemeStatusService } from "./ProblemeStatus.service";
+import { StatusService } from "./Status.service";
 
 export class CompteService {
 
@@ -39,16 +40,19 @@ export class CompteService {
             // console.log("Problème ID:", probleme);
             if (probleme.idProbleme) {
 
-                const status: ProblemeStatus | null = await ProblemeStatusService.getLastByIdProbleme(probleme.idProbleme);
-                //         if (status && status.etat === "terminé") {
-                //             totalTermine += 1;
+                const problemeStatus: ProblemeStatus | null = await ProblemeStatusService.getLastByIdProbleme(probleme.idProbleme);
+                const status = problemeStatus ? await StatusService.getById(problemeStatus.idStatus) : null;
+
+                if (status && status.nom === "termine") {
+                    totalTermine += 1;
+                }
             }
             totalSurface += probleme.surfaceM2;
             totalBudget += probleme.budget ?? 0;
         }
 
         // }
-        // avancement  = totalProbleme > 0 ? Math.round((totalTermine / totalProbleme) * 100) : 0;
+        avancement = totalProbleme > 0 ? Math.round((totalTermine / totalProbleme) * 100) : 0;
 
 
 

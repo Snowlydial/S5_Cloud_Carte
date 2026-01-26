@@ -29,10 +29,10 @@
           {{ isLoading ? 'Connexion en cours...' : 'Se connecter' }}
         </ion-button>
 
-        <div class="ion-text-center ion-margin-top">
+        <!-- <div class="ion-text-center ion-margin-top">
           <p>Pas encore de compte ?</p>
           <ion-button fill="clear" @click="inscription" size="small" :disabled="isLoading">S'inscrire</ion-button>
-        </div>
+        </div> -->
       </div>
 
       <ion-loading
@@ -73,10 +73,8 @@ const handlelogin = async () => {
     await login(username.value, password.value);
 
     if (success.value) {
-      console.log("success de login :", success.value);
       router.push('/home');
     } else {
-      console.log("error de login :", error.value);
       const alert = await alertController.create({
         header: 'Échec de connexion',
         message: error.value || 'Nom d\'utilisateur ou mot de passe incorrect.',
