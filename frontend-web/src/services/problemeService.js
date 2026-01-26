@@ -35,9 +35,9 @@ export const createProbleme = async (signalementId, problemeData) => {
             dateProbleme: problemeData.dateProbleme
                 ? problemeData.dateProbleme + "T00:00:00"   // si juste une date
                 : new Date().toISOString().split('.')[0] ,  // retire les millisecondes et Z
-            surfaceM2: problemeData.surfaceM2 || 0,
+            surfaceM2: problemeData.surface || 0,
             budget: problemeData.budget || 0,
-            entrepriseNom: problemeData.entrepriseNom || null,
+            entrepriseNom: problemeData.entrepriseId || null,
             compteEmail: problemeData.compteEmail || null,
             signalementId: signalementId,
             statut: problemeData.statut || 1                 // statut par défaut
@@ -51,7 +51,7 @@ export const createProbleme = async (signalementId, problemeData) => {
         });
         return response.data;
 
-        return await mockApiDelay(newProbleme);
+        // return await mockApiDelay(newProbleme);
 
     } catch (error) {
         console.error('Error creating probleme:', error);

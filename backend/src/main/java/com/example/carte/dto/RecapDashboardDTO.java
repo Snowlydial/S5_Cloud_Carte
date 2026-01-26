@@ -1,7 +1,9 @@
 package com.example.carte.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
 
+@Data
 @Schema(description = "Tableau de récapitulation global")
 public class RecapDashboardDTO {
 
