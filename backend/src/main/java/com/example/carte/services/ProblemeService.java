@@ -9,9 +9,11 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.example.carte.dto.ProblemeDTO;
+import com.example.carte.dto.ProblemeStatusData;
 import com.example.carte.dto.RecapDashboardDTO;
 import com.example.carte.entities.Entreprise;
 import com.example.carte.entities.Probleme;
@@ -21,6 +23,7 @@ import com.example.carte.entities.Status;
 import com.example.carte.entities.User;
 import com.example.carte.repository.EntrepriseRepository;
 import com.example.carte.repository.ProblemeRepository;
+import com.example.carte.repository.ProblemeStatusRepository;
 import com.example.carte.repository.SignalementRepository;
 import com.example.carte.repository.StatutRepository;
 import com.example.carte.repository.UtilisateurRepository;
@@ -44,6 +47,8 @@ public class ProblemeService {
     private final UtilisateurRepository utilisateurRepository;
     private final EntrepriseRepository entrepriseRepo;
     private final StatutRepository statutRepo;
+    @Autowired
+    private ProblemeStatusRepository problemeStatusRepository;
 
     public ProblemeService(ProblemeRepository problemeRepo, SignalementRepository signalementRepo,
             UtilisateurRepository utilisateurRepository,
@@ -59,9 +64,11 @@ public class ProblemeService {
     public List<Probleme> getAllProblemesRaw() {
         return problemeRepo.findAll();
     }
-    public void syncFireBaseProbleme() throws InterruptedException, ExecutionException{
+
+    public void syncFireBaseProbleme() throws InterruptedException, ExecutionException {
         List<ProblemeDTO> dtos = getListSyncProblemes();
     }
+
     @Transactional
     public List<ProblemeDTO> getListSyncProblemes() throws InterruptedException, ExecutionException {
 
@@ -459,4 +466,31 @@ public class ProblemeService {
         recapDashboardDTO.setTotalSurface(surface_total);
         return recapDashboardDTO;
     }
+
+    @Transactional
+    public ProblemeDTO updateStatus(Integer idProbleme, ProblemeStatusData statusData) {
+
+        System.out.println(statusData.toJsonString());
+        Probleme probleme = problemeRepo.findById(idProbleme)
+                .orElseThrow(() -> new RuntimeException("Problème introuvable"));
+
+        Status status = statutRepo.findById(statusData.getIdStatus())
+                .orElseThrow(() -> new RuntimeException("Status introuvable : " + statusData.getIdStatus()));
+
+        ProblemeStatus problemeStatus = new ProblemeStatus();
+        problemeStatus.setProbleme(probleme);
+        problemeStatus.setStatus(status);
+        problemeStatus.setEtat(statusData.getEtat());
+        // Si dateStatus fourni, sinon maintenant
+        problemeStatus.setDateStatus(
+                statusData.getDateStatus() != null ? statusData.getDateStatus() : LocalDateTime.now());
+
+        problemeStatusRepository.save(problemeStatus);
+
+        // probleme.(status);
+        problemeRepo.save(probleme);
+
+        return mapToDTO(probleme);
+    }
+
 }

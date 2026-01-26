@@ -9,7 +9,7 @@ export const PROBLEME_ENDPOINTS = {
     LIST: `${API_BASE_URL}/problemes`,
     UPDATE: `${API_BASE_URL}/problemes`,
     DELETE: `${API_BASE_URL}/problemes`,
-    UPDATE_STATUS: `${API_BASE_URL}/problemes/status`
+    UPDATE_STATUS: `${API_BASE_URL}/problemes/update-status`
 };
 
 //*-- API Endpoints for related entities
@@ -88,21 +88,21 @@ export const getAllProblemes = async (filters = {}) => {
         const token = localStorage.getItem("JWT_TOKEN");
 
         // TODO: Uncomment when backend ready
-        // const response = await axios.get(PROBLEME_ENDPOINTS.LIST, { 
-        //     params: filters,
-        //     headers: { Authorization: `Bearer ${token}` }
-        // });
-        // return response.data;
+        const response = await axios.get(PROBLEME_ENDPOINTS.LIST, { 
+            params: filters,
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
 
-        //*-- MOCK version
-        console.log('[MOCK API] Getting all problemes', filters);
-        let filtered = [...mockProblemes];
+        // //*-- MOCK version
+        // console.log('[MOCK API] Getting all problemes', filters);
+        // let filtered = [...mockProblemes];
 
-        if (filters.signalementId) {
-            filtered = filtered.filter(p => p.signalementId === filters.signalementId);
-        }
+        // if (filters.signalementId) {
+        //     filtered = filtered.filter(p => p.signalementId === filters.signalementId);
+        // }
 
-        return await mockApiDelay(filtered);
+        // return await mockApiDelay(filtered);
     } catch (error) {
         console.error('Error fetching problemes:', error);
         throw new Error(error.response?.data?.message || 'Erreur lors de la récupération');
@@ -181,25 +181,26 @@ export const deleteProbleme = async (id) => {
 //?=== UPDATE PROBLEME STATUS
 export const updateProblemeStatus = async (idProbleme, statusData) => {
     try {
+        console.log("statust ",statusData)
         const token = localStorage.getItem("JWT_TOKEN");
 
         // TODO: Uncomment when backend ready
-        // const response = await axios.post(PROBLEME_ENDPOINTS.UPDATE_STATUS, {
-        //     idProbleme,
-        //     ...statusData
-        // }, {
-        //     headers: { Authorization: `Bearer ${token}` }
-        // });
-        // return response.data;
+        const response = await axios.post(PROBLEME_ENDPOINTS.UPDATE_STATUS, {
+            idProbleme,
+            statusData
+        }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
 
         //*-- MOCK version
-        console.log(`[MOCK API] Updating status for probleme ${idProbleme}`, statusData);
-        const index = mockProblemes.findIndex(p => p.idProbleme === idProbleme || p.id === idProbleme);
-        if (index !== -1) {
-            mockProblemes[index].currentStatus = statusData.etat;
-            mockProblemes[index].dateStatus = statusData.dateStatus;
-        }
-        return await mockApiDelay({ success: true });
+        // console.log(`[MOCK API] Updating status for probleme ${idProbleme}`, statusData);
+        // const index = mockProblemes.findIndex(p => p.idProbleme === idProbleme || p.id === idProbleme);
+        // if (index !== -1) {
+        //     mockProblemes[index].currentStatus = statusData.etat;
+        //     mockProblemes[index].dateStatus = statusData.dateStatus;
+        // }
+        // return await mockApiDelay({ success: true });
     } catch (error) {
         console.error('Error updating status:', error);
         throw new Error(error.response?.data?.message || 'Erreur lors de la mise à jour du statut');
@@ -212,10 +213,10 @@ export const getEntreprises = async () => {
         const token = localStorage.getItem("JWT_TOKEN");
 
         // TODO: Uncomment when backend ready
-        // const response = await axios.get(ENTREPRISE_ENDPOINTS.LIST, {
-        //     headers: { Authorization: `Bearer ${token}` }
-        // });
-        // return response.data;
+        const response = await axios.get(ENTREPRISE_ENDPOINTS.LIST, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
 
         //*-- MOCK version
         console.log('[MOCK API] Getting entreprises');
@@ -232,10 +233,10 @@ export const getStatusList = async () => {
         const token = localStorage.getItem("JWT_TOKEN");
 
         // TODO: Uncomment when backend ready
-        // const response = await axios.get(STATUS_ENDPOINTS.LIST, {
-        //     headers: { Authorization: `Bearer ${token}` }
-        // });
-        // return response.data;
+        const response = await axios.get(STATUS_ENDPOINTS.LIST, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
 
         //*-- MOCK version
         console.log('[MOCK API] Getting status list');
