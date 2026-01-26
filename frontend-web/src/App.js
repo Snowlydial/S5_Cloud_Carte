@@ -1,15 +1,16 @@
 //?=== MAIN APP WITH ROUTING
 
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import DashboardPage from './pages/DashboardPage';
-import UserManagementPage from './pages/UserManagementPage';
-import MapPage from './pages/MapPage';
-import SignalementPage from './pages/SignalementPage';
-import './App.css';
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import DashboardPage from "./pages/DashboardPage";
+import UserManagementPage from "./pages/UserManagementPage";
+import MapPage from "./pages/MapPage";
+import SignalementPage from "./pages/SignalementPage";
+import ProblemePage from "./pages/ProblemePage";
+import "./App.css";
 
 //*-- Protected Route: redirects to login if not authenticated
 const ProtectedRoute = ({ children }) => {
@@ -42,59 +43,64 @@ function App() {
                     <Route path="/" element={<Navigate to="/login" />} />
                     
                     {/* Public routes */}
-                    <Route 
-                        path="/login" 
+                    <Route
+                        path="/login"
                         element={
-                        <PublicRoute>
-                            <LoginPage />
-                        </PublicRoute>
-                        } 
+                            <PublicRoute>
+                                <LoginPage />
+                            </PublicRoute>
+                        }
                     />
-                    <Route 
-                        path="/register" 
+                    <Route
+                        path="/register"
                         element={
-                        <PublicRoute>
-                            <RegisterPage />
-                        </PublicRoute>
-                        } 
+                            <PublicRoute>
+                                <RegisterPage />
+                            </PublicRoute>
+                        }
                     />
                     
                     {/* Protected routes */}
-                    <Route 
-                        path="/dashboard" 
+                    <Route
+                        path="/dashboard"
                         element={
-                        <ProtectedRoute>
-                            <DashboardPage />
-                        </ProtectedRoute>
-                        } 
+                            <ProtectedRoute>
+                                <DashboardPage />
+                            </ProtectedRoute>
+                        }
                     />
-                    <Route 
-                        path="/users" 
+                    <Route
+                        path="/users"
                         element={
-                        <ProtectedRoute>
-                            <UserManagementPage />
-                        </ProtectedRoute>
-                        } 
+                            <ProtectedRoute>
+                                <UserManagementPage />
+                            </ProtectedRoute>
+                        }
                     />
-
-                    <Route 
-                        path="/map" 
+                    <Route
+                        path="/map"
                         element={
-                        <ProtectedRoute>
-                            <MapPage />
-                        </ProtectedRoute>
-                        } 
+                            <ProtectedRoute>
+                                <MapPage />
+                            </ProtectedRoute>
+                        }
                     />
-
-                    <Route 
-                        path="/signalements" 
+                    <Route
+                        path="/signalements"
                         element={
-                        <ProtectedRoute>
-                            <SignalementPage />
-                        </ProtectedRoute>
-                        } 
+                            <ProtectedRoute>
+                                <SignalementPage />
+                            </ProtectedRoute>
+                        }
                     />
-                    
+                    <Route
+                        path="/problemes"
+                        element={
+                            <ProtectedRoute>
+                                <ProblemePage />
+                            </ProtectedRoute>
+                        }
+                    />
 
                     {/* 404 fallback */}
                     <Route path="*" element={<Navigate to="/login" />} />

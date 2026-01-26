@@ -12,9 +12,12 @@ export const AUTH_ENDPOINTS = {
 
 //*-- User endpoints
 export const USER_ENDPOINTS = {
+    LIST: `${API_BASE_URL}/users`,
     GET_BLOCKED: `${API_BASE_URL}/users/blocked`,
+    UPDATE: `${API_BASE_URL}/users`,
+    DELETE: `${API_BASE_URL}/users`,
+    BLOCK: `${API_BASE_URL}/users/block`,
     UNBLOCK: `${API_BASE_URL}/users/unblock`,
-    UPDATE: `${API_BASE_URL}/users/update`,
     SYNC: `${API_BASE_URL}/users/sync`
 };
 
@@ -25,6 +28,25 @@ export const SIGNALEMENT_ENDPOINTS = {
     UPDATE: `${API_BASE_URL}/signalements`,
     DELETE: `${API_BASE_URL}/signalements`,
     SYNC: `${API_BASE_URL}/signalements/sync`
+};
+
+//*-- Probleme endpoints
+export const PROBLEME_ENDPOINTS = {
+    CREATE: `${API_BASE_URL}/problemes`,
+    LIST: `${API_BASE_URL}/problemes`,
+    UPDATE: `${API_BASE_URL}/problemes`,
+    DELETE: `${API_BASE_URL}/problemes`,
+    UPDATE_STATUS: `${API_BASE_URL}/problemes/status`
+};
+
+//*-- Entreprise endpoints
+export const ENTREPRISE_ENDPOINTS = {
+    LIST: `${API_BASE_URL}/entreprises`
+};
+
+//*-- Status endpoints
+export const STATUS_ENDPOINTS = {
+    LIST: `${API_BASE_URL}/status`
 };
 
 //*-- User roles
