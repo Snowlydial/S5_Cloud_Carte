@@ -165,7 +165,7 @@ const ProblemePage = () => {
             await updateProblemeStatus(selectedProblemeId, {
                 etat: statusFormData.etat,
                 dateStatus: statusFormData.dateStatus,
-                idStatus: statusList.find(s => s.nom === statusFormData.etat)?.id || 1
+                idStatus: statusList.find(s => s.nom === statusFormData.etat)?.idStatus || 1
             });
 
             setSuccess('Statut mis à jour');
@@ -317,13 +317,26 @@ const ProblemePage = () => {
 
                     <div className="form-group">
                         <label htmlFor="entrepriseNom">Entreprise</label>
-                        <input
+                        {/* <input
                             type="text"
                             id="entrepriseNom"
                             value={editForm.entrepriseNom}
                             onChange={(e) => handleEditInputChange('entrepriseNom', e.target.value)}
                             placeholder="Nom de l'entreprise"
-                        />
+                        /> */}
+                        <select name="entrepriseNom" id="entrepriseNom">
+                            <option value="">-- Sélectionner une entreprise --</option>
+
+                            {entreprises.map((entreprise) => (
+                                <option
+                                    key={entreprise.idEntreprise}
+                                    value={entreprise.idEntreprise}
+                                >
+                                    {entreprise.nom}
+                                </option>
+                            ))}
+                        </select>
+
                     </div>
 
                     <div className="modal-actions">
