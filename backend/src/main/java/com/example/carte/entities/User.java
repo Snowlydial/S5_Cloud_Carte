@@ -1,6 +1,8 @@
 package com.example.carte.entities;
 
 import jakarta.persistence.*;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
@@ -11,7 +13,7 @@ import java.time.LocalDateTime;
         @Index(name = "idx_user_firebase_uid", columnList = "firebase_uid")
     }
 )
-public class User {
+public class User implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

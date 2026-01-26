@@ -1,10 +1,12 @@
 package com.example.carte.entities;
 
+import java.io.Serializable;
+
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "entreprise")
-public class Entreprise {
+public class Entreprise implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

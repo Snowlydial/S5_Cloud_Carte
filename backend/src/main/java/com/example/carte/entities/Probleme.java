@@ -3,13 +3,14 @@ package com.example.carte.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Data
 @Table(name = "probleme")
-public class Probleme implements Syncable {
+public class Probleme implements Syncable,Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,8 +36,8 @@ public class Probleme implements Syncable {
     @JoinColumn(name = "id_compte", nullable = false)
     private User compte;
 
-    @ManyToOne
-    @JoinColumn(name = "id_signalement", nullable = false)
+    @OneToOne
+    @JoinColumn(name = "id_signalement", nullable = false, unique = true)
     private Signalement signalement;
 
     @OneToMany(mappedBy = "probleme", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -54,7 +55,7 @@ public class Probleme implements Syncable {
     }
 
     public Probleme(LocalDateTime dateProbleme, Double surfaceM2, Double budget,
-                    Entreprise entreprise, User compte, Signalement signalement) {
+            Entreprise entreprise, User compte, Signalement signalement) {
         this.dateProbleme = dateProbleme;
         this.surfaceM2 = surfaceM2;
         this.budget = budget;

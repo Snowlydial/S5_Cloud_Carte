@@ -22,8 +22,8 @@ public class ProblemeController {
 
 
     @GetMapping
-    public ResponseEntity<List<Probleme>> getAllProblemesRaw() {
-        List<Probleme> liste = problemeService.getAllProblemesRaw();
+    public ResponseEntity<List<ProblemeDTO>> getAllProblemesRaw() {
+        List<ProblemeDTO> liste = problemeService.getAllProblemes();
         return ResponseEntity.ok(liste);
     }
     @GetMapping("/{id}")
@@ -41,6 +41,16 @@ public class ProblemeController {
 
         ProblemeDTO created = problemeService.createProbleme(dto);
         return ResponseEntity.ok(created);
+    }
+    @GetMapping ("/sync")
+    public ResponseEntity<?> syncProblemes(){
+        try {
+            problemeService.syncFireBaseProbleme();
+        } catch (Exception e) {
+            e.printStackTrace();
+           ResponseEntity.status(500).build();
+        }
+        return ResponseEntity.ok(true);
     }
 
 }

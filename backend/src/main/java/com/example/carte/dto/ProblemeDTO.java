@@ -2,6 +2,9 @@ package com.example.carte.dto;
 
 import java.time.LocalDateTime;
 
+import lombok.Data;
+
+@Data
 public class ProblemeDTO {
 
     private Integer idProbleme;
@@ -12,6 +15,7 @@ public class ProblemeDTO {
     private String compteEmail;
     private Integer signalementId;
     private Integer statut; // un seul statut
+    private String firebaseId;
 
     // 🔹 Getters & Setters
     public Integer getIdProbleme() { return idProbleme; }
