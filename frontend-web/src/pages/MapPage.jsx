@@ -1,11 +1,12 @@
 //?=== MAP PAGE (Shows problems on Antananarivo map)
 
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getAllSignalements, getRecapStats } from '../services/signalementService';
 import { SIGNALEMENT_STATUS } from '../config/constants';
+import { useOfflineMap } from '../hooks/useOfflineMap';
 import 'leaflet/dist/leaflet.css';
 import '../styles/Map.css';
 
@@ -25,6 +26,7 @@ L.Marker.prototype.options.icon = DefaultIcon;
 const MapPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { tileUrl, attribution, isOnline } = useOfflineMap();
 
     const [signalements, setSignalements] = useState([]);
     const [stats, setStats] = useState(null);
@@ -32,8 +34,14 @@ const MapPage = () => {
     const [statusFilter, setStatusFilter] = useState('');
     const [error, setError] = useState('');
 
-    //*-- Antananarivo center coordinates
-    const center = [-18.8792, 47.5079];
+    //*-- Antananarivo center coordinates (Leaflet uses [lat, lon] format)
+    const center = [-18.91425, 47.52817];
+    
+    //*-- Tile bounds from mbtiles
+    const tileBounds = [
+        [-19.025, 47.37],   // Southwest
+        [-18.772, 47.679]   // Northeast
+    ];
 
     useEffect(() => {
         loadData();
@@ -66,12 +74,28 @@ const MapPage = () => {
         }
     };
 
+    const handleTileLoad = (e) => {
+        console.log('✔ Tile loaded:', e.tile.src);
+    };
+
+    const handleTileError = (e) => {
+        console.warn('✘ Tile failed:', e.tile.src);
+    };
+
     return (
         <div className="map-page">
             <div className="map-header">
                 <div>
                     <h1>Carte des Travaux Routiers</h1>
                     <p>Antananarivo</p>
+                    
+                    {/* Show map status indicator */}
+                    <div className="map-status-indicator">
+                        <span className={`status-dot ${isOnline ? 'online' : 'offline'}`}></span>
+                        <span className="status-text">
+                            {isOnline ? 'En ligne (OpenStreetMap)' : 'Hors ligne (Carte locale)'}
+                        </span>
+                    </div>
                 </div>
                 <div className="header-actions">
                     {user?.role === 'MANAGER' && (
@@ -154,13 +178,21 @@ const MapPage = () => {
                     ) : (
                         <MapContainer
                             center={center}
-                            zoom={13}
+                            zoom={14}
                             style={{ height: '100%', width: '100%' }}
+                            maxBounds={tileBounds}
+                            maxBoundsViscosity={0.8}
                         >
-                            {/* TODO: Replace with offline tile server when ready */}
+                            {/* Auto-switching between online/offline tiles */}
                             <TileLayer
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution={attribution}
+                                url={tileUrl}
+                                eventHandlers={{
+                                    tileload: handleTileLoad,
+                                    tileerror: handleTileError
+                                }}
+                                maxZoom={14}
+                                minZoom={10}
                             />
 
                             {signalements.map((signalement) => (
