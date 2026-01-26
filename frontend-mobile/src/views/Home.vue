@@ -8,24 +8,27 @@
 
     <ion-content :scroll-y="false">
       <div class="main-wrapper">
-        
         <div id="map" ref="mapContainer"></div>
-        <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin fab-location">
-        <ion-fab-button size="small" @click="getCurrentLocation" color="light">
-          <ion-icon :icon="locateOutline"></ion-icon>
-        </ion-fab-button>
-      </ion-fab>
+          <div class="fab-container fab-location">
+          <span class="fab-label">Ma position</span>
+          <ion-fab-button size="small" @click="getCurrentLocation" color="light">
+            <ion-icon :icon="locateOutline"></ion-icon>
+          </ion-fab-button>
+        </div>
 
-      <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin fab-logout">
-        <ion-fab-button size="small" @click="handleLogout" color="light">
-          <ion-icon :icon="logOutOutline"></ion-icon>
-        </ion-fab-button>
-      </ion-fab>
-       <ion-fab vertical="top" horizontal="end" slot="fixed" class="ion-margin fab-filter">
-        <ion-fab-button size="small" @click="filterMySignalement" color="light">
-          <ion-icon :icon="filterOutline"></ion-icon>
-        </ion-fab-button>
-      </ion-fab>
+        <div class="fab-container fab-logout">
+          <span class="fab-label">Déconnexion</span>
+          <ion-fab-button size="small" @click="handleLogout" color="light">
+            <ion-icon :icon="logOutOutline"></ion-icon>
+          </ion-fab-button>
+        </div>
+
+        <div class="fab-container fab-filter">
+          <span class="fab-label">Mes signalements</span>
+          <ion-fab-button size="small" @click="filterMySignalement" color="light">
+            <ion-icon :icon="filterOutline"></ion-icon>
+          </ion-fab-button>
+        </div>
       
         <div class="form-container">
           <ion-list>
@@ -360,12 +363,30 @@ const loadMapData = async () => {
   width: 100%;
 }
 
-.form-container {
-  flex: 4; /* Prend 40% de l'espace disponible */
-  background: white;
-  padding: 10px;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-  overflow-y: auto;
+.fab-container {
+  position: absolute;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  z-index: 1000; /* Pour passer au dessus de la carte Leaflet */
+}
+
+.fab-label {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-right: 10px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  pointer-events: none; /* Le clic traverse le texte vers le bouton si besoin */
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.fab-container:hover .fab-label {
+  opacity: 1;
 }
 
 ion-fab {
@@ -373,24 +394,19 @@ ion-fab {
 }
 
 /* Position the first button normally */
-.fab-location {
-  top: 10px;
-}
+.fab-location { top: 10px; }
+.fab-logout   { top: 60px; }
+.fab-filter   { top: 110px; }
 
-/* Push the logout button down (40px button height + 10px spacing) */
-.fab-logout {
-  top: 60px; 
-}
 
-.fab-filter {
-  top: 120px; 
-}
 #map { flex: 6; width: 100%; position: relative; }
 .main-wrapper { display: flex; flex-direction: column; height: 100%; }
-.form-container { flex: 4; background: white; padding: 10px; z-index: 10; }
+.form-container { flex: 4; background: white; padding: 10px; z-index: 10; overflow-y: auto;}
 
 :deep(.custom-marker) {
   background: transparent;
   border: none;
 }
+
+
 </style>
