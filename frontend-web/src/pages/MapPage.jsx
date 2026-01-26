@@ -174,7 +174,7 @@ const MapPage = () => {
                                             <p><strong>Date:</strong> {signalement.date}</p>
                                             <p><strong>Statut:</strong> {signalement.status}</p>
                                             <p><strong>Surface:</strong> {signalement.surface} m²</p>
-                                            <p><strong>Budget:</strong> {signalement.budget.toLocaleString()} Ar</p>
+                                            <p><strong>Budget:</strong> {signalement.budget?.toLocaleString()} Ar</p>
                                             <p><strong>Entreprise:</strong> {signalement.entreprise}</p>
                                         </div>
                                     </Popup>
