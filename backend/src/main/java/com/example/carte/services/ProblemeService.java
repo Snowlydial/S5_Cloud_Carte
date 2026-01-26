@@ -493,4 +493,63 @@ public class ProblemeService {
         return mapToDTO(probleme);
     }
 
+    @Transactional
+    public ProblemeDTO updateProbleme(ProblemeDTO dto, Integer idProbleme) {
+
+        Probleme probleme = problemeRepo.findById(idProbleme)
+                .orElseThrow(() -> new RuntimeException("Problème introuvable"));
+
+        // Mettre à jour les champs simples
+        if (dto.getSurfaceM2() != null) {
+            probleme.setSurfaceM2(dto.getSurfaceM2());
+        }
+
+        if (dto.getBudget() != null) {
+            probleme.setBudget(dto.getBudget());
+        }
+
+        if (dto.getDateProbleme() != null) {
+            probleme.setDateProbleme(dto.getDateProbleme());
+        }
+
+        // Mettre à jour l'entreprise si fourni
+        if (dto.getEntrepriseNom() != null) {
+            Entreprise entreprise = entrepriseRepo.findById(Integer.valueOf(dto.getEntrepriseNom()))
+                    .orElseThrow(() -> new RuntimeException("Entreprise introuvable"));
+            probleme.setEntreprise(entreprise);
+        }
+
+        // Mettre à jour le compte si fourni
+        if (dto.getCompteEmail() != null) {
+            User compte = utilisateurRepository.findByEmail(dto.getCompteEmail())
+                    .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+            probleme.setCompte(compte);
+        }
+
+        // Mettre à jour le signalement si fourni
+        if (dto.getSignalementId() != null) {
+            Signalement signalement = signalementRepo.findById(dto.getSignalementId())
+                    .orElseThrow(() -> new RuntimeException("Signalement introuvable"));
+            probleme.setSignalement(signalement);
+        }
+
+        // Mettre à jour le statut si fourni
+        if (dto.getStatut() != null) {
+            Status status = statutRepo.findById(dto.getStatut())
+                    .orElseThrow(() -> new RuntimeException("Status introuvable"));
+            ProblemeStatus problemeStatus = new ProblemeStatus();
+            problemeStatus.setProbleme(probleme);
+            problemeStatus.setStatus(status);
+            problemeStatus.setEtat(status.getNom());
+            problemeStatus.setDateStatus(LocalDateTime.now());
+            problemeStatusRepository.save(problemeStatus);
+        }
+
+        // Sauvegarder le problème
+        Probleme updated = problemeRepo.save(probleme);
+
+        // Retourner le DTO mis à jour
+        return mapToDTO(updated);
+    }
+
 }

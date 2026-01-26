@@ -23,10 +23,10 @@ export const getAllUsers = async () => {
         const token = localStorage.getItem("JWT_TOKEN");
 
         // TODO: Uncomment when backend ready
-        // const response = await axios.get(USER_ENDPOINTS.LIST, {
-        //   headers: { Authorization: `Bearer ${token}` }
-        // });
-        // return response.data;
+        const response = await axios.get(USER_ENDPOINTS.LIST, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
 
         console.log('[MOCK API] Getting all users');
         return await mockApiDelay([...mockUsers]);

@@ -66,4 +66,13 @@ public class ProblemeController {
         return ResponseEntity.ok(dto);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<ProblemeDTO> updateProbleme(
+            @PathVariable("id") Integer id,
+            @RequestBody ProblemeDTO dto) {
+
+        ProblemeDTO updated = problemeService.updateProbleme(dto, id);
+        return ResponseEntity.ok(updated);
+    }
+
 }

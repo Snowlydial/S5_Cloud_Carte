@@ -67,10 +67,13 @@ export const login = async (email, password) => {
         });
         console.log("Backend login response:", response);
         const user = response.data.data;
+        if (user==null){
+            throw new Error(response.data.data.error);
+        }
         localStorage.setItem("JWT_TOKEN", user.token);
         console.log("error "+response.data.error);
         // }
-        if (response.data.error == null) {
+        if (response.data.data.error == null) {
             return response.data.data;
         }
         else {

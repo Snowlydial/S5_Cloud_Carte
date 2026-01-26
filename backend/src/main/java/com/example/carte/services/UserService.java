@@ -261,7 +261,6 @@ public class UserService {
         return mapToDTO(user);
     }
 
-    /** Récupère un utilisateur par email (local) */
     public UserDTO getUserByEmail(String email) {
         System.out.println("Getting user by email: " + email);
         User user = userRepo.findByEmail(email)
@@ -271,12 +270,13 @@ public class UserService {
         return mapToDTO(user);
     }
 
-    /** Mapping User -> UserDTO */
     private UserDTO mapToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setFirebaseUid(user.getFirebaseUid());
         dto.setEmail(user.getEmail());
-        dto.setRole(user.getRole());
+        dto.setRole(user.getProfil().getNom());
+        dto.setBlocked(user.getIsBlocked());
+        dto.setTentative(user.getLoginAttempts());
         dto.setLastSync(user.getLastSync());
         return dto;
     }
@@ -345,6 +345,12 @@ public class UserService {
                 })
                 .collect(Collectors.toList());
     }
+    public List<UserDTO> getAllUsers() {
+    return userRepo.findAll()
+            .stream()
+            .map(this::mapToDTO)
+            .toList();
+}
 
     public boolean checkPasswordLocal(String email, String password) {
         return userRepo.findByEmail(email)
