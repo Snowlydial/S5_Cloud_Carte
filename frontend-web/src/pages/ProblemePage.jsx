@@ -1,10 +1,10 @@
+//?=== PROBLEME MANAGEMENT PAGE (Full CRUD)
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
     getAllProblemes,
-    createProbleme,
     updateProbleme,
     deleteProbleme,
     updateProblemeStatus,
@@ -27,15 +27,14 @@ const ProblemePage = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    //*-- Create/Edit Modal
-    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+    //*-- Edit Modal
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const [formData, setFormData] = useState({
+    const [editForm, setEditForm] = useState({
         dateProbleme: '',
         surfaceM2: '',
         budget: '',
-        idEntreprise: '',
-        idSignalement: ''
+        entrepriseNom: ''
     });
 
     //*-- Status Modal
@@ -78,78 +77,54 @@ const ProblemePage = () => {
         }
     };
 
-    //?=== CREATE/EDIT MODAL HANDLERS
-    const handleOpenCreateModal = () => {
-        setEditingId(null);
-        setFormData({
-            dateProbleme: new Date().toISOString().slice(0, 16),
-            surfaceM2: '',
-            budget: '',
-            idEntreprise: entreprises.length > 0 ? entreprises[0].id : '',
-            idSignalement: signalements.length > 0 ? signalements[0].id : ''
-        });
-        setIsFormModalOpen(true);
-    };
-
+    //?=== EDIT MODAL HANDLERS
     const handleOpenEditModal = (probleme) => {
-        setEditingId(probleme.id);
-        setFormData({
-            dateProbleme: probleme.dateProbleme.slice(0, 16),
+        setEditingId(probleme.idProbleme || probleme.id);
+        setEditForm({
+            dateProbleme: (probleme.dateProbleme || '').slice(0, 16),
             surfaceM2: probleme.surfaceM2,
             budget: probleme.budget,
-            idEntreprise: probleme.idEntreprise,
-            idSignalement: probleme.idSignalement
+            entrepriseNom: probleme.entrepriseNom || ''
         });
-        setIsFormModalOpen(true);
+        setIsEditModalOpen(true);
     };
 
-    const handleCloseFormModal = () => {
-        setIsFormModalOpen(false);
+    const handleCloseEditModal = () => {
+        setIsEditModalOpen(false);
         setEditingId(null);
-        setFormData({
+        setEditForm({
             dateProbleme: '',
             surfaceM2: '',
             budget: '',
-            idEntreprise: '',
-            idSignalement: ''
+            entrepriseNom: ''
         });
     };
 
-    const handleFormInputChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+    const handleEditInputChange = (field, value) => {
+        setEditForm(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleSubmitForm = async (e) => {
+    const handleSubmitEdit = async (e) => {
         e.preventDefault();
         setError('');
         setSuccess('');
 
-        //*-- Validation
-        if (!formData.dateProbleme || !formData.surfaceM2 || !formData.budget ||
-            !formData.idEntreprise || !formData.idSignalement) {
-            setError('Veuillez remplir tous les champs');
+        if (!editForm.dateProbleme || !editForm.surfaceM2 || !editForm.budget) {
+            setError('Veuillez remplir tous les champs obligatoires');
             return;
         }
 
         try {
             const payload = {
-                dateProbleme: formData.dateProbleme,
-                surfaceM2: Number(formData.surfaceM2),
-                budget: Number(formData.budget),
-                idEntreprise: Number(formData.idEntreprise),
-                idSignalement: Number(formData.idSignalement),
-                idCompte: user.id || 1 // User logged ID
+                dateProbleme: editForm.dateProbleme,
+                surfaceM2: Number(editForm.surfaceM2),
+                budget: Number(editForm.budget),
+                entrepriseNom: editForm.entrepriseNom
             };
 
-            if (editingId) {
-                await updateProbleme(editingId, payload);
-                setSuccess('Problème mis à jour');
-            } else {
-                await createProbleme(payload);
-                setSuccess('Problème créé');
-            }
-
-            handleCloseFormModal();
+            await updateProbleme(editingId, payload);
+            setSuccess('Problème mis à jour');
+            handleCloseEditModal();
             loadAllData();
         } catch (err) {
             setError(err.message);
@@ -158,7 +133,7 @@ const ProblemePage = () => {
 
     //?=== STATUS MODAL HANDLERS
     const handleOpenStatusModal = (probleme) => {
-        setSelectedProblemeId(probleme.id);
+        setSelectedProblemeId(probleme.idProbleme || probleme.id);
         setStatusFormData({
             etat: probleme.currentStatus || (statusList.length > 0 ? statusList[0].nom : ''),
             dateStatus: new Date().toISOString().slice(0, 16)
@@ -226,9 +201,6 @@ const ProblemePage = () => {
                     <p>CRUD complet des problèmes routiers</p>
                 </div>
                 <div className="header-actions">
-                    <button onClick={handleOpenCreateModal} className="btn-primary">
-                        + Créer Problème
-                    </button>
                     <button onClick={() => navigate('/signalements')} className="btn-secondary">
                         Voir signalements
                     </button>
@@ -247,9 +219,6 @@ const ProblemePage = () => {
                 ) : problemes.length === 0 ? (
                     <div className="empty-state">
                         <p>Aucun problème enregistré</p>
-                        <button onClick={handleOpenCreateModal} className="btn-primary">
-                            Créer le premier problème
-                        </button>
                     </div>
                 ) : (
                     <div className="table-container">
@@ -269,19 +238,19 @@ const ProblemePage = () => {
                             </thead>
                             <tbody>
                                 {problemes.map((prob) => (
-                                    <tr key={prob.id}>
-                                        <td>{prob.id}</td>
+                                    <tr key={prob.idProbleme || prob.id}>
+                                        <td>{prob.idProbleme || prob.id}</td>
                                         <td>{new Date(prob.dateProbleme).toLocaleString('fr-FR')}</td>
-                                        <td>#{prob.idSignalement}</td>
+                                        <td>#{prob.signalementId || prob.idSignalement}</td>
                                         <td>{prob.surfaceM2}</td>
-                                        <td>{prob.budget.toLocaleString()}</td>
-                                        <td>{prob.entrepriseNom || prob.idEntreprise}</td>
+                                        <td>{Number(prob.budget).toLocaleString()}</td>
+                                        <td>{prob.entrepriseNom || '-'}</td>
                                         <td>
-                                            <span className={`status-badge status-${prob.currentStatus}`}>
-                                                {prob.currentStatus}
+                                            <span className={`status-badge status-${prob.currentStatus || prob.statut}`}>
+                                                {prob.currentStatus || prob.statut || 'nouveau'}
                                             </span>
                                         </td>
-                                        <td>{new Date(prob.dateStatus).toLocaleDateString('fr-FR')}</td>
+                                        <td>{prob.dateStatus ? new Date(prob.dateStatus).toLocaleDateString('fr-FR') : '-'}</td>
                                         <td>
                                             <div className="action-buttons">
                                                 <button onClick={() => handleOpenEditModal(prob)} className="btn-edit">
@@ -290,7 +259,7 @@ const ProblemePage = () => {
                                                 <button onClick={() => handleOpenStatusModal(prob)} className="btn-status">
                                                     Changer Statut
                                                 </button>
-                                                <button onClick={() => handleDelete(prob.id)} className="btn-delete">
+                                                <button onClick={() => handleDelete(prob.idProbleme || prob.id)} className="btn-delete">
                                                     Supprimer
                                                 </button>
                                             </div>
@@ -303,39 +272,22 @@ const ProblemePage = () => {
                 )}
             </div>
 
-            {/* Create/Edit Modal */}
+            {/* Edit Modal */}
             <Modal
-                isOpen={isFormModalOpen}
-                onClose={handleCloseFormModal}
-                title={editingId ? 'Modifier le Problème' : 'Créer un Problème'}
+                isOpen={isEditModalOpen}
+                onClose={handleCloseEditModal}
+                title="Modifier le Problème"
             >
-                <form onSubmit={handleSubmitForm} className="modal-form">
+                <form onSubmit={handleSubmitEdit} className="modal-form">
                     <div className="form-group">
                         <label htmlFor="dateProbleme">Date du problème</label>
                         <input
                             type="datetime-local"
                             id="dateProbleme"
-                            value={formData.dateProbleme}
-                            onChange={(e) => handleFormInputChange('dateProbleme', e.target.value)}
+                            value={editForm.dateProbleme}
+                            onChange={(e) => handleEditInputChange('dateProbleme', e.target.value)}
                             required
                         />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="idSignalement">Signalement</label>
-                        <select
-                            id="idSignalement"
-                            value={formData.idSignalement}
-                            onChange={(e) => handleFormInputChange('idSignalement', e.target.value)}
-                            required
-                        >
-                            <option value="">Sélectionner un signalement</option>
-                            {signalements.map(sig => (
-                                <option key={sig.id} value={sig.id}>
-                                    #{sig.id} - {sig.description}
-                                </option>
-                            ))}
-                        </select>
                     </div>
 
                     <div className="form-group">
@@ -343,9 +295,8 @@ const ProblemePage = () => {
                         <input
                             type="number"
                             id="surfaceM2"
-                            value={formData.surfaceM2}
-                            onChange={(e) => handleFormInputChange('surfaceM2', e.target.value)}
-                            placeholder="Ex: 25.5"
+                            value={editForm.surfaceM2}
+                            onChange={(e) => handleEditInputChange('surfaceM2', e.target.value)}
                             min="0"
                             step="0.01"
                             required
@@ -357,37 +308,30 @@ const ProblemePage = () => {
                         <input
                             type="number"
                             id="budget"
-                            value={formData.budget}
-                            onChange={(e) => handleFormInputChange('budget', e.target.value)}
-                            placeholder="Ex: 500000"
+                            value={editForm.budget}
+                            onChange={(e) => handleEditInputChange('budget', e.target.value)}
                             min="0"
                             required
                         />
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="idEntreprise">Entreprise</label>
-                        <select
-                            id="idEntreprise"
-                            value={formData.idEntreprise}
-                            onChange={(e) => handleFormInputChange('idEntreprise', e.target.value)}
-                            required
-                        >
-                            <option value="">Sélectionner une entreprise</option>
-                            {entreprises.map(ent => (
-                                <option key={ent.id} value={ent.id}>
-                                    {ent.nom}
-                                </option>
-                            ))}
-                        </select>
+                        <label htmlFor="entrepriseNom">Entreprise</label>
+                        <input
+                            type="text"
+                            id="entrepriseNom"
+                            value={editForm.entrepriseNom}
+                            onChange={(e) => handleEditInputChange('entrepriseNom', e.target.value)}
+                            placeholder="Nom de l'entreprise"
+                        />
                     </div>
 
                     <div className="modal-actions">
-                        <button type="button" onClick={handleCloseFormModal} className="btn-cancel">
+                        <button type="button" onClick={handleCloseEditModal} className="btn-cancel">
                             Annuler
                         </button>
                         <button type="submit" className="btn-submit">
-                            {editingId ? 'Mettre à jour' : 'Créer'}
+                            Mettre à jour
                         </button>
                     </div>
                 </form>
