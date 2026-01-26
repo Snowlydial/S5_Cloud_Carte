@@ -442,7 +442,7 @@ public class ProblemeService {
     }
 
     @Transactional
-    public RecapDashboardDTO getRecapActuel() {
+    public RecapDashboardDTO getRecapActuel2() {
         RecapDashboardDTO recapDashboardDTO = new RecapDashboardDTO();
         // get nb de points total
         // get total surface
@@ -465,6 +465,44 @@ public class ProblemeService {
         recapDashboardDTO.setTotalSurface(total_budget);
         recapDashboardDTO.setTotalSurface(surface_total);
         return recapDashboardDTO;
+    }
+
+    public RecapDashboardDTO getRecapActuel() {
+
+        RecapDashboardDTO recap = new RecapDashboardDTO();
+
+        List<Probleme> problemes = problemeRepo.findAll();
+
+        int nbPoints = problemes.size();
+        double totalSurface = 0;
+        double totalBudget = 0;
+        double avancementTotal = 0;
+
+        for (Probleme probleme : problemes) {
+
+            totalSurface += probleme.getSurfaceM2();
+            totalBudget += probleme.getBudget();
+
+            // 🔹 Récupérer le dernier status du problème
+            ProblemeStatus lastStatus = problemeStatusRepository.findTopByProblemeOrderByDateStatusDesc(probleme);
+
+            if (lastStatus != null) {
+                switch (lastStatus.getEtat().toLowerCase()) {
+                    case "termine" -> avancementTotal += 100;
+                    case "en_cours" -> avancementTotal += 50;
+                    case "nouveau" -> avancementTotal += 0;
+                }
+            }
+        }
+
+        double avancementPercent = nbPoints == 0 ? 0 : avancementTotal / nbPoints;
+
+        recap.setNbPoints(nbPoints);
+        recap.setTotalSurface(totalSurface);
+        recap.setTotalBudget(totalBudget);
+        recap.setAvancementPercent(avancementPercent);
+
+        return recap;
     }
 
     @Transactional

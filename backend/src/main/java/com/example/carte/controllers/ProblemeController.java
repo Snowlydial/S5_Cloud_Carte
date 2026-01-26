@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.carte.dto.ProblemeDTO;
+import com.example.carte.dto.RecapDashboardDTO;
 import com.example.carte.dto.UpdateProblemeStatusRequest;
 import com.example.carte.entities.Probleme;
 import com.example.carte.security.SecurityUtils;
@@ -73,6 +74,11 @@ public class ProblemeController {
 
         ProblemeDTO updated = problemeService.updateProbleme(dto, id);
         return ResponseEntity.ok(updated);
+    }
+
+    @GetMapping("/recap")
+    public ResponseEntity<RecapDashboardDTO> getRecapActuel() {
+        return ResponseEntity.ok(problemeService.getRecapActuel());
     }
 
 }
