@@ -9,10 +9,13 @@ export const PROBLEME_ENDPOINTS = {
     LIST: `${API_BASE_URL}/problemes`,
     UPDATE: `${API_BASE_URL}/problemes`,
     DELETE: `${API_BASE_URL}/problemes`
+    // DELETE: `${API_BASE_URL}/problemes`
 };
 
 //*-- MOCK: Simulate probleme data
 const mockProblemes = [];
+//*-- MOCK: Simulate probleme data
+
 
 const mockApiDelay = (data) => {
     return new Promise((resolve) => {
