@@ -38,11 +38,11 @@ const DashboardPage = () => {
                     <div className="module-card">
                         <h3>Carte & Signalements</h3>
                         <p>Visualiser les problèmes routiers sur la carte d'Antananarivo</p>
-                        <button 
-                        onClick={() => navigate('/map')}
-                        className="btn-primary"
+                        <button
+                            onClick={() => navigate('/map')}
+                            className="btn-primary"
                         >
-                        Voir la carte
+                            Voir la carte
                         </button>
                     </div>
 
@@ -51,22 +51,32 @@ const DashboardPage = () => {
                             <div className="module-card">
                                 <h3>Gestion Utilisateurs</h3>
                                 <p>Gérer les comptes bloqués et synchroniser les utilisateurs</p>
-                                <button 
-                                onClick={() => navigate('/users')}
-                                className="btn-primary"
+                                <button
+                                    onClick={() => navigate('/users')}
+                                    className="btn-primary"
                                 >
-                                Gérer les utilisateurs
+                                    Gérer les utilisateurs
                                 </button>
                             </div>
 
                             <div className="module-card">
                                 <h3>Gestion Signalements</h3>
                                 <p>CRUD des signalements et synchronisation Firebase</p>
-                                <button 
-                                onClick={() => navigate('/signalements')}
-                                className="btn-primary"
+                                <button
+                                    onClick={() => navigate('/signalements')}
+                                    className="btn-primary"
                                 >
-                                Gérer les signalements
+                                    Gérer les signalements
+                                </button>
+                            </div>
+                            <div className="module-card">
+                                <h3>Gestion Problèmes</h3>
+                                <p>CRUD complet des problèmes avec statuts et entreprises</p>
+                                <button
+                                    onClick={() => navigate('/problemes')}
+                                    className="btn-primary"
+                                >
+                                    Gérer les problèmes
                                 </button>
                             </div>
                         </>

@@ -3,13 +3,13 @@ package com.example.carte.entities;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
 @Table(name = "type_signalement")
-@Data
-public class TypeSignalement implements Syncable  {
+public class TypeSignalement implements Serializable,Syncable{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,6 +50,24 @@ public class TypeSignalement implements Syncable  {
 
     @Override
     public String getCollectionName() {
-        return "type_signalements"; // nom de la collection Firestore
+        return "type_signalement"; // nom de la collection Firestore
+    }
+    public void setIdType(Integer idType) {
+        this.idType = idType;
+    }
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
+    public void setSignalements(List<Signalement> signalements) {
+        this.signalements = signalements;
+    }
+    public Integer getIdType() {
+        return idType;
+    }
+    public String getNom() {
+        return nom;
+    }
+    public List<Signalement> getSignalements() {
+        return signalements;
     }
 }

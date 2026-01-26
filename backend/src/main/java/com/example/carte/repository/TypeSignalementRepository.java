@@ -11,5 +11,7 @@ public interface TypeSignalementRepository extends JpaRepository<TypeSignalement
 
     Optional<TypeSignalement> findByNom(String nom);
 
+    // Optional<TypeSignalement> findByNom(String nom);
+
     boolean existsByNom(String nom);
 }
