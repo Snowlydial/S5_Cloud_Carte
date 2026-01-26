@@ -108,10 +108,10 @@ export const unblockUser = async (userId) => {
         const token = localStorage.getItem("JWT_TOKEN");
 
         // TODO: Uncomment when backend ready
-        // const response = await axios.post(`${USER_ENDPOINTS.UNBLOCK}/${userId}`, {}, {
-        //   headers: { Authorization: `Bearer ${token}` }
-        // });
-        // return response.data;
+        const response = await axios.post(`${USER_ENDPOINTS.UNBLOCK}/${userId}`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
 
         console.log(`[MOCK API] Unblocking user ${userId}`);
         const user = mockUsers.find(u => u.id === userId);

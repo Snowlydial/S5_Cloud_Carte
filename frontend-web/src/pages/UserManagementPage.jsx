@@ -215,8 +215,8 @@ const UserManagementPage = () => {
                                     <td><span className="role-badge">{u.role}</span></td>
                                     <td>{u.tentative || 0}</td>
                                     <td>
-                                        <span className={`status-badge ${u.isBlocked ? 'status-blocked' : 'status-active'}`}>
-                                            {u.isBlocked ? 'Bloqué' : 'Actif'}
+                                        <span className={`status-badge ${u.blocked ? 'status-blocked' : 'status-active'}`}>
+                                            {u.blocked ? 'Bloqué' : 'Actif'}
                                         </span>
                                     </td>
                                     <td>
@@ -228,10 +228,10 @@ const UserManagementPage = () => {
                                                 Modifier
                                             </button>
                                             <button
-                                                onClick={() => handleToggleBlock(u.id, u.isBlocked)}
-                                                className={u.isBlocked ? 'btn-unblock' : 'btn-block'}
+                                                onClick={() => handleToggleBlock(u.email, u.blocked)}
+                                                className={u.blocked ? 'btn-unblock' : 'btn-block'}
                                             >
-                                                {u.isBlocked ? 'Débloquer' : 'Bloquer'}
+                                                {u.blocked ? 'Débloquer' : 'Bloquer'}
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(u.id)}

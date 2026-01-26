@@ -10,6 +10,7 @@ import com.example.carte.dto.UserDTO;
 import com.example.carte.services.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 
 @RestController
 @RequestMapping("/api/users")
@@ -32,5 +33,12 @@ public class UserController {
     @GetMapping("/blocked")
     public ResponseEntity<List<BlockedUserDTO>> getBlockedUsers() {
         return ResponseEntity.ok(userService.getBlockedUsers());
+    }
+    @PostMapping("/unlock/{email}")
+    public ResponseEntity<Void> unlockUser(
+            @PathVariable @Parameter(description = "Email de l'utilisateur à débloquer", example = "user@mail.com") String email) {
+
+        userService.resetLoginAttempts(email);
+        return ResponseEntity.ok().build();
     }
 }

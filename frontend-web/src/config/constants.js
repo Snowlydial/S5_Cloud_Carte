@@ -17,7 +17,7 @@ export const USER_ENDPOINTS = {
     UPDATE: `${API_BASE_URL}/users`,
     DELETE: `${API_BASE_URL}/users`,
     BLOCK: `${API_BASE_URL}/users/block`,
-    UNBLOCK: `${API_BASE_URL}/users/unblock`,
+    UNBLOCK: `${API_BASE_URL}/users/unlock`,
     SYNC: `${API_BASE_URL}/users/sync`
 };
 
