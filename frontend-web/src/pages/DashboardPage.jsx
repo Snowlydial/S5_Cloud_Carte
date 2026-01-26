@@ -1,4 +1,4 @@
-//?=== DASHBOARD PAGE
+//?=== DASHBOARD PAGE (Main page after login)
 
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,7 +33,6 @@ const DashboardPage = () => {
                     <p>Système de gestion des travaux routiers - Antananarivo</p>
                 </div>
 
-                {/* Placeholder for future modules */}
                 <div className="modules-grid">
                     <div className="module-card">
                         <h3>Carte & Signalements</h3>
@@ -69,6 +68,7 @@ const DashboardPage = () => {
                                     Gérer les signalements
                                 </button>
                             </div>
+
                             <div className="module-card">
                                 <h3>Gestion Problèmes</h3>
                                 <p>CRUD complet des problèmes avec statuts et entreprises</p>
