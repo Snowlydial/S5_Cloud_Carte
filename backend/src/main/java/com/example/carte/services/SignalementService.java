@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,13 +40,18 @@ public class SignalementService {
     @Autowired
     private ProblemeService problemeService;
 
+    @Autowired
+    private TypeSignalementService typeSignalementService;
+
+    @Autowired
+    private UserService userService;
     public SignalementService(SignalementRepository signalementRepo, UtilisateurRepository utilisateurRepository) {
         this.signalementRepo = signalementRepo;
         this.utilisateurRepository = utilisateurRepository;
     }
 
     @Transactional
-    public List<SignalementDTO> getListSyncSignalements() throws InterruptedException, ExecutionException {
+    public List<SignalementDTO> getListSyncSignalements() throws Exception {
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference colRef = db.collection("signalements");
 
@@ -114,8 +118,16 @@ public class SignalementService {
                 signalementMap.put("surfaceM2", local.getSurfaceM2());
                 signalementMap.put("description", local.getDescription());
                 signalementMap.put("firebaseId", fbId);
+                if( local.getTypeSignalement().getFirebaseId()==null){
+                    typeSignalementService.syncer();
+                }
+                if(local.getCompte().getFirebaseUid()==null){
+                    userService.syncCompteLocalToFirebase(local.getCompte());
+                }
+                //syncer le compte
                 signalementMap.put("idTypeSignalement", local.getTypeSignalement().getFirebaseId());
                 signalementMap.put("compteEmail", local.getCompte() != null ? local.getCompte().getEmail() : null);
+                signalementMap.put("idCompte", local.getCompte().getFirebaseUid());
                 db.collection("signalements").document(fbId).set(signalementMap);
                 //si le typeSignalement ne possede pas de fbid on le sync vers firebase 
             }

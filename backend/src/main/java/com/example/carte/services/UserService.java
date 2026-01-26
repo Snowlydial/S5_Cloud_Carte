@@ -70,7 +70,8 @@ public class UserService {
             if (isOnline()) {
                 accepted = firebaseAuthService.verifyPassword(email, password);
                 existInFirebase = true;
-            } else {
+            }
+            if(checkPasswordLocal(email, password)){
                 // verifier le password en local
                 accepted = checkPasswordLocal(email, password);
                 existLocal = true;
@@ -105,7 +106,7 @@ public class UserService {
         return false;
     }
 
-    private void syncCompteFirebaseToLocal(String email) throws Exception {
+    public void syncCompteFirebaseToLocal(String email) throws Exception {
         Firestore db = FirestoreClient.getFirestore();
         DocumentSnapshot doc = db.collection("compte").document(email).get().get();
 
@@ -122,7 +123,7 @@ public class UserService {
         userRepo.save(user);
     }
 
-    private void syncCompteLocalToFirebase(User u) throws Exception {
+    public void syncCompteLocalToFirebase(User u) throws Exception {
         Firestore db = FirestoreClient.getFirestore();
 
         Map<String, Object> compteMap = new HashMap<>();

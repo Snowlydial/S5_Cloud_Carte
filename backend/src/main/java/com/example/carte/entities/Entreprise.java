@@ -48,8 +48,8 @@ public class Entreprise implements Serializable,Syncable {
     private LocalDateTime lastSync;
 
     // Relation inverse (optionnelle mais recommandée)
-    @OneToMany(mappedBy = "typeSignalement")
-    private List<Signalement> signalements;
+    @OneToMany(mappedBy = "entreprise")
+    private List<Probleme> problemes;
 
    @Override
     public String getFirebaseId() {

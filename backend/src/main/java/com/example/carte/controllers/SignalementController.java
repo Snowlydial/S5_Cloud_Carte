@@ -21,7 +21,7 @@ public class SignalementController {
     }
 
     @GetMapping
-    public ResponseEntity<List<SignalementDTO>> getAllSignalements() throws InterruptedException, ExecutionException {
+    public ResponseEntity<List<SignalementDTO>> getAllSignalements() throws InterruptedException, ExecutionException,Exception {
 
         List<SignalementDTO> signalements = signalementService.getListSyncSignalements();
         return ResponseEntity.ok(signalements);
