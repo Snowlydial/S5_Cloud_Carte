@@ -267,19 +267,20 @@ onMounted(async () => {
 // Fonction pour ajouter les marqueurs
 const markersLayer = L.layerGroup(); // Pour éviter l'empilement
 
-const renderSignalementMarkers = (signalements: SignalementProbleme[]) => {
+const renderSignalementMarkers = async (signalements: SignalementProbleme[]) => {
   markersLayer.clearLayers();
 
-  signalements.forEach((sig) => {
+  signalements.forEach(async (sig) => {
     if (!sig.latitude || !sig.longitude) return;
 
     const hasProbleme = !!sig.idProbleme;
+    const typeSingnalement = await TypeSignalementService.getById(sig.idTypeSignalement as string);
 
     const markerInstance = L.marker(
       [sig.latitude, sig.longitude],
       {
         icon: createCustomIcon(
-          String(sig.idTypeSignalement),
+          String(typeSingnalement?.idimage ?? ''),
           hasProbleme
         )
       }
@@ -332,6 +333,10 @@ const renderSignalementMarkers = (signalements: SignalementProbleme[]) => {
 
 const createCustomIcon = (typeId: string, hasProbleme: boolean) => {
   const config = iconConfigs[typeId] || defaultIconConfig;
+
+  console.log ("Création icône pour typeId:", typeId, "avec config:", config, "et hasProbleme:", hasProbleme);
+
+  
 
   return L.divIcon({
     className: 'custom-marker',

@@ -4,6 +4,7 @@ import { Util } from "@/utils/util";
 import { CompteService } from "@/services/Compte.service";
 import { TypeSignalementService } from "@/services/TypeSignalement.service";
 import { CompteRepository } from "@/repositories/CompteRepository";
+import { TypeSignalement } from "@/models/TypeSignalement";
 
 export class SignalementSeeder {
   static async seed() {
@@ -11,7 +12,7 @@ export class SignalementSeeder {
 
     const comptes = await CompteRepository.findAll();
     console.log("Comptes disponibles pour les signalements:", comptes);
-    const typeSignalements = await TypeSignalementService.getAll();
+    const typeSignalements : TypeSignalement[] = await TypeSignalementService.getAll();
 
     if (comptes.length === 0 || typeSignalements.length === 0) {
       console.log("Pas assez de données pour créer des signalements");
@@ -20,6 +21,13 @@ export class SignalementSeeder {
 
     const firstCompte = comptes[0];
     const firstTypeSignalement = typeSignalements[0];
+
+    console.log("Premier compte pour les signalements:", firstTypeSignalement); 
+    console.log  ("les signalements vont être créés pour le compte:"+  typeSignalements);
+
+    for (const element of typeSignalements) {
+      
+    }
 
     const signalements: Omit<Signalement, "idSignalement">[] = [
       {
@@ -50,7 +58,7 @@ export class SignalementSeeder {
     for (const signalement of signalements) {
       try {
         await SignalementRepository.create(signalement);
-        console.log(`Signalement créé à [${signalement.latitude}, ${signalement.longitude}].`);
+        console.log("Signalement créé à: " +  signalement.idTypeSignalement);
       } catch (error) {
         console.error(`Erreur lors de la création du signalement:`, error);
       }
