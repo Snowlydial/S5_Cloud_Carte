@@ -17,20 +17,12 @@ import { ProblemeStatusService } from "./ProblemeStatus.service";
 export class CompteService {
 
     static async getRecap(): Promise<Recap> {
-
         let nbrPoint = 0;
         let totalSurface = 0;
         let totalBudget = 0;
-
-
-
         let totalTermine = 0;
         let avancement = 0;
-
-
         let totalProbleme = 0;
-
-
         // const signalements: Signalement[] = await SignalementRepository.findAll();
         const problemes: Probleme[] = await ProblemeRepository.getAll();
         totalProbleme = problemes.length;
