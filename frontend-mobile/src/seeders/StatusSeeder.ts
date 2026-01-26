@@ -8,7 +8,7 @@ export class StatusSeeder {
         const statuses: Status[] = [
             { nom: "nouveau" },
             { nom: "en_cours" },
-            { nom: "terminé" },
+            { nom: "termine" },
         ];
         await Util.clearCollection(StatusRepository.COLLECTION);
 

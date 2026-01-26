@@ -25,8 +25,11 @@ export class ProblemeSeeder {
                 };
                 console.log ("Création du problème:", probleme);
                 await ProblemeRepository.create(probleme);
+                
             }
         }
+
+
     }
 
 }

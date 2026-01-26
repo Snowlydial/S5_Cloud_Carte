@@ -18,8 +18,8 @@ export class StatusRepository {
     static async getAll(): Promise<Status[]> {
         const snap = await getDocs(collection(db, StatusRepository.COLLECTION));
         return snap.docs.map(d => ({
-            id: d.id,
-            ...(d.data() as Omit<Status, "id">)
+            idStatus: d.id,
+            ...(d.data() as Omit<Status, "idStatus">)
         }));
     }
 
@@ -27,7 +27,7 @@ export class StatusRepository {
         const ref = doc(db, StatusRepository.COLLECTION, id);
         const snap = await getDoc(ref);
         return snap.exists()
-            ? { id: snap.id, ...(snap.data() as Omit<Status, "id">) }
+            ? { idStatus: snap.id, ...(snap.data() as Omit<Status, "idStatus">) }
             : null;
     }
 
@@ -37,12 +37,12 @@ export class StatusRepository {
         return status || null;
     }
 
-    static async create(status: Omit<Status, "id">): Promise<string> {
+    static async create(status: Omit<Status, "idStatus">): Promise<string> {
         const docRef = await addDoc(collection(db, StatusRepository.COLLECTION), status);
         return docRef.id;
     }
 
-    static async update(id: string, data: Partial<Omit<Status, "id">>): Promise<void> {
+    static async update(id: string, data: Partial<Omit<Status, "idStatus">>): Promise<void> {
         const ref = doc(db, StatusRepository.COLLECTION, id);
         await updateDoc(ref, data);
     }

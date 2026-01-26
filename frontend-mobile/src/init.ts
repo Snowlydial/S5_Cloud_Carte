@@ -1,6 +1,8 @@
+import { EntrepriseRepository } from "./repositories/EntrepriseRepository";
 import { CompteSeeder } from "./seeders/CompteSeeder";
 import { EntrepriseSeeder } from "./seeders/EntrepriseSeeder";
 import { ProblemeSeeder } from "./seeders/ProblemeSeeder";
+import { ProblemeStatusSeeder } from "./seeders/ProblemeStatusSeeder";
 import { ProfilSeeder } from "./seeders/ProfilSeeder";
 import { SignalementSeeder } from "./seeders/SignalementSeeder";
 import { StatusSeeder } from "./seeders/StatusSeeder";
@@ -16,6 +18,11 @@ import { UserSeeder } from "./seeders/UserSeed";
   await EntrepriseSeeder.seed();
   await TypeSignalementSeeder.seed();
   await ProblemeSeeder.seed();
+  await ProblemeStatusSeeder.seed();  
+
+  const entreprises = await EntrepriseRepository.getAll();
+  console.log("Entreprises dans la base de données:", entreprises);
+
   console.log("Seeding terminé ✅");
   process.exit();
 })();
