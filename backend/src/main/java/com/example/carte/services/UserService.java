@@ -68,10 +68,16 @@ public class UserService {
 
         try {
             if (isOnline()) {
-                accepted = firebaseAuthService.verifyPassword(email, password);
-                existInFirebase = true;
+                // accepted = firebaseAuthService.verifyPassword(email, password);
+                // existInFirebase = true;
+                try {
+                    accepted = firebaseAuthService.verifyPassword(email, password);
+                    existInFirebase = true;
+                } catch (Exception e) {
+                    System.out.println("Firebase inaccessible, on continue en offline");
+                }
             }
-            if(checkPasswordLocal(email, password)){
+            if (checkPasswordLocal(email, password)) {
                 // verifier le password en local
                 accepted = checkPasswordLocal(email, password);
                 existLocal = true;
@@ -345,12 +351,13 @@ public class UserService {
                 })
                 .collect(Collectors.toList());
     }
+
     public List<UserDTO> getAllUsers() {
-    return userRepo.findAll()
-            .stream()
-            .map(this::mapToDTO)
-            .toList();
-}
+        return userRepo.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
 
     public boolean checkPasswordLocal(String email, String password) {
         return userRepo.findByEmail(email)
