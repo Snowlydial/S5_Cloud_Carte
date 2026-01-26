@@ -10,4 +10,5 @@ import com.example.carte.entities.Profil;
 @Repository
 public interface ProfilRepository extends JpaRepository<Profil, Integer> {
     Optional<Profil> findByNom(String name);
+    
 }
