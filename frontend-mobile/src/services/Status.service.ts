@@ -2,6 +2,8 @@ import { StatusRepository } from "@/repositories/StatusRepository";
 import { Status } from "@/models/Status";
 
 export class StatusService {
+
+  
   static async getAll(): Promise<Status[]> {
     try {
       return await StatusRepository.getAll();

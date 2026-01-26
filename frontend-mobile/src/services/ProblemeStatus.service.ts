@@ -65,7 +65,7 @@ export class ProblemeStatusService {
     }
   }
 
-  static async create(data: Omit<ProblemeStatus, "id">): Promise<string> {
+  static async create(data: Omit<ProblemeStatus, "idProblemeStatus">): Promise<string> {
     try {
       return await ProblemeStatusRepository.create(data);
     } catch (error) {
@@ -76,7 +76,7 @@ export class ProblemeStatusService {
 
   static async update(
     id: string,
-    data: Partial<Omit<ProblemeStatus, "id">>
+    data: Partial<Omit<ProblemeStatus, "idProblemeStatus">>
   ): Promise<void> {
     try {
       await ProblemeStatusRepository.update(id, data);
