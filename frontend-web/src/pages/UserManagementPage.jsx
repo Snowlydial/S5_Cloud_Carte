@@ -32,6 +32,20 @@ const UserManagementPage = () => {
         email: ''
     });
 
+    //*-- Fiche user
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [viewingUser, setViewingUser] = useState(null);
+
+    const handleOpenViewModal = (user) => {
+        setViewingUser(user);
+        setIsViewModalOpen(true);
+    };
+
+    const handleCloseViewModal = () => {
+        setIsViewModalOpen(false);
+        setViewingUser(null);
+    };
+
     useEffect(() => {
         if (!hasRole('MANAGER')) {
             navigate('/dashboard');
@@ -165,7 +179,7 @@ const UserManagementPage = () => {
                         className="btn-primary"
                         disabled={syncing}
                     >
-                        {syncing ? 'Synchronisation...' : '🔄 Synchroniser'}
+                        {syncing ? 'Synchronisation...' : 'Synchroniser'}
                     </button>
                     <button onClick={() => navigate('/dashboard')} className="btn-secondary">
                         Retour
@@ -228,6 +242,12 @@ const UserManagementPage = () => {
                                                 Modifier
                                             </button>
                                             <button
+                                                onClick={() => handleOpenViewModal(u)}
+                                                className="btn-view"
+                                            >
+                                                Voir
+                                            </button>
+                                            <button
                                                 onClick={() => handleToggleBlock(u.email, u.blocked)}
                                                 className={u.blocked ? 'btn-unblock' : 'btn-block'}
                                             >
@@ -279,6 +299,30 @@ const UserManagementPage = () => {
                         </button>
                     </div>
                 </form>
+            </Modal>
+
+            {/* View Modal - Fiche Utilisateur */}
+            <Modal
+                isOpen={isViewModalOpen}
+                onClose={handleCloseViewModal}
+                title="Fiche Utilisateur"
+            >
+                {viewingUser ? (
+                    <div className="user-details">
+                        <p><strong>ID:</strong> {viewingUser.id}</p>
+                        <p><strong>Email:</strong> {viewingUser.email}</p>
+                        <p><strong>Rôle:</strong> {viewingUser.role}</p>
+                        <p><strong>Tentatives:</strong> {viewingUser.tentative ?? viewingUser.loginAttempts ?? 0}</p>
+                        <p><strong>Statut:</strong> {(viewingUser.isBlocked || viewingUser.blocked) ? 'Bloqué' : 'Actif'}</p>
+                        <p><strong>Dernière synchronisation:</strong> {viewingUser.lastSync ? new Date(viewingUser.lastSync).toLocaleString() : '-'}</p>
+                    </div>
+                ) : (
+                    <div>Chargement...</div>
+                )}
+
+                <div className="modal-actions">
+                    <button onClick={handleCloseViewModal} className="btn-cancel">Fermer</button>
+                </div>
             </Modal>
         </div>
     );
