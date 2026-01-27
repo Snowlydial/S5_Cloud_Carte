@@ -160,16 +160,22 @@ public class UserService {
         Boolean blocked = doc.getBoolean("isBlocked");
         dto.setBlocked(blocked != null ? blocked : false);
 
-        // Gestion safe de la date
-        if (doc.getTimestamp("lastSync") != null) {
-            dto.setLastSync(
-                    doc.getTimestamp("lastSync")
-                            .toDate()
-                            .toInstant()
-                            .atZone(java.time.ZoneId.systemDefault())
-                            .toLocalDateTime());
+        Object lastSyncObj = doc.get("lastSync");
+        if (lastSyncObj != null) {
+            if (lastSyncObj instanceof com.google.cloud.Timestamp ts) {
+                dto.setLastSync(
+                        ts.toDate()
+                                .toInstant()
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDateTime());
+            } else if (lastSyncObj instanceof String str) {
+                dto.setLastSync(LocalDateTime.parse(str)); // si c'est stocké en ISO
+            } else {
+                // fallback par défaut
+                dto.setLastSync(LocalDateTime.now());
+            }
         } else {
-            dto.setLastSync(LocalDateTime.now()); // valeur par défaut
+            dto.setLastSync(LocalDateTime.now());
         }
 
         return dto;

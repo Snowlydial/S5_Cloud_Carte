@@ -17,8 +17,9 @@ public class SignalementDTO {
     private String firebaseId;
     private String compteEmail; // pour identifier le user associé
     private String description;
-    private Integer idTypeSignalement;
+    private String idTypeSignalement;
     private ProblemeDTO problemeDTO;
+    private String idCompte;
     // Getters et Setters
     public Integer getIdSignalement() {
         return idSignalement;
