@@ -181,6 +181,7 @@ public class UserService {
         boolean accepted = false;
         boolean existInFirebase = false;
         boolean existLocal = false;
+        List<UserDTO> fireBaseUsers = this.getListSyncComptes();
 
         try {
             if (isOnline()) {
