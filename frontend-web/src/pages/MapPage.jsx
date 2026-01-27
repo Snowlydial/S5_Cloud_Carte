@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { getAllSignalements, getRecapStats } from '../services/signalementService';
-import { SIGNALEMENT_STATUS } from '../config/constants';
+import { getAllSignalements } from '../services/signalementService';
+import { getRecapDashboard, getStatusList } from '../services/problemeService';
 import { useOfflineMap } from '../hooks/useOfflineMap';
 import 'leaflet/dist/leaflet.css';
 import '../styles/Map.css';
@@ -29,7 +29,8 @@ const MapPage = () => {
     const { tileUrl, attribution, isOnline } = useOfflineMap();
 
     const [signalements, setSignalements] = useState([]);
-    const [stats, setStats] = useState(null);
+    const [recapStats, setRecapStats] = useState(null);
+    const [statusList, setStatusList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('');
     const [error, setError] = useState('');
@@ -44,20 +45,36 @@ const MapPage = () => {
     ];
 
     useEffect(() => {
-        loadData();
+        loadInitialData();
+    }, []);
+
+    useEffect(() => {
+        loadSignalements();
     }, [statusFilter]);
 
-    const loadData = async () => {
+    //*-- Load status list and initial recap data
+    const loadInitialData = async () => {
+        try {
+            const statusData = await getStatusList();
+            setStatusList(statusData);
+        } catch (err) {
+            console.error('Error loading initial data:', err);
+        }
+    };
+
+    //*-- Load signalements based on filter
+    const loadSignalements = async () => {
         setLoading(true);
         setError('');
         try {
-            const filters = statusFilter ? { status: statusFilter } : {};
-            const [signalementsData, statsData] = await Promise.all([
-                getAllSignalements(filters),
-                getRecapStats()
-            ]);
+            //*-- Build filter params for signalement API
+            const filters = {};
+            if (statusFilter) {
+                filters.statusId = statusFilter;
+            }
+
+            const signalementsData = await getAllSignalements(filters);
             setSignalements(signalementsData.data || signalementsData);
-            setStats(statsData.data || statsData);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -65,11 +82,29 @@ const MapPage = () => {
         }
     };
 
-    const getMarkerColor = (status) => {
-        switch (status) {
-            case SIGNALEMENT_STATUS.NOUVEAU: return '#e74c3c';
-            case SIGNALEMENT_STATUS.EN_COURS: return '#f39c12';
-            case SIGNALEMENT_STATUS.TERMINE: return '#27ae60';
+    //*-- Load recap data separately to always show global stats
+    const loadRecapData = async () => {
+        try {
+            const recapData = await getRecapDashboard();
+            setRecapStats(recapData);
+        } catch (err) {
+            console.error('Error loading recap:', err);
+        }
+    };
+
+    //*-- Load recap when component mounts or when signalements change
+    useEffect(() => {
+        if (signalements.length >= 0) {
+            loadRecapData();
+        }
+    }, [signalements]);
+
+    const getMarkerColor = (statusId) => {
+        //*-- Color based on status ID (adjust according to your status IDs)
+        switch (statusId) {
+            case 1: return '#e74c3c';  // nouveau
+            case 2: return '#f39c12';  // en_cours
+            case 3: return '#27ae60';  // termine
             default: return '#95a5a6';
         }
     };
@@ -125,31 +160,33 @@ const MapPage = () => {
                             className="filter-select"
                         >
                             <option value="">Tous les statuts</option>
-                            <option value={SIGNALEMENT_STATUS.NOUVEAU}>Nouveau</option>
-                            <option value={SIGNALEMENT_STATUS.EN_COURS}>En cours</option>
-                            <option value={SIGNALEMENT_STATUS.TERMINE}>Terminé</option>
+                            {statusList.map(status => (
+                                <option key={status.id} value={status.id}>
+                                    {status.nom || status.etat}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
-                    {/* Stats */}
-                    {stats && (
+                    {/* Stats - Recap Dashboard */}
+                    {recapStats && (
                         <div className="stats-section">
                             <h3>Récapitulatif</h3>
                             <div className="stat-item">
                                 <span className="stat-label">Nombre de points</span>
-                                <span className="stat-value">{stats.total}</span>
+                                <span className="stat-value">{recapStats.nbPoints}</span>
                             </div>
                             <div className="stat-item">
                                 <span className="stat-label">Surface totale</span>
-                                <span className="stat-value">{stats.totalSurface} m²</span>
+                                <span className="stat-value">{recapStats.totalSurface?.toFixed(2)} m²</span>
                             </div>
                             <div className="stat-item">
                                 <span className="stat-label">Budget total</span>
-                                <span className="stat-value">{stats.totalBudget.toLocaleString()} Ar</span>
+                                <span className="stat-value">{recapStats.totalBudget?.toLocaleString()} Ar</span>
                             </div>
                             <div className="stat-item">
                                 <span className="stat-label">Avancement</span>
-                                <span className="stat-value">{stats.progress}%</span>
+                                <span className="stat-value">{recapStats.avancementPercent?.toFixed(1)}%</span>
                             </div>
                         </div>
                     )}
@@ -157,18 +194,15 @@ const MapPage = () => {
                     {/* Legend */}
                     <div className="legend-section">
                         <h3>Légende</h3>
-                        <div className="legend-item">
-                            <span className="legend-color" style={{ backgroundColor: '#e74c3c' }}></span>
-                            <span>Nouveau</span>
-                        </div>
-                        <div className="legend-item">
-                            <span className="legend-color" style={{ backgroundColor: '#f39c12' }}></span>
-                            <span>En cours</span>
-                        </div>
-                        <div className="legend-item">
-                            <span className="legend-color" style={{ backgroundColor: '#27ae60' }}></span>
-                            <span>Terminé</span>
-                        </div>
+                        {statusList.map(status => (
+                            <div key={status.id} className="legend-item">
+                                <span 
+                                    className="legend-color" 
+                                    style={{ backgroundColor: getMarkerColor(status.id) }}
+                                ></span>
+                                <span>{status.nom || status.etat}</span>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
