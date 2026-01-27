@@ -621,4 +621,9 @@ public class ProblemeService {
         return mapToDTO(updated);
     }
 
+    public List<ProblemeDTO> getProblemesByStatus(Integer statusId) {
+        List<Probleme> problemes = problemeRepo.findByStatut(statusId);
+        return problemes.stream().map(this::mapToDTO).collect(Collectors.toList());
+    }
+
 }

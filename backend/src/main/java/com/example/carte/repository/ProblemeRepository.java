@@ -20,5 +20,7 @@ public interface ProblemeRepository extends JpaRepository<Probleme,Integer>{
     List<Probleme> findByCompte(User user);
 
     Optional<Probleme> findByFirebaseId(String firebaseId); 
+
+    List<Probleme> findByStatut(Integer statutId);
     
 }
