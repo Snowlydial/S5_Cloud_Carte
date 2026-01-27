@@ -140,3 +140,62 @@
 .marker-popup strong {
   color: #333;
 }
+
+.map-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  font-size: 13px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot.online {
+  background-color: #27ae60;
+}
+
+.status-dot.offline {
+  background-color: #e74c3c;
+}
+
+.status-text {
+  color: #666;
+}
+
+.status-note {
+  color: #3498db;
+  font-style: italic;
+}
+
+.map-error-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.map-error-content {
+  text-align: center;
+  padding: 30px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.map-error-content p {
+  margin-bottom: 20px;
+  color: #e74c3c;
+  font-size: 16px;
+}
