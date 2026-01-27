@@ -24,8 +24,17 @@ public class ProblemeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProblemeDTO>> getAllProblemesRaw() throws Exception {
-        List<ProblemeDTO> liste = problemeService.getListSyncProblemes();
+    public ResponseEntity<List<ProblemeDTO>> getAllProblemesRaw(
+            @RequestParam(required = false) Integer statusId) throws Exception {
+        
+        //*-- If statusId is provided, filter by status
+        List<ProblemeDTO> liste;
+        if (statusId != null) {
+            liste = problemeService.getProblemesByStatus(statusId);
+        } else {
+            liste = problemeService.getListSyncProblemes();
+        }
+        
         return ResponseEntity.ok(liste);
     }
 
