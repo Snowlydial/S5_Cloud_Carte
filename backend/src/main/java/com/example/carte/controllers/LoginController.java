@@ -28,7 +28,7 @@ public class LoginController {
     public String loginForm(@RequestParam String username, @RequestParam String password, Model model) {
         // Vérification simple
         var userOpt = utilisateurRepository.findByEmail(username);
-        if (userOpt.isPresent() && userOpt.get().getMotDePasse().equals(password)) {
+        if (userOpt.isPresent() && userOpt.get().getPassword().equals(password)) {
             // Login réussi
             model.addAttribute("user", userOpt.get());
             return "welcome"; // redirige vers une page welcome.html

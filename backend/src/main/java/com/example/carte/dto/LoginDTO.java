@@ -7,4 +7,5 @@ public class LoginDTO {
     private String email;
     private String motDePasse;
     private String token;
+    private String role;
 }
