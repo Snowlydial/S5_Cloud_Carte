@@ -40,7 +40,7 @@ public class UserService {
         this.profilRepository = profilRepository;
         this.firebaseAuthService = firebaseAuthService;
     }
-
+    // public void 
     // fonction pour reinitialiser les tentatives de connexion
     // debloquer le user
     public void resetLoginAttempts(String email) {
