@@ -161,8 +161,8 @@ public class ProblemeService {
                 data.put("entrepriseNom", local.getEntreprise().getFirebaseId());
                 data.put("idCompte", local.getCompte().getFirebaseUid());
                 data.put("signalementId",
-                        local.getSignalement() != null ? local.getSignalement().getFirebaseId() : null);
-
+                        local.getSignalement() != null ? local.getSignalement().getIdSignalement() : null);
+                data.put("idSignalement", local.getSignalement().getFirebaseId());
                 db.collection("problemes").document(fbId).set(data);
             }
         }
@@ -196,6 +196,7 @@ public class ProblemeService {
         dto.setSurfaceM2(doc.contains("surfaceM2") ? doc.getDouble("surfaceM2") : 0.0);
         dto.setBudget(doc.contains("budget") ? doc.getDouble("budget") : 0.0);
         dto.setCompteEmail(doc.getString("compteEmail"));
+        dto.setIdSignalement(doc.getString("idSignalement"));
         dto.setSignalementId(doc.contains("signalementId") ? doc.getLong("signalementId").intValue() : null);
         dto.setFirebaseId(doc.getId());
 
