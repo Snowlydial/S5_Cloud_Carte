@@ -15,4 +15,20 @@ docker-compose up --build -d
 -v will delete the volumes
 
 --build for everytime you change a Java code
-a
+
+npm install @capacitor/geolocation
+npx cap sync
+
+# Si Problem ionic capacitor:
+npm uninstall @capacitor/core @capacitor/cli
+npm install @capacitor/core@latest @capacitor/cli@latest
+
+npx cap init frontend-mobile io.ionic.starter
+
+npm run build
+
+npm run build
+
+# A rajouter:
+permission localisation dans conf ionic:
+Android (AndroidManifest.xml) : ACCESS_FINE_LOCATION.
