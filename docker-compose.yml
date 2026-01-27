@@ -1,69 +1,88 @@
+version: "3.9"
+
 services:
   postgres:
-    image: postgis/postgis:17-3.5
-    container_name: postgres
+    image: postgres:17.6
+    container_name: postgres-cloud
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: pwd
-      POSTGRES_DB: cloud_carte
+      POSTGRES_PASSWORD: mimi
+      POSTGRES_DB: cloud
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backend/sql/script_pg.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     networks:
       - appnet
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   springboot:
-    build: 
+    build:
       context: ./backend
-      dockerfile: Dockerfile
-    container_name: springboot-app
+      dockerfile: Dockerfile.dev
+    container_name: springboot-app-cloud
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/cloud_carte
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/cloud
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: pwd
+      SPRING_DATASOURCE_PASSWORD: mimi
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"   
+      SPRING_DEVTOOLS_LIVE_RELOAD_ENABLED: "true"
     ports:
       - "8080:8080"
     networks:
       - appnet
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/pom.xml:/app/pom.xml
+      - ~/.m2:/root/.m2   # pour cacher le cache Maven et éviter les re-downloads
+    command: mvn spring-boot:run   # Dev mode avec reload automatique
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      retries: 5
 
   web-frontend:
     build:
       context: ./frontend-web
-      dockerfile: Dockerfile
-    container_name: react-web-app
-    depends_on:
-      - springboot
+      dockerfile: Dockerfile.dev
+    container_name: react-dev
+    volumes:
+      - ./frontend-web/src:/app/src
+      - ./frontend-web/public:/app/public
+      - node_modules_front:/app/node_modules
     ports:
-      - "80:80"
+      - "3000:3000"
+    command: npm start
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+
+  tile-server:
+    image: maptiler/tileserver-gl:v4.4.1
+    container_name: tileserver-offline
+    volumes:
+      - ./tiles:/data
+    ports:
+      - "8081:8080"
     networks:
       - appnet
+    environment:
+      - "NODE_ENV=production"
+    restart: unless-stopped
 
-  mobile-frontend:
-    build:
-      context: ./frontend-mobile
-      dockerfile: Dockerfile
-    container_name: ionic-vue-app
-    depends_on:
-      - springboot
-    ports:
-      - "8100:80"
-    networks:
-      - appnet
 
+# -------------------------
+# Volumes
+# -------------------------
 volumes:
   postgres_data:
+  node_modules_front:
 
+# -------------------------
+# Réseau unique
+# -------------------------
 networks:
   appnet:
     driver: bridge
