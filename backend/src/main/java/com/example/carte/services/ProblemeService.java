@@ -6,12 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.example.carte.dto.EntrepriseDTO;
 import com.example.carte.dto.ProblemeDTO;
 import com.example.carte.dto.ProblemeStatusData;
 import com.example.carte.dto.RecapDashboardDTO;
@@ -49,6 +49,10 @@ public class ProblemeService {
     private final StatutRepository statutRepo;
     @Autowired
     private ProblemeStatusRepository problemeStatusRepository;
+    @Autowired
+    private EntrepriseService entrepriseService;
+    @Autowired
+    private UserService userService;
 
     public ProblemeService(ProblemeRepository problemeRepo, SignalementRepository signalementRepo,
             UtilisateurRepository utilisateurRepository,
@@ -65,12 +69,12 @@ public class ProblemeService {
         return problemeRepo.findAll();
     }
 
-    public void syncFireBaseProbleme() throws InterruptedException, ExecutionException {
+    public void syncFireBaseProbleme() throws Exception {
         List<ProblemeDTO> dtos = getListSyncProblemes();
     }
 
     @Transactional
-    public List<ProblemeDTO> getListSyncProblemes() throws InterruptedException, ExecutionException {
+    public List<ProblemeDTO> getListSyncProblemes() throws Exception {
 
         Firestore db = FirestoreClient.getFirestore();
         CollectionReference colRef = db.collection("problemes");
@@ -126,7 +130,7 @@ public class ProblemeService {
                     localByFirebaseId.put(fbId, p);
                 }
             }
-
+            // syncena ilay local
             for (Probleme local : localProblemes) {
 
                 String fbId = local.getFirebaseId();
@@ -143,8 +147,21 @@ public class ProblemeService {
                 data.put("budget", local.getBudget());
                 data.put("firebaseId", fbId);
                 data.put("compteEmail", local.getCompte() != null ? local.getCompte().getEmail() : null);
+                // data.put("idEntreprise", local.get)
+                // verification de l'entreprise
+                if (local.getEntreprise().getFirebaseId() == null) {
+                    // syncer
+                    List<EntrepriseDTO> dto = entrepriseService.getListSyncEntreprises();
+                }
+                if (local.getCompte().getFirebaseUid() == null) {
+                    // syncer
+                    User u = userService.getById(local.getCompte().getId());
+                    userService.syncCompteLocalToFirebase(u);
+                }
+                data.put("entrepriseNom", local.getEntreprise().getFirebaseId());
+                data.put("idCompte", local.getCompte().getFirebaseUid());
                 data.put("signalementId",
-                        local.getSignalement() != null ? local.getSignalement().getIdSignalement() : null);
+                        local.getSignalement() != null ? local.getSignalement().getFirebaseId() : null);
 
                 db.collection("problemes").document(fbId).set(data);
             }
@@ -162,11 +179,18 @@ public class ProblemeService {
         dto.setIdProbleme(doc.contains("idProbleme") ? doc.getLong("idProbleme").intValue() : null);
 
         if (doc.contains("dateProbleme")) {
-            dto.setDateProbleme(
-                    doc.getTimestamp("dateProbleme").toDate()
-                            .toInstant()
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDateTime());
+            Object rawDate = doc.get("dateProbleme");
+
+            if (rawDate instanceof com.google.cloud.Timestamp ts) {
+                dto.setDateProbleme(
+                        ts.toDate()
+                                .toInstant()
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDateTime());
+            } else if (rawDate instanceof String dateStr) {
+                dto.setDateProbleme(
+                        LocalDateTime.parse(dateStr));
+            }
         }
 
         dto.setSurfaceM2(doc.contains("surfaceM2") ? doc.getDouble("surfaceM2") : 0.0);
@@ -189,12 +213,18 @@ public class ProblemeService {
             User compte = utilisateurRepository.findByEmail(dto.getCompteEmail())
                     .orElseThrow(() -> new RuntimeException("Compte introuvable"));
             p.setCompte(compte);
+
         }
 
         if (dto.getSignalementId() != null) {
             Signalement s = signalementRepo.findById(dto.getSignalementId())
                     .orElseThrow(() -> new RuntimeException("Signalement introuvable"));
             p.setSignalement(s);
+        }
+        if (dto.getEntrepriseNom() != null) {
+            Entreprise e = entrepriseRepo.findById(dto.getEntrepriseNom())
+                    .orElseThrow(() -> new RuntimeException("entreprise introuvable"));
+            p.setEntreprise(e);
         }
 
         return p;
