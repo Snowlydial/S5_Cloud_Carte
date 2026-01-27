@@ -59,6 +59,18 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
 
+  tile-server:
+    image: maptiler/tileserver-gl:v4.4.1
+    container_name: tileserver-offline
+    volumes:
+      - ./tiles:/data
+    ports:
+      - "8081:8080"
+    networks:
+      - appnet
+    environment:
+      - "NODE_ENV=production"
+    restart: unless-stopped
 
 
 # -------------------------
