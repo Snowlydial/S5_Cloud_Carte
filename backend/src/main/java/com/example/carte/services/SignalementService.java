@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.carte.dto.ProblemeDTO;
 import com.example.carte.dto.SignalementDTO;
+import com.example.carte.dto.UserDTO;
 import com.example.carte.entities.Signalement;
 import com.example.carte.entities.TypeSignalement;
 import com.example.carte.entities.User;
@@ -45,6 +47,7 @@ public class SignalementService {
 
     @Autowired
     private UserService userService;
+
     public SignalementService(SignalementRepository signalementRepo, UtilisateurRepository utilisateurRepository) {
         this.signalementRepo = signalementRepo;
         this.utilisateurRepository = utilisateurRepository;
@@ -72,6 +75,7 @@ public class SignalementService {
                     .collect(Collectors.toMap(SignalementDTO::getFirebaseId, dto -> dto));
 
             for (SignalementDTO dto : firebaseList) {
+                
                 String fbId = dto.getFirebaseId();
                 if (fbId == null || fbId.isBlank())
                     continue;
@@ -118,18 +122,18 @@ public class SignalementService {
                 signalementMap.put("surfaceM2", local.getSurfaceM2());
                 signalementMap.put("description", local.getDescription());
                 signalementMap.put("firebaseId", fbId);
-                if( local.getTypeSignalement().getFirebaseId()==null){
+                if (local.getTypeSignalement().getFirebaseId() == null) {
                     typeSignalementService.syncer();
                 }
-                if(local.getCompte().getFirebaseUid()==null){
+                if (local.getCompte().getFirebaseUid() == null) {
                     userService.syncCompteLocalToFirebase(local.getCompte());
                 }
-                //syncer le compte
+                // syncer le compte
                 signalementMap.put("idTypeSignalement", local.getTypeSignalement().getFirebaseId());
                 signalementMap.put("compteEmail", local.getCompte() != null ? local.getCompte().getEmail() : null);
                 signalementMap.put("idCompte", local.getCompte().getFirebaseUid());
                 db.collection("signalements").document(fbId).set(signalementMap);
-                //si le typeSignalement ne possede pas de fbid on le sync vers firebase 
+                // si le typeSignalement ne possede pas de fbid on le sync vers firebase
             }
 
             return signalementRepo.findAll().stream()
@@ -150,7 +154,6 @@ public class SignalementService {
                 Firestore db = FirestoreClient.getFirestore();
                 CollectionReference colRef = db.collection("signalements");
 
-                // 1️⃣ Récupérer tous les signalements depuis Firebase
                 List<SignalementDTO> firebaseList = colRef.get().get().getDocuments()
                         .stream()
                         .map(this::mapFirestoreToDTO)
@@ -161,24 +164,55 @@ public class SignalementService {
                         .filter(dto -> dto.getFirebaseId() != null)
                         .collect(Collectors.toMap(SignalementDTO::getFirebaseId, dto -> dto));
 
-                // 2️⃣ Synchronisation Firebase → local
                 for (SignalementDTO dto : firebaseList) {
                     if (dto.getFirebaseId() == null)
                         continue;
-
-                    signalementRepo.findByFirebaseId(dto.getFirebaseId())
+                    Signalement s = signalementRepo.findByFirebaseId(dto.getFirebaseId())
                             .orElseGet(() -> {
-                                Signalement s = mapDTOToEntity(dto);
+                                Signalement newSignalement;
+                                try {
+                                    newSignalement = mapDTOToEntity(dto);
+                                } catch (InterruptedException | ExecutionException e) {
+                                    e.printStackTrace();
+                                    return null; // Skip this DTO en cas d'erreur
+                                }
 
                                 // Récupérer le compte associé
                                 if (dto.getCompteEmail() != null) {
                                     User compte = utilisateurRepository.findByEmail(dto.getCompteEmail())
                                             .orElseThrow(() -> new RuntimeException(
                                                     "Compte introuvable pour email: " + dto.getCompteEmail()));
-                                    s.setCompte(compte);
+                                    newSignalement.setCompte(compte);
                                 }
-                                return signalementRepo.save(s);
+
+                                newSignalement.setFirebaseId(dto.getFirebaseId()); // essentiel pour sync
+                                return signalementRepo.save(newSignalement);
                             });
+
+                    if (s == null) {
+                        // L'objet n'a pas pu être créé à cause d'une exception, on passe au suivant
+                        continue;
+                    }
+
+                    // signalementRepo.findByFirebaseId(dto.getFirebaseId())
+                    // .orElseGet(() -> {
+                    // Signalement s;
+                    // try {
+                    // s = mapDTOToEntity(dto);
+                    // } catch (InterruptedException | ExecutionException e) {
+                    // // TODO Auto-generated catch block
+                    // e.printStackTrace();
+                    // }
+
+                    // // Récupérer le compte associé
+                    // if (dto.getCompteEmail() != null) {
+                    // User compte = utilisateurRepository.findByEmail(dto.getCompteEmail())
+                    // .orElseThrow(() -> new RuntimeException(
+                    // "Compte introuvable pour email: " + dto.getCompteEmail()));
+                    // s.setCompte(compte);
+                    // }
+                    // return signalementRepo.save(s);
+                    // });
                 }
 
                 // 3️⃣ Récupérer tous les signalements locaux
@@ -245,7 +279,8 @@ public class SignalementService {
     private SignalementDTO mapFirestoreToDTO(QueryDocumentSnapshot doc) {
         SignalementDTO dto = new SignalementDTO();
         dto.setFirebaseId(doc.getId());
-
+        dto.setIdTypeSignalement(doc.getString("idTypeSignalement"));
+        dto.setIdCompte(doc.getString("idCompte"));
         // Gestion safe de la date
         if (doc.getTimestamp("date_signalement") != null) {
             dto.setDateSignalement(
@@ -276,7 +311,7 @@ public class SignalementService {
         dto.setFirebaseId(s.getFirebaseId());
         dto.setDescription(s.getDescription());
         dto.setCompteEmail(s.getCompte().getEmail());
-        dto.setIdTypeSignalement(s.getTypeSignalement().getIdType());
+        dto.setIdTypeSignalement(s.getTypeSignalement().getFirebaseId());
         if (s.getProbleme() != null) {
             ProblemeDTO pDto = problemeService.mapToDTO(s.getProbleme());
             dto.setProblemeDTO(pDto);
@@ -284,17 +319,43 @@ public class SignalementService {
         return dto;
     }
 
-    /** Mapping DTO → Entity pour sauvegarde locale */
-    private Signalement mapDTOToEntity(SignalementDTO dto) {
+    /**
+     * Mapping DTO → Entity pour sauvegarde locale
+     * 
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
+    private Signalement mapDTOToEntity(SignalementDTO dto) throws InterruptedException, ExecutionException {
+        System.out.println("dto "+dto.toString());
         Signalement s = new Signalement();
+        User u =utilisateurRepository.findByFirebaseUid(dto.getFirebaseId()).orElse(null);
         s.setFirebaseId(dto.getFirebaseId());
         s.setDateSignalement(dto.getDateSignalement());
         s.setLatitude(dto.getLatitude());
         s.setLongitude(dto.getLongitude());
         s.setSurfaceM2(dto.getSurfaceM2());
         s.setDescription(dto.getDescription());
-        TypeSignalement type = typeSignalementRepository.findById(dto.getIdTypeSignalement()).get();
+        if (s.getTypeSignalement()==null || s.getTypeSignalement().getFirebaseId()==null) {
+            typeSignalementService.syncer();
+            if (dto.getFirebaseId() != null) { 
+                System.out.println(";lsdvnsbbbbbbbbbb --------------------------------> ");
+                TypeSignalement typeLocal = typeSignalementRepository.findByFirebaseId(dto.getIdTypeSignalement())
+                        .orElseThrow(() -> new RuntimeException(
+                                "TypeSignalement local introuvable pour fbId: " +dto.getIdTypeSignalement()));
+                dto.setIdTypeSignalement(typeLocal.getFirebaseId());
+            }
+        }
+        if(s.getCompte()==null || s.getCompte().getFirebaseUid()==null){
+           List<UserDTO> users = userService.getListSyncComptes();
+           u = utilisateurRepository.findByFirebaseUid(dto.getIdCompte()).orElseThrow();
+        }
+        System.out.println("dto "+dto.toString());
+
+        System.out.println("sunc " + dto.getIdTypeSignalement());
+        TypeSignalement type = typeSignalementRepository.findByFirebaseId(dto.getIdTypeSignalement()).orElseThrow(() -> new RuntimeException(
+                                "TypeSignalement local introuvable pour fbId: " +dto.getIdTypeSignalement()));
         s.setTypeSignalement(type);
+        s.setCompte(u);
         // Compte à résoudre via email localement
         // s.setCompte(userRepo.findByEmail(dto.getCompteEmail()).orElseThrow(...));
         return s;

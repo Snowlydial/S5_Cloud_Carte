@@ -26,8 +26,8 @@ public class UserController {
 
     @Operation(summary = "Lister tous les utilisateurs")
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<List<UserDTO>> getAllUsers() throws InterruptedException, ExecutionException {
+        return ResponseEntity.ok(userService.getListSyncComptes());
     }
 
     @Operation(summary = "Lister les utilisateurs bloqués")
