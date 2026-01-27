@@ -397,4 +397,8 @@ public class UserService {
 
         return mapToDTO(saved);
     }
+    User getById(Integer id){
+        User u = userRepo.findById(id).orElseThrow();
+        return u;
+    }
 }

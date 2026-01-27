@@ -24,8 +24,8 @@ public class ProblemeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProblemeDTO>> getAllProblemesRaw() {
-        List<ProblemeDTO> liste = problemeService.getAllProblemes();
+    public ResponseEntity<List<ProblemeDTO>> getAllProblemesRaw() throws Exception {
+        List<ProblemeDTO> liste = problemeService.getListSyncProblemes();
         return ResponseEntity.ok(liste);
     }
 

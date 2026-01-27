@@ -16,6 +16,7 @@ public class ProblemeDTO {
     private Integer signalementId;
     private Integer statut; // un seul statut
     private String firebaseId;
+    private String idCompte;
 
     // 🔹 Getters & Setters
     public Integer getIdProbleme() { return idProbleme; }
