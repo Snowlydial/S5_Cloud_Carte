@@ -9,6 +9,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.example.carte.dto.EntrepriseDTO;
@@ -38,6 +41,7 @@ import com.google.firebase.auth.FirebaseToken;
 import com.google.firebase.cloud.FirestoreClient;
 
 import jakarta.transaction.Transactional;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 public class ProblemeService {
@@ -53,6 +57,7 @@ public class ProblemeService {
     private EntrepriseService entrepriseService;
     @Autowired
     private UserService userService;
+    private final ReentrantLock syncLock = new ReentrantLock();
 
     public ProblemeService(ProblemeRepository problemeRepo, SignalementRepository signalementRepo,
             UtilisateurRepository utilisateurRepository,
@@ -76,100 +81,291 @@ public class ProblemeService {
     @Transactional
     public List<ProblemeDTO> getListSyncProblemes() throws Exception {
 
-        Firestore db = FirestoreClient.getFirestore();
-        CollectionReference colRef = db.collection("problemes");
+        syncLock.lock();
+        try {
+            System.out.println("🔍 ========== DEBUT SYNC PROBLEMES ========== " + LocalDateTime.now());
 
-        List<Probleme> localProblemes = problemeRepo.findAll();
+            Firestore db = FirestoreClient.getFirestore();
+            CollectionReference colRef = db.collection("problemes");
 
-        if (isOnline()) {
+            List<Probleme> localProblemes = problemeRepo.findAll();
+            System.out.println("🔍 Nombre de problèmes locaux: " + localProblemes.size());
 
-            Map<String, Probleme> localByFirebaseId = localProblemes.stream()
-                    .filter(p -> p.getFirebaseId() != null && !p.getFirebaseId().isBlank())
-                    .collect(Collectors.toMap(Probleme::getFirebaseId, p -> p));
+            if (!isOnline()) {
+                return localProblemes.stream()
+                        .map(this::mapToDTO)
+                        .collect(Collectors.toList());
+            }
 
-            List<ProblemeDTO> firebaseList = colRef.get().get().getDocuments()
+            System.out.println("en ligne " + isOnline());
+
+            Map<String, Probleme> processedProblemes = new HashMap<>();
+            // 3️⃣ SYNC FIREBASE → LOCAL
+            System.out.println("🔍 === PHASE FIREBASE → LOCAL ===");
+            List<ProblemeDTO> firebaseList = colRef.get().get()
+                    .getDocuments()
                     .stream()
                     .map(this::mapFirestoreToProblemeDTO)
                     .collect(Collectors.toList());
-
-            for (ProblemeDTO dto : firebaseList) {
-                String fbId = dto.getFirebaseId();
-                if (fbId == null || fbId.isBlank())
-                    continue;
-
-                Probleme local = problemeRepo.findByFirebaseId(fbId).orElse(null);
-
-                if (local != null) {
-                    // UPDATE
-                    local.setSurfaceM2(dto.getSurfaceM2());
-                    local.setBudget(dto.getBudget());
-                    local.setDateProbleme(dto.getDateProbleme());
-
-                    if (dto.getCompteEmail() != null) {
-                        User compte = utilisateurRepository.findByEmail(dto.getCompteEmail())
-                                .orElseThrow(() -> new RuntimeException("Compte introuvable"));
-                        local.setCompte(compte);
-                    }
-
-                    if (dto.getSignalementId() != null) {
-                        Signalement s = signalementRepo.findById(dto.getSignalementId())
-                                .orElseThrow(() -> new RuntimeException("Signalement introuvable"));
-                        local.setSignalement(s);
-                    }
-
-                    local.setLastSync(LocalDateTime.now());
-                    problemeRepo.save(local);
-                    localByFirebaseId.put(fbId, local);
-
-                } else {
-                    // INSERT
-                    Probleme p = mapDTOToProbleme(dto);
-                    p.setFirebaseId(fbId);
-                    p.setLastSync(LocalDateTime.now());
-                    problemeRepo.save(p);
-                    localByFirebaseId.put(fbId, p);
-                }
-            }
-            // syncena ilay local
+            // 2️⃣ SYNC LOCAL → FIREBASE
+            System.out.println("🔍 === PHASE LOCAL → FIREBASE ===");
             for (Probleme local : localProblemes) {
 
                 String fbId = local.getFirebaseId();
+                System.out.println("🔍 Traitement Probleme ID=" + local.getIdProbleme() + ", firebaseId=" + fbId);
+
                 if (fbId == null || fbId.isBlank()) {
-                    fbId = db.collection("problemes").document().getId();
+                    fbId = colRef.document().getId();
+                    System.out.println("🔍   ➕ CREATE Firebase avec nouveau fbId: " + fbId);
                     local.setFirebaseId(fbId);
+                    local.setLastSync(LocalDateTime.now());
+
+                    syncProblemeDepedencies(local);
+
+                    Map<String, Object> problemeMap = buildProblemeFirebaseMap(local, fbId);
+                    colRef.document(fbId).set(problemeMap);
+
                     problemeRepo.save(local);
+                    processedProblemes.put(fbId, local);
+                    System.out.println("🔍   ✅ Créé et ajouté au cache");
+                    continue;
                 }
 
-                Map<String, Object> data = new HashMap<>();
-                data.put("idProbleme", local.getIdProbleme());
-                data.put("dateProbleme", local.getDateProbleme().toString());
-                data.put("surfaceM2", local.getSurfaceM2());
-                data.put("budget", local.getBudget());
-                data.put("firebaseId", fbId);
-                data.put("compteEmail", local.getCompte() != null ? local.getCompte().getEmail() : null);
-                // data.put("idEntreprise", local.get)
-                // verification de l'entreprise
-                if (local.getEntreprise().getFirebaseId() == null) {
-                    // syncer
-                    List<EntrepriseDTO> dto = entrepriseService.getListSyncEntreprises();
+                DocumentSnapshot firebaseDoc = colRef.document(fbId).get().get();
+
+                if (!firebaseDoc.exists()) {
+                    System.out.println("🔍   🔁 Firebase manquant, CREATE");
+                    local.setLastSync(LocalDateTime.now());
+                    syncProblemeDepedencies(local);
+
+                    Map<String, Object> problemeMap = buildProblemeFirebaseMap(local, fbId);
+                    colRef.document(fbId).set(problemeMap);
+
+                    problemeRepo.save(local);
+                    processedProblemes.put(fbId, local);
+                    System.out.println("🔍   ✅ Créé et ajouté au cache");
+                    continue;
                 }
-                if (local.getCompte().getFirebaseUid() == null) {
-                    // syncer
-                    User u = userService.getById(local.getCompte().getId());
-                    userService.syncCompteLocalToFirebase(u);
+
+                LocalDateTime firebaseLastSync = parseFirebaseTimestamp(
+                        firebaseDoc.getString("lastSync"));
+
+                System.out.println(
+                        "🔍   Firebase lastSync: " + firebaseLastSync + ", Local lastSync: " + local.getLastSync());
+
+                // if (local.getLastSync() != null &&
+                // (firebaseLastSync == null ||
+                // local.getLastSync().isAfter(firebaseLastSync))) {
+                if (local.getLastSync() != null) {
+
+                    System.out.println("🔍   ⬆️ Local plus récent, UPDATE Firebase");
+                    local.setLastSync(LocalDateTime.now());
+                    syncProblemeDepedencies(local);
+
+                    Map<String, Object> problemeMap = buildProblemeFirebaseMap(local, fbId);
+                    colRef.document(fbId).set(problemeMap);
+
+                    problemeRepo.save(local);
+                } else {
+                    System.out.println("🔍   ⏭️ Firebase à jour, skip");
                 }
-                data.put("entrepriseNom", local.getEntreprise().getFirebaseId());
-                data.put("idCompte", local.getCompte().getFirebaseUid());
-                data.put("signalementId",
-                        local.getSignalement() != null ? local.getSignalement().getIdSignalement() : null);
-                data.put("idSignalement", local.getSignalement().getFirebaseId());
-                db.collection("problemes").document(fbId).set(data);
+
+                processedProblemes.put(fbId, local);
+                System.out.println("🔍   ✅ Ajouté au cache");
+            }
+
+            System.out.println("🔍 Cache size après LOCAL→FIREBASE: " + processedProblemes.size());
+            System.out.println("🔍 Cache keys: " + processedProblemes.keySet());
+
+            System.out.println("🔍 Nombre de problèmes Firebase: " + firebaseList.size());
+
+            for (ProblemeDTO firebaseDto : firebaseList) {
+
+                String fbId = firebaseDto.getFirebaseId();
+                System.out.println("🔍 Traitement Firebase fbId: " + fbId);
+
+                if (fbId == null || fbId.isBlank()) {
+                    System.out.println("🔍   ⚠️ fbId vide, skip");
+                    continue;
+                }
+
+                if (processedProblemes.containsKey(fbId)) {
+                    System.out.println("🔍   ✅ Déjà dans le cache, vérification lastSync");
+                    Probleme existingLocal = processedProblemes.get(fbId);
+
+                    if (firebaseDto.getLastSync() != null &&
+                            (existingLocal.getLastSync() == null ||
+                                    firebaseDto.getLastSync().isAfter(existingLocal.getLastSync()))) {
+
+                        System.out.println("🔍   ⬇️ Firebase plus récent, UPDATE local");
+                        updateLocalProblemeFromFirebase(existingLocal, firebaseDto);
+                        problemeRepo.save(existingLocal);
+                    } else {
+                        System.out.println("🔍   ⏭️ Local à jour, skip");
+                    }
+                    continue;
+                }
+
+                System.out.println("🔍   ⚠️ PAS dans le cache, recherche en base");
+                Optional<Probleme> localOpt = problemeRepo.findByFirebaseId(fbId);
+
+                if (localOpt.isPresent()) {
+                    System.out.println("🔍   ✅ Trouvé en base");
+                    Probleme existingLocal = localOpt.get();
+
+                    if (firebaseDto.getLastSync() != null &&
+                            (existingLocal.getLastSync() == null ||
+                                    firebaseDto.getLastSync().isAfter(existingLocal.getLastSync()))) {
+
+                        System.out.println("🔍   ⬇️ Firebase plus récent, UPDATE local");
+                        updateLocalProblemeFromFirebase(existingLocal, firebaseDto);
+                        problemeRepo.save(existingLocal);
+                    }
+
+                } else {
+                    System.out.println("🔍   ➕ NOUVEAU problème, CREATE local");
+                    Probleme newLocal = mapDTOToProbleme(firebaseDto);
+                    newLocal.setFirebaseId(fbId);
+                    newLocal.setLastSync(firebaseDto.getLastSync());
+
+                    if (firebaseDto.getCompteEmail() != null) {
+                        User compte = utilisateurRepository.findByEmail(firebaseDto.getCompteEmail())
+                                .orElseThrow(
+                                        () -> new RuntimeException(
+                                                "Compte introuvable : " + firebaseDto.getCompteEmail()));
+                        newLocal.setCompte(compte);
+                    }
+
+                    if (firebaseDto.getIdSignalement() != null) {
+                        Signalement signalement = signalementRepo
+                                .findByFirebaseId(firebaseDto.getIdSignalement())
+                                .orElseThrow(() -> new RuntimeException(
+                                        "Signalement introuvable : " + firebaseDto.getIdSignalement()));
+                        newLocal.setSignalement(signalement);
+                    }
+
+                    if (firebaseDto.getIdEntreprise() != null) {
+                        Entreprise entreprise = entrepriseRepo
+                                .findByFirebaseId(firebaseDto.getIdEntreprise())
+                                .orElseThrow(() -> new RuntimeException(
+                                        "Entreprise introuvable : " + firebaseDto.getIdEntreprise()));
+                        newLocal.setEntreprise(entreprise);
+                    }
+
+                    problemeRepo.save(newLocal);
+                    System.out.println("🔍   ✅ Créé en local");
+                }
+            }
+
+            System.out.println("🔍 ========== FIN SYNC PROBLEMES ========== " + LocalDateTime.now());
+
+            return problemeRepo.findAll()
+                    .stream()
+                    .map(this::mapToDTO)
+                    .collect(Collectors.toList());
+        } finally {
+            // 🔒 Toujours libérer le verrou
+            syncLock.unlock();
+        }
+    }
+
+    private void updateLocalProblemeFromFirebase(Probleme local, ProblemeDTO firebaseDto) {
+        local.setSurfaceM2(firebaseDto.getSurfaceM2());
+        local.setBudget(firebaseDto.getBudget());
+        local.setDateProbleme(firebaseDto.getDateProbleme());
+        local.setLastSync(firebaseDto.getLastSync());
+
+        // Mettre à jour le compte si nécessaire
+        if (firebaseDto.getCompteEmail() != null) {
+            User compte = utilisateurRepository.findByEmail(firebaseDto.getCompteEmail())
+                    .orElse(null);
+            if (compte != null) {
+                local.setCompte(compte);
             }
         }
 
-        return problemeRepo.findAll().stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+        // Mettre à jour le signalement si nécessaire
+        if (firebaseDto.getIdSignalement() != null) {
+            Signalement signalement = signalementRepo.findByFirebaseId(firebaseDto.getIdSignalement())
+                    .orElse(null);
+            if (signalement != null) {
+                local.setSignalement(signalement);
+            }
+        }
+
+        // Mettre à jour l'entreprise si nécessaire
+        if (firebaseDto.getIdEntreprise() != null) {
+            Entreprise entreprise = entrepriseRepo.findByFirebaseId(firebaseDto.getIdEntreprise())
+                    .orElse(null);
+            if (entreprise != null) {
+                local.setEntreprise(entreprise);
+            }
+        }
+    }
+
+    private void syncProblemeDepedencies(Probleme local) throws Exception {
+        // Synchroniser l'entreprise si nécessaire
+        if (local.getEntreprise() != null &&
+                (local.getEntreprise().getFirebaseId() == null ||
+                        local.getEntreprise().getFirebaseId().isBlank())) {
+            entrepriseService.getListSyncEntreprises();
+        }
+
+        // Synchroniser le compte si nécessaire
+        if (local.getCompte() != null &&
+                (local.getCompte().getFirebaseUid() == null ||
+                        local.getCompte().getFirebaseUid().isBlank())) {
+            User u = userService.getById(local.getCompte().getId());
+            userService.syncCompteLocalToFirebase(u);
+        }
+
+        // Synchroniser le signalement si nécessaire (si non null)
+        if (local.getSignalement() != null &&
+                (local.getSignalement().getFirebaseId() == null ||
+                        local.getSignalement().getFirebaseId().isBlank())) {
+            // Appeler la synchronisation des signalements si nécessaire
+            // signalementService.getListSyncSignalements();
+        }
+    }
+
+    private Map<String, Object> buildProblemeFirebaseMap(Probleme local, String fbId) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("idProbleme", local.getIdProbleme());
+        map.put("dateProbleme", local.getDateProbleme().toString());
+        map.put("surfaceM2", local.getSurfaceM2());
+        map.put("budget", local.getBudget());
+        map.put("firebaseId", fbId);
+        map.put("lastSync", local.getLastSync().toString());
+
+        // Compte
+        map.put("compteEmail",
+                local.getCompte() != null ? local.getCompte().getEmail() : null);
+        map.put("idCompte",
+                local.getCompte() != null ? local.getCompte().getFirebaseUid() : null);
+
+        // Entreprise
+        map.put("entrepriseNom",
+                local.getEntreprise() != null ? local.getEntreprise().getFirebaseId() : null);
+
+        // Signalement
+        map.put("signalementId",
+                local.getSignalement() != null ? local.getSignalement().getIdSignalement() : null);
+        map.put("idSignalement",
+                local.getSignalement() != null ? local.getSignalement().getFirebaseId() : null);
+        // dto.setStatut(probleme.getStatusList().getLast().getStatus().getIdStatus());
+        map.put("statutNom", local.getStatusList().getLast().getStatus().getNom());
+        return map;
+    }
+
+    private LocalDateTime parseFirebaseTimestamp(String timestamp) {
+        if (timestamp == null || timestamp.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(timestamp);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private ProblemeDTO mapFirestoreToProblemeDTO(QueryDocumentSnapshot doc) {
@@ -295,64 +491,6 @@ public class ProblemeService {
 
     public List<ProblemeDTO> getAllProblemes() {
         List<Probleme> problemeList;
-
-        if (isOnline()) {
-            try {
-                Firestore db = FirestoreClient.getFirestore();
-
-                // Récupère tous les documents de la collection "problemes" depuis Firebase
-                List<QueryDocumentSnapshot> docs = db.collection("problemes").get().get().getDocuments();
-
-                for (QueryDocumentSnapshot doc : docs) {
-                    Integer idFirebase = doc.contains("idProbleme") ? doc.getLong("idProbleme").intValue() : null;
-
-                    // Chercher le problème localement
-                    Probleme p = (idFirebase != null && problemeRepo.findById(idFirebase).isPresent())
-                            ? problemeRepo.findById(idFirebase).get()
-                            : new Probleme();
-
-                    // Date du problème
-                    if (doc.contains("dateProbleme") && doc.getTimestamp("dateProbleme") != null) {
-                        p.setDateProbleme(
-                                doc.getTimestamp("dateProbleme").toDate().toInstant()
-                                        .atZone(ZoneId.systemDefault())
-                                        .toLocalDateTime());
-                    } else {
-                        p.setDateProbleme(LocalDateTime.now());
-                    }
-
-                    // Surface et budget
-                    p.setSurfaceM2(doc.contains("surfaceM2") ? doc.getDouble("surfaceM2") : 0.0);
-                    p.setBudget(doc.contains("budget") ? doc.getDouble("budget") : 0.0);
-
-                    // Compte lié
-                    if (doc.contains("compteEmail")) {
-                        User compte = utilisateurRepository.findByEmail(doc.getString("compteEmail"))
-                                .orElseThrow(() -> new RuntimeException(
-                                        "Utilisateur local introuvable pour " + doc.getString("compteEmail")));
-                        p.setCompte(compte);
-                    }
-
-                    // Signalement lié
-                    if (doc.contains("signalementId")) {
-                        Signalement signalement = signalementRepo.findById(doc.getLong("signalementId").intValue())
-                                .orElseThrow(() -> new RuntimeException(
-                                        "Signalement local introuvable pour ID " + doc.getLong("signalementId")));
-                        p.setSignalement(signalement);
-                    }
-
-                    // Mettre à jour les infos Firebase
-                    p.setFirebaseId(doc.getId());
-                    p.setLastSync(LocalDateTime.now());
-
-                    // Sauvegarder localement
-                    problemeRepo.save(p);
-                }
-            } catch (Exception e) {
-                System.out.println("Firebase inaccessible, fallback local : " + e.getMessage());
-            }
-        }
-
         // Retourne tous les problèmes locaux
         problemeList = problemeRepo.findAll();
 
@@ -372,6 +510,7 @@ public class ProblemeService {
         dto.setCompteEmail(probleme.getCompte() != null ? probleme.getCompte().getEmail() : null);
         dto.setSignalementId(probleme.getSignalement() != null ? probleme.getSignalement().getIdSignalement() : null);
         dto.setStatut(probleme.getStatusList().getLast().getStatus().getIdStatus());
+        dto.setStatutNom(probleme.getStatusList().getLast().getStatus().getNom());
         return dto;
     }
 
@@ -454,7 +593,7 @@ public class ProblemeService {
         probleme.setEntreprise(entreprise != null ? entreprise : null);
         probleme.setCompte(compte);
         probleme.setSignalement(signalement);
-
+        probleme.setLastSync(LocalDateTime.now());
         ProblemeStatus problemeStatus = new ProblemeStatus();
         problemeStatus.setEtat(statut.getNom());
         problemeStatus.setStatus(statut);
@@ -515,8 +654,10 @@ public class ProblemeService {
             totalBudget += probleme.getBudget();
 
             // 🔹 Récupérer le dernier status du problème
-            ProblemeStatus lastStatus = problemeStatusRepository.findTopByProblemeOrderByDateStatusDesc(probleme);
-
+            Pageable topOne = PageRequest.of(0, 1, Sort.by("dateStatus").descending().and(Sort.by("idProblemeStatus").descending()));
+            ProblemeStatus status = problemeStatusRepository.findByProbleme(probleme, topOne).get(0);
+            // ProblemeStatus lastStatus = problemeStatusRepository.findTopByProblemeOrderByDateStatusDesc(probleme);
+            ProblemeStatus lastStatus = status;
             if (lastStatus != null) {
                 switch (lastStatus.getStatus().getNom().toLowerCase()) {
                     case "termine" -> avancementTotal += 100;

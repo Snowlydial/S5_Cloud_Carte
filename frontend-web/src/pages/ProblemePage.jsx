@@ -9,7 +9,8 @@ import {
     deleteProbleme,
     updateProblemeStatus,
     getEntreprises,
-    getStatusList
+    getStatusList,
+    asyncProblemes
 } from '../services/problemeService';
 import { getAllSignalements } from '../services/signalementService';
 import Modal from '../components/Modal';
@@ -26,6 +27,7 @@ const ProblemePage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [syncing, setSyncing] = useState(false);
 
     //*-- Edit Modal
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -192,7 +194,21 @@ const ProblemePage = () => {
             setError(err.message);
         }
     };
-
+const handleSync = async () => {
+        setSyncing(true);
+        setError('');
+        setSuccess('');
+        try {
+            const response = await asyncProblemes();
+            setSuccess(response.data?.message || response.message || 'Synchronisation réussie');
+            // loadSignalements();
+            loadAllData()
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setSyncing(false);
+        }
+    };
     return (
         <div className="page-container">
             <div className="page-header">
@@ -201,6 +217,14 @@ const ProblemePage = () => {
                     <p>CRUD complet des problèmes routiers</p>
                 </div>
                 <div className="header-actions">
+                    <button
+                        onClick={handleSync}
+                        className="btn-primary"
+                        disabled={syncing}
+                    >
+                        {syncing ? 'Synchronisation...' : 'Synchroniser'}
+
+                    </button>
                     <button onClick={() => navigate('/signalements')} className="btn-secondary">
                         Voir signalements
                     </button>
@@ -250,7 +274,7 @@ const ProblemePage = () => {
                                                 {prob.currentStatus || prob.statut || 'nouveau'}
                                             </span>
                                         </td>
-                                        <td>{prob.dateStatus ? new Date(prob.dateStatus).toLocaleDateString('fr-FR') : '-'}</td>
+                                        <td>{prob.dateProbleme ? new Date(prob.dateProbleme).toLocaleDateString('fr-FR') : '-'}</td>
                                         <td>
                                             <div className="action-buttons">
                                                 <button onClick={() => handleOpenEditModal(prob)} className="btn-edit">

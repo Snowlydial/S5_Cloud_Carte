@@ -18,7 +18,9 @@ public class ProblemeDTO {
     private String firebaseId;
     private String idCompte;
     private String idSignalement;
-
+    private LocalDateTime lastSync;
+    private String idEntreprise;
+    private String statutNom;
     // 🔹 Getters & Setters
     public Integer getIdProbleme() { return idProbleme; }
     public void setIdProbleme(Integer idProbleme) { this.idProbleme = idProbleme; }

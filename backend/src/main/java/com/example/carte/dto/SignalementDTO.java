@@ -19,7 +19,9 @@ public class SignalementDTO {
     private String description;
     private String idTypeSignalement;
     private ProblemeDTO problemeDTO;
+    private String entreprise;
     private String idCompte;
+    private LocalDateTime lastSync;
     // Getters et Setters
     public Integer getIdSignalement() {
         return idSignalement;

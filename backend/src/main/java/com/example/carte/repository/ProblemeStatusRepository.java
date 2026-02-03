@@ -5,6 +5,7 @@ import com.example.carte.entities.ProblemeStatus;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,4 +14,5 @@ public interface ProblemeStatusRepository extends JpaRepository<ProblemeStatus, 
     // Ici tu peux ajouter des méthodes custom si besoin, par ex:
     
     ProblemeStatus findTopByProblemeOrderByDateStatusDesc(Probleme probleme);
+    List<ProblemeStatus> findByProbleme(Probleme probleme, Pageable pageable);
 }

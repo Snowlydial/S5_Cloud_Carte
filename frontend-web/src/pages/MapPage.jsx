@@ -37,7 +37,7 @@ const MapPage = () => {
 
     //*-- Antananarivo center coordinates (Leaflet uses [lat, lon] format)
     const center = [-18.91425, 47.52817];
-    
+
     //*-- Tile bounds from mbtiles
     const tileBounds = [
         [-19.025, 47.37],   // Southwest
@@ -74,7 +74,14 @@ const MapPage = () => {
             }
 
             const signalementsData = await getAllSignalements(filters);
-            setSignalements(signalementsData.data || signalementsData);
+            // Dans loadSignalements, après avoir reçu les data :
+            console.log("filtre ",signalementsData);
+            const filteredData = statusFilter
+                ? signalementsData.filter(s => s.problemeDTO?.statut == statusFilter)
+                : signalementsData;
+            
+            setSignalements(filteredData);
+            // setSignalements(signalementsData.data || signalementsData);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -99,13 +106,13 @@ const MapPage = () => {
         }
     }, [signalements]);
 
-    const getMarkerColor = (statusId) => {
+    const getMarkerColor2 = (statusId) => {
         //*-- Color based on status ID (adjust according to your status IDs)
         switch (statusId) {
-            case 1: return '#e74c3c';  // nouveau
-            case 2: return '#f39c12';  // en_cours
-            case 3: return '#27ae60';  // termine
-            default: return '#95a5a6';
+            case "nouveau": return '#e863f4';  // nouveau (Bleu)
+            case "en_cours": return '#f39c12';  // en cours (Orange)
+            case "termine": return '#27ae60';  // terminé (Vert)
+            default: return '#3498db'; // Par défaut bleu
         }
     };
 
@@ -116,14 +123,39 @@ const MapPage = () => {
     const handleTileError = (e) => {
         console.warn('✘ Tile failed:', e.tile.src);
     };
+    const createCustomIcon = (color) => {
+        return new L.DivIcon({
+            html: `<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12.5 0C5.596 0 0 5.596 0 12.5C0 21.875 12.5 41 12.5 41C12.5 41 25 21.875 25 12.5C25 5.596 19.404 0 12.5 0Z" fill="${color}" stroke="white" stroke-width="1"/>
+                <circle cx="12.5" cy="12.5" r="4" fill="white" />
+               </svg>`,
+            className: "custom-marker-icon",
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+    };
+    const getMarkerColor = (signalement) => {
+        // Si pas de problème associé = non-commencé (Bleu)
+        if (!signalement.problemeDTO) return '#3498db';
 
+        const statusId = signalement.problemeDTO?.statutNom; // Vérifiez le chemin exact de l'ID status dans votre DTO
+
+        switch (statusId) {
+            case "nouveau": return '#e863f4';  // nouveau (Bleu)
+            case "en_cours": return '#f39c12';  // en cours (Orange)
+            case "termine": return '#27ae60';  // terminé (Vert)
+            default: return '#3498db'; // Par défaut bleu
+        }
+    };
     return (
         <div className="map-page">
             <div className="map-header">
                 <div>
                     <h1>Carte des Travaux Routiers</h1>
                     <p>Antananarivo</p>
-                    
+
                     {/* Show map status indicator */}
                     <div className="map-status-indicator">
                         <span className={`status-dot ${isOnline ? 'online' : 'offline'}`}></span>
@@ -161,7 +193,7 @@ const MapPage = () => {
                         >
                             <option value="">Tous les statuts</option>
                             {statusList.map(status => (
-                                <option key={status.id} value={status.id}>
+                                <option key={status.idStatus} value={status.idStatus}>
                                     {status.nom || status.etat}
                                 </option>
                             ))}
@@ -196,9 +228,9 @@ const MapPage = () => {
                         <h3>Légende</h3>
                         {statusList.map(status => (
                             <div key={status.id} className="legend-item">
-                                <span 
-                                    className="legend-color" 
-                                    style={{ backgroundColor: getMarkerColor(status.id) }}
+                                <span
+                                    className="legend-color"
+                                    style={{ backgroundColor: getMarkerColor2(status.nom) }}
                                 ></span>
                                 <span>{status.nom || status.etat}</span>
                             </div>
@@ -229,23 +261,36 @@ const MapPage = () => {
                                 minZoom={10}
                             />
 
-                            {signalements.map((signalement) => (
-                                <Marker
-                                    key={signalement.id}
-                                    position={[signalement.latitude, signalement.longitude]}
-                                >
-                                    <Popup>
-                                        <div className="marker-popup">
-                                            <h4>{signalement.description}</h4>
-                                            <p><strong>Date:</strong> {signalement.dateSignalement}</p>
-                                            <p><strong>Statut:</strong> {signalement.statut}</p>
-                                            <p><strong>Surface:</strong> {signalement.problemeDTO?.surfaceM2} m²</p>
-                                            <p><strong>Budget:</strong> {signalement.problemeDTO?.budget?.toLocaleString()} Ar</p>
-                                            <p><strong>Entreprise:</strong> {signalement.entreprise}</p>
-                                        </div>
-                                    </Popup>
-                                </Marker>
-                            ))}
+                            {signalements.map((signalement) => {
+                                const color = getMarkerColor(signalement);
+                                const customIcon = createCustomIcon(color);
+
+                                return (
+                                    <Marker
+                                        key={signalement.id}
+                                        position={[signalement.latitude, signalement.longitude]}
+                                        icon={customIcon} // Utilisation de l'icône colorée
+                                    >
+                                        <Popup>
+                                            <div className="marker-popup">
+                                                <h4>{signalement.description}</h4>
+                                                <p><strong>Date:</strong> {new Date(signalement.dateSignalement).toLocaleDateString()}</p>
+                                                <p><strong>Statut:</strong>
+                                                    <span style={{ color: color, fontWeight: 'bold', marginLeft: '5px' }}>
+                                                        {signalement.problemeDTO?.statutNom || "Non traité"}
+                                                    </span>
+                                                </p>
+                                                {signalement?.problemeDTO && (
+                                                    <>
+                                                        <p><strong>Surface:</strong> {signalement.problemeDTO.surfaceM2} m²</p>
+                                                        <p><strong>Budget:</strong> {signalement.problemeDTO.budget?.toLocaleString()} Ar</p>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </Popup>
+                                    </Marker>
+                                );
+                            })}
                         </MapContainer>
                     )}
                 </div>
