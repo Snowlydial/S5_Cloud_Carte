@@ -41,7 +41,7 @@ const useSignalement = () => {
   }
 
  
-  const signaler = async (idTypeSignalement: string, coords: L.LatLngExpression) => {
+  const signaler = async (idTypeSignalement: string, coords: L.LatLngExpression, selectedPhotos: any[]) => {
     const [lat, lng] = Array.isArray(coords) ? coords : [(coords as any).lat, (coords as any).lng];
     loading.value = true;
 

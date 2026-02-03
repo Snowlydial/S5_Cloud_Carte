@@ -32,3 +32,6 @@ npm run build
 # A rajouter:
 permission localisation dans conf ionic:
 Android (AndroidManifest.xml) : ACCESS_FINE_LOCATION.
+
+
+npm install @ionic/pwa-elements
