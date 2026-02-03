@@ -1,6 +1,7 @@
 package com.example.carte.controllers;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,8 +26,8 @@ public class UserController {
 
     @Operation(summary = "Lister tous les utilisateurs")
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<List<UserDTO>> getAllUsers() throws InterruptedException, ExecutionException {
+        return ResponseEntity.ok(userService.getListSyncComptes());
     }
 
     @Operation(summary = "Lister les utilisateurs bloqués")
@@ -40,5 +41,11 @@ public class UserController {
 
         userService.resetLoginAttempts(email);
         return ResponseEntity.ok().build();
+    }
+    @PostMapping("/sync")
+    public ResponseEntity<Void> sync() throws InterruptedException, ExecutionException{
+        List<UserDTO> users = userService.getListSyncComptes();
+        return null;
+        
     }
 }

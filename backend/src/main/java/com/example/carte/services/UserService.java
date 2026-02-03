@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -12,13 +13,17 @@ import org.springframework.stereotype.Service;
 import com.example.carte.dto.BlockedUserDTO;
 import com.example.carte.dto.UserDTO;
 import com.example.carte.entities.Profil;
+import com.example.carte.entities.Signalement;
 import com.example.carte.entities.User;
 import com.example.carte.repository.ProfilRepository;
 import com.example.carte.repository.UtilisateurRepository;
 import com.example.carte.request.AuthRegisterRequest;
 import com.google.cloud.firestore.CollectionReference;
+import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
+import com.google.cloud.firestore.QuerySnapshot;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
@@ -33,22 +38,182 @@ public class UserService {
     private final UtilisateurRepository userRepo;
     private final ProfilRepository profilRepository;
     private final FirebaseAuthService firebaseAuthService;
+    private final ProfilSyncService profilSyncService;
 
     public UserService(UtilisateurRepository userRepo, ProfilRepository profilRepository,
-            FirebaseAuthService firebaseAuthService) {
+            FirebaseAuthService firebaseAuthService, ProfilSyncService profilSyncService) {
         this.userRepo = userRepo;
         this.profilRepository = profilRepository;
         this.firebaseAuthService = firebaseAuthService;
+        this.profilSyncService = profilSyncService;
     }
-    // public void 
+
+    @Transactional
+    public List<UserDTO> getListSyncComptes() throws InterruptedException, ExecutionException {
+
+        Firestore db = FirestoreClient.getFirestore();
+
+        List<User> localUsers = userRepo.findAll();
+
+        if (!isOnline()) {
+            return localUsers.stream()
+                    .map(this::mapToDTO)
+                    .toList();
+        }
+
+        Map<String, User> localByFirebaseUid = localUsers.stream()
+                .filter(u -> u.getFirebaseUid() != null && !u.getFirebaseUid().isBlank())
+                .collect(Collectors.toMap(User::getFirebaseUid, u -> u));
+        
+        // Sync profiles first before syncing users (profiles are required as foreign keys)
+        try {
+            profilSyncService.getListSyncProfils();
+        } catch (Exception e) {
+            System.out.println("Warning: Could not sync profiles: " + e.getMessage());
+        }
+        
+        // alaina ireo avy am firebase
+        CollectionReference colRef = db.collection("compte");
+        List<UserDTO> firebaseUsers = colRef.get().get().getDocuments()
+                .stream()
+                .map(this::mapFirestoreToUserDTO)
+                .toList();
+        System.out.println("Firebase users fetched: " + firebaseUsers.size());
+        for (UserDTO dto : firebaseUsers) {
+
+            String fbUid = dto.getFirebaseUid();
+            if (fbUid == null || fbUid.isBlank())
+                continue;
+
+            User local = localByFirebaseUid.get(fbUid);
+            LocalDateTime fbLastSync = dto.getLastSync();
+
+            if (local != null) {
+                System.out.println("Syncing existing user: " + local.getEmail());
+                if (isFirebaseNewer(fbLastSync, local.getLastSync())) {
+
+                    local.setEmail(dto.getEmail());
+                    local.setIsBlocked(dto.isBlocked());
+
+                    if (dto.getTentative() != null) {
+                        local.setLoginAttempts(dto.getTentative());
+                    }
+
+                    if (dto.getPassword() != null) {
+                        local.setPassword(dto.getPassword());
+                    }
+
+                    Profil profil = profilRepository.findByNom(dto.getRole())
+                            .orElseGet(this::getdefaultProfil);
+
+                    if (profil.getFirebaseId() == null) {
+                        profilSyncService.getListSyncProfils();
+                    }
+                    local.setProfil(profil);
+                    local.setRole(profil.getNom());
+
+                    local.setLastSync(fbLastSync);
+                    userRepo.save(local);
+                }
+
+            } else {
+                System.out.println("Existe pas en local");
+                // Firebase existe mais pas en local
+                User newUser = new User();
+                newUser.setFirebaseUid(fbUid);
+                newUser.setEmail(dto.getEmail());
+                newUser.setIsBlocked(dto.isBlocked());
+                newUser.setLoginAttempts(dto.getTentative());
+                newUser.setPassword(dto.getPassword());
+
+                Profil profil = profilRepository.findByNom(dto.getRole())
+                        .orElseGet(this::getdefaultProfil);
+                // if (profil.getFirebaseId() == null) {
+                //     profilSyncService.getListSyncProfils();
+                // }
+                newUser.setProfil(profil);
+                newUser.setRole(profil.getNom());
+
+                newUser.setLastSync(fbLastSync != null ? fbLastSync : LocalDateTime.now());
+                userRepo.save(newUser);
+                localByFirebaseUid.put(fbUid, newUser);
+            }
+        }
+
+        // local makany am firebase
+        for (User local : localUsers) {
+
+            String fbId = db.collection("compte").document().getId();
+            if (local.getFirebaseUid() == null || local.getFirebaseUid().isBlank()) {
+                local.setFirebaseUid(fbId);
+                userRepo.save(local);
+            }
+
+            DocumentReference docRef = colRef.document(local.getFirebaseUid());
+            DocumentSnapshot snapshot = docRef.get().get();
+
+            LocalDateTime fbLastSync = snapshot.exists()
+                    ? parseDate(snapshot.getString("lastSync"))
+                    : null;
+
+            if (!snapshot.exists() || isLocalNewer(local.getLastSync(), fbLastSync)) {
+
+                Map<String, Object> compteMap = new HashMap<>();
+                compteMap.put("email", local.getEmail());
+                compteMap.put("role", local.getProfil().getNom());
+                compteMap.put("isBlocked", local.getIsBlocked());
+                compteMap.put("tentative", local.getLoginAttempts());
+                if (local.getProfil().getFirebaseId() == null) {
+                    profilSyncService.getListSyncProfils();
+                }
+                compteMap.put("profil", local.getProfil().getFirebaseId());
+                compteMap.put("firebaseUid", local.getFirebaseUid());
+                compteMap.put("lastSync", local.getLastSync().toString());
+                compteMap.put("password", local.getPassword());
+
+                docRef.set(compteMap);
+            }
+        }
+
+        return userRepo.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    private LocalDateTime parseDate(String value) {
+        return value == null ? null : LocalDateTime.parse(value);
+    }
+
+    private boolean isFirebaseNewer(LocalDateTime fb, LocalDateTime local) {
+        // If local is null, Firebase data should be pulled (local doesn't exist or never synced)
+        if (local == null)
+            return true;
+        // If Firebase lastSync is null but local exists, treat as equal (don't overwrite)
+        if (fb == null)
+            return false;
+        return fb.isAfter(local);
+    }
+
+    private boolean isLocalNewer(LocalDateTime local, LocalDateTime fb) {
+        if (local == null)
+            return false;
+        if (fb == null)
+            return true;
+        return local.isAfter(fb);
+    }
+
+    // public void
     // fonction pour reinitialiser les tentatives de connexion
     // debloquer le user
     public void resetLoginAttempts(String email) {
         Optional<User> userOpt = userRepo.findByEmail(email);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
+            System.out.println("reset -----------------" + user.getEmail());
             user.setLoginAttempts(0);
             user.setIsBlocked(false);
+            user.setLastSync(LocalDateTime.now());
             userRepo.save(user);
         } else {
             throw new RuntimeException("Utilisateur non trouvé pour réinitialisation des tentatives de connexion");
@@ -58,16 +223,64 @@ public class UserService {
     // fonction pour verifier un user
     // si c en ligne on verifie avec firebase
     // sinon on verifie en local
-    public boolean verifyUser(String email, String password) {
+    private UserDTO mapFirestoreToUserDTO(QueryDocumentSnapshot doc) {
+        UserDTO dto = new UserDTO();
+
+        dto.setFirebaseUid(doc.getId());
+
+        dto.setEmail(doc.getString("email"));
+        dto.setRole(doc.getString("role"));
+
+        Boolean blocked = doc.getBoolean("isBlocked");
+        dto.setBlocked(blocked != null ? blocked : false);
+        dto.setPassword(doc.getString("password"));
+
+        // Fetch tentative (login attempts) from Firestore
+        Long tentative = doc.getLong("tentative");
+        dto.setTentative(tentative != null ? tentative.intValue() : 0);
+        Object lastSyncObj = doc.get("lastSync");
+        if (lastSyncObj != null) {
+            if (lastSyncObj instanceof com.google.cloud.Timestamp ts) {
+                dto.setLastSync(
+                        ts.toDate()
+                                .toInstant()
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDateTime());
+            } else if (lastSyncObj instanceof String str) {
+                dto.setLastSync(LocalDateTime.parse(str)); // si c'est stocké en ISO
+            } else {
+                // fallback par défaut
+                dto.setLastSync(LocalDateTime.now());
+            }
+        } else {
+            dto.setLastSync(LocalDateTime.now());
+        }
+
+        return dto;
+    }
+
+    // public
+    public boolean verifyUser(String email, String password) throws InterruptedException, ExecutionException {
         User u = userRepo.findByEmail(email).orElse(null);
         boolean accepted = false;
         boolean existInFirebase = false;
         boolean existLocal = false;
-        Firestore db = FirestoreClient.getFirestore();
-        CollectionReference colRef = db.collection("compte");
-
+        List<UserDTO> users = this.getListSyncComptes();
         try {
             if (isOnline()) {
+                Firestore db = FirestoreClient.getFirestore();
+                // CollectionReference colRef = db.collection("compte");
+                QuerySnapshot snapshot = db.collection("compte")
+                        .whereEqualTo("email", email)
+                        .get()
+                        .get();
+                // UserDTO firebaseUser = mapFirestoreToUserDTO(snapshot.getDocuments().get(0));
+                if (snapshot.isEmpty()) {
+                    syncCompteLocalToFirebase(u);
+                }
+                // User existingLocal =
+                // userRepo.findByFirebaseUid(u.getFirebaseUid()).orElse(null);
+
                 // accepted = firebaseAuthService.verifyPassword(email, password);
                 // existInFirebase = true;
                 try {
@@ -136,7 +349,8 @@ public class UserService {
         compteMap.put("email", u.getEmail());
         compteMap.put("role", u.getRole());
         compteMap.put("firebaseUid", u.getFirebaseUid());
-
+        compteMap.put("tentative", u.getLoginAttempts());
+        compteMap.put("isBlocked", u.getIsBlocked());
         db.collection("compte").document(u.getEmail()).set(compteMap);
     }
 
@@ -203,7 +417,15 @@ public class UserService {
 
     public Profil getdefaultProfil() {
         Optional<Profil> profilOpt = profilRepository.findByNom("MANAGER");
-        return profilOpt.orElseThrow(() -> new RuntimeException("Profil par défaut introuvable"));
+        if (profilOpt.isPresent()) {
+            return profilOpt.get();
+        }
+        // If MANAGER profile doesn't exist, try to create it
+        System.out.println("Creating default MANAGER profile as it doesn't exist");
+        Profil defaultProfil = new Profil();
+        defaultProfil.setNom("MANAGER");
+        defaultProfil.setLastSync(LocalDateTime.now());
+        return profilRepository.save(defaultProfil);
     }
 
     public void saveUser(User user) {
@@ -257,6 +479,7 @@ public class UserService {
         try {
             return java.net.InetAddress.getByName("firebase.google.com").isReachable(1000);
         } catch (Exception e) {
+            System.out.println("isOnline check failed: " + e.getMessage());
             return false;
         }
     }
@@ -281,6 +504,7 @@ public class UserService {
         dto.setFirebaseUid(user.getFirebaseUid());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getProfil().getNom());
+        dto.setPassword(user.getPassword());
         dto.setBlocked(user.getIsBlocked());
         dto.setTentative(user.getLoginAttempts());
         dto.setLastSync(user.getLastSync());
@@ -397,7 +621,8 @@ public class UserService {
 
         return mapToDTO(saved);
     }
-    User getById(Integer id){
+
+    User getById(Integer id) {
         User u = userRepo.findById(id).orElseThrow();
         return u;
     }

@@ -68,6 +68,7 @@ public class TypeSignalementService {
                 } else {
                     TypeSignalement newLocal = mapDTOToEntityTypeSignalement(dto);
                     typeSignalementRepo.save(newLocal);
+                    typeSignalementRepo.flush();
                     localByFirebaseId.put(fbId, newLocal);
                 }
             }
@@ -79,6 +80,7 @@ public class TypeSignalementService {
                     fbId = db.collection("type_signalement").document().getId();
                     local.setFirebaseId(fbId);
                     typeSignalementRepo.save(local);
+                    typeSignalementRepo.flush();
                     System.out.println(
                             "Generated new fbId for local typeSignalement id " + local.getIdType() + ": " + fbId);
                 }
@@ -119,7 +121,7 @@ public class TypeSignalementService {
             return null;
 
         TypeSignalement entity = new TypeSignalement();
-        entity.setIdType(dto.getIdType());
+        // entity.setIdType(dto.getIdType());
         entity.setNom(dto.getNom());
         entity.setFirebaseId(dto.getFirebaseId());
 
