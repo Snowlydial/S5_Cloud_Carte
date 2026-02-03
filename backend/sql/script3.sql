@@ -7,26 +7,6 @@ INSERT INTO type_signalement (nom) VALUES
 ('Signalisation absente'),
 ('Chaussee fissuree');
 
-UPDATE signalement
-SET description = 'Presence d un grand nid de poule rendant la circulation difficile, risque eleve pour les vehicules.'
-WHERE id_signalement = 232;
-
-UPDATE signalement
-SET description = 'Route fortement degradee avec plusieurs fissures, circulation ralentie.'
-WHERE id_signalement = 233;
-
-UPDATE signalement
-SET description = 'Petit nid de poule en formation, intervention rapide recommandee.'
-WHERE id_signalement = 234;
-
-UPDATE signalement
-SET description = 'Zone inondee après de fortes pluies, passage presque impraticable.'
-WHERE id_signalement = 235;
-
-UPDATE signalement
-SET description = 'Chaussee endommagee avec affaissement partiel, danger pour les deux-roues.'
-WHERE id_signalement = 236;
-
 WITH derniers AS (
     SELECT id_signalement
     FROM signalement

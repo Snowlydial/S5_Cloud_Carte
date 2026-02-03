@@ -114,8 +114,8 @@ const UserManagementPage = () => {
         }
 
         try {
-            await updateUser(editingUser.id, {
-                email: editForm.email
+            await updateUser(editingUser.idUser, {
+                newEmail: editForm.email
             });
             setSuccess('Utilisateur mis à jour');
             handleCloseEditModal();

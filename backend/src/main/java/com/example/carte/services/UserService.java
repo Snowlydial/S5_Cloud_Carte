@@ -64,14 +64,15 @@ public class UserService {
         Map<String, User> localByFirebaseUid = localUsers.stream()
                 .filter(u -> u.getFirebaseUid() != null && !u.getFirebaseUid().isBlank())
                 .collect(Collectors.toMap(User::getFirebaseUid, u -> u));
-        
-        // Sync profiles first before syncing users (profiles are required as foreign keys)
+
+        // Sync profiles first before syncing users (profiles are required as foreign
+        // keys)
         try {
             profilSyncService.getListSyncProfils();
         } catch (Exception e) {
             System.out.println("Warning: Could not sync profiles: " + e.getMessage());
         }
-        
+
         // alaina ireo avy am firebase
         CollectionReference colRef = db.collection("compte");
         List<UserDTO> firebaseUsers = colRef.get().get().getDocuments()
@@ -129,7 +130,7 @@ public class UserService {
                 Profil profil = profilRepository.findByNom(dto.getRole())
                         .orElseGet(this::getdefaultProfil);
                 // if (profil.getFirebaseId() == null) {
-                //     profilSyncService.getListSyncProfils();
+                // profilSyncService.getListSyncProfils();
                 // }
                 newUser.setProfil(profil);
                 newUser.setRole(profil.getNom());
@@ -186,10 +187,12 @@ public class UserService {
     }
 
     private boolean isFirebaseNewer(LocalDateTime fb, LocalDateTime local) {
-        // If local is null, Firebase data should be pulled (local doesn't exist or never synced)
+        // If local is null, Firebase data should be pulled (local doesn't exist or
+        // never synced)
         if (local == null)
             return true;
-        // If Firebase lastSync is null but local exists, treat as equal (don't overwrite)
+        // If Firebase lastSync is null but local exists, treat as equal (don't
+        // overwrite)
         if (fb == null)
             return false;
         return fb.isAfter(local);
@@ -506,6 +509,7 @@ public class UserService {
         dto.setRole(user.getProfil().getNom());
         dto.setPassword(user.getPassword());
         dto.setBlocked(user.getIsBlocked());
+        dto.setIdUser(user.getId());
         dto.setTentative(user.getLoginAttempts());
         dto.setLastSync(user.getLastSync());
         return dto;
@@ -626,4 +630,48 @@ public class UserService {
         User u = userRepo.findById(id).orElseThrow();
         return u;
     }
+
+    @Transactional
+    public UserDTO updateUserEmail(Integer userId, String newEmail) throws FirebaseAuthException {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+
+        if (userRepo.findByEmail(newEmail).isPresent()) {
+            throw new RuntimeException("Un utilisateur avec cet email existe déjà");
+        }
+
+        if (isOnline() && user.getFirebaseUid() != null && !user.getFirebaseUid().isBlank()) {
+            try {
+                // Met à jour l'email sur Firebase
+                UserRecord.UpdateRequest request = new UserRecord.UpdateRequest(user.getFirebaseUid())
+                        .setEmail(newEmail);
+                FirebaseAuth.getInstance().updateUser(request);
+                System.out.println("Firebase email updated for UID: " + user.getFirebaseUid());
+            } catch (FirebaseAuthException e) {
+                throw new RuntimeException("Erreur lors de la mise à jour Firebase", e);
+            }
+        }
+
+        user.setEmail(newEmail);
+        user.setLastSync(LocalDateTime.now());
+        userRepo.save(user);
+
+        if (isOnline() && user.getFirebaseUid() != null && !user.getFirebaseUid().isBlank()) {
+            try {
+                Firestore db = FirestoreClient.getFirestore();
+                DocumentReference docRef = db.collection("compte").document(user.getFirebaseUid());
+
+                Map<String, Object> updateMap = new HashMap<>();
+                updateMap.put("email", newEmail);
+                updateMap.put("lastSync", LocalDateTime.now().toString());
+
+                docRef.update(updateMap);
+            } catch (Exception e) {
+                System.out.println("Erreur lors de la mise à jour Firestore: " + e.getMessage());
+            }
+        }
+
+        return mapToDTO(user);
+    }
+
 }
