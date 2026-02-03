@@ -24,7 +24,7 @@ export const getAllUsers = async () => {
 
         // TODO: Uncomment when backend ready
         const response = await axios.get(USER_ENDPOINTS.LIST, {
-          headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` }
         });
         return response.data;
 
@@ -60,19 +60,21 @@ export const getBlockedUsers = async () => {
 export const updateUser = async (userId, userData) => {
     try {
         const token = localStorage.getItem("JWT_TOKEN");
-
+        const response = await axios.put(`${USER_ENDPOINTS.UPDATE}/${userId}/email`, userData, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
         // TODO: Uncomment when backend ready
         // const response = await axios.put(`${USER_ENDPOINTS.UPDATE}/${userId}`, userData, {
         //   headers: { Authorization: `Bearer ${token}` }
         // });
-        // return response.data;
+        return response.data;
 
-        console.log(`[MOCK API] Updating user ${userId}`, userData);
-        const index = mockUsers.findIndex(u => u.id === userId);
-        if (index !== -1) {
-            mockUsers[index] = { ...mockUsers[index], ...userData };
-        }
-        return await mockApiDelay(mockUsers[index]);
+        // console.log(`[MOCK API] Updating user ${userId}`, userData);
+        // const index = mockUsers.findIndex(u => u.id === userId);
+        // if (index !== -1) {
+        //     mockUsers[index] = { ...mockUsers[index], ...userData };
+        // }
+        // return await mockApiDelay(mockUsers[index]);
     } catch (error) {
         console.error('Error updating user:', error);
         throw new Error(error.response?.data?.message || 'Erreur lors de la mise à jour');
@@ -109,7 +111,7 @@ export const unblockUser = async (userId) => {
 
         // TODO: Uncomment when backend ready
         const response = await axios.post(`${USER_ENDPOINTS.UNBLOCK}/${userId}`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` }
         });
         return response.data;
 

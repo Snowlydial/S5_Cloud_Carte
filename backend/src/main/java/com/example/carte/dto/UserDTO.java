@@ -7,6 +7,7 @@ import lombok.Data;
 @Data
 public class UserDTO {
     private String firebaseUid;
+    private Integer idUser;
     private String email;
     private String role;
     private LocalDateTime lastSync;

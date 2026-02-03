@@ -38,7 +38,7 @@ export const useSignalementProbleme = () => {
       // 2. Création de dictionnaires (Maps) pour un accès O(1)
       const typeMap = new Map(types.map(t => [t.idTypeSignalement.toString(), t]));
       const entMap = new Map(ents.map(e => [e.idEntreprise, e]));
-      const statusLabelMap = new Map(statusLabels.map(s => [s.id, s]));
+      const statusLabelMap = new Map(statusLabels.map(s => [s.idStatus, s]));
       
       // Map pour les problèmes indexés par idSignalement
       const probMap = new Map(probs.map(p => [p.idSignalement, p]));
