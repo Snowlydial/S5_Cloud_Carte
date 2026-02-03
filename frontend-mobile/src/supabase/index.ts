@@ -1,13 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
 
-dotenv.config();
-
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_ANON_KEY!;
+// ✅ Avec Vite, on utilise import.meta.env
+// Note : Les variables doivent commencer par VITE_ dans votre fichier .env
+// const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+// const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = 'https://iyjgmdtbpsaglrvdvlpm.supabase.co';
+const supabaseKey = 'sb_publishable_y6XIeHJCniYIO8sfMXzAww_7kkTL3-b';
 
 if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Variables SUPABASE_URL et SUPABASE_ANON_KEY requises dans .env');
+    console.error('Variables VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY manquantes dans le .env');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);

@@ -199,6 +199,7 @@ const format = (value?: number) => {
 import { Signalement } from '@/models/Signalement';
 import { TypeSignalementService } from '@/services/TypeSignalement.service';
 import { PhotoService } from '@/services/Photo.service';
+import { SupabaseService } from '@/services/supabase.service';
 
 const { typesSignalement,  getListeTypeSignalement, error, success} = useTypeSignalement();
 const {signaler, loading , getAllSignalements, listeSignalement, getAllSignalementsMine} = useSignalement();
@@ -299,6 +300,14 @@ const envoyerSignalement = () => {
 };
 
 const finaliserSignalement = async () => {
+  loading.value = true; // Si vous avez un état de chargement
+    
+    // 1. Envoyer les images à Supabase et récupérer les URLs
+    let imageUrls: string[] = [];
+    if (selectedPhotos.value.length > 0) {
+      imageUrls = await SupabaseService.uploadCapacitorPhotos(selectedPhotos.value);
+    }
+    
   const coords: L.LatLngExpression = [form.value.lat!, form.value.lng!];
   const idType = form.value.type;
   
@@ -513,7 +522,7 @@ const loadMapData = async () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-}3
+}
 
 #map {
   flex: 6; /* Prend 60% de l'espace disponible */
