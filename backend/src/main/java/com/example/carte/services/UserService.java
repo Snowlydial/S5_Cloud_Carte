@@ -110,6 +110,7 @@ public class UserService {
                         profilSyncService.getListSyncProfils();
                     }
                     local.setProfil(profil);
+                    local.setRole(profil.getNom());
 
                     local.setLastSync(fbLastSync);
                     userRepo.save(local);
@@ -131,6 +132,7 @@ public class UserService {
                 //     profilSyncService.getListSyncProfils();
                 // }
                 newUser.setProfil(profil);
+                newUser.setRole(profil.getNom());
 
                 newUser.setLastSync(fbLastSync != null ? fbLastSync : LocalDateTime.now());
                 userRepo.save(newUser);
