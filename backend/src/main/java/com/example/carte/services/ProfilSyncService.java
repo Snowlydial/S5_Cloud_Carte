@@ -98,7 +98,29 @@ public class ProfilSyncService {
          * LOCAL → FIREBASE (SAFE)
          * =========================
          */
-        for (Profil local : localProfils) {
+        // Build a set of profile names that already exist in Firebase to avoid duplicates
+        Map<String, String> firebaseNameToId = new HashMap<>();
+        for (QueryDocumentSnapshot doc : firebaseDocs) {
+            String nom = doc.getString("nom");
+            if (nom != null && !nom.isBlank()) {
+                firebaseNameToId.put(nom, doc.getId());
+            }
+        }
+
+        // Re-fetch local profiles to include any newly created ones
+        List<Profil> updatedLocalProfils = profilRepo.findAll();
+
+        for (Profil local : updatedLocalProfils) {
+
+            // Skip if this profile name already exists in Firebase
+            if (firebaseNameToId.containsKey(local.getNom())) {
+                // Update local firebaseId if not set
+                if (local.getFirebaseId() == null || local.getFirebaseId().isBlank()) {
+                    local.setFirebaseId(firebaseNameToId.get(local.getNom()));
+                    profilRepo.save(local);
+                }
+                continue;
+            }
 
             if (local.getFirebaseId() == null || local.getFirebaseId().isBlank()) {
                 // UID logique basé sur le nom
