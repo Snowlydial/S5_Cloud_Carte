@@ -8,21 +8,40 @@ import { SignalementSeeder } from "./seeders/SignalementSeeder";
 import { StatusSeeder } from "./seeders/StatusSeeder";
 import { TypeSignalementSeeder } from "./seeders/TypeSignalementSeeder";
 import { UserSeeder } from "./seeders/UserSeed";
+import { CompteService } from "./services/Compte.service";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { auth } from "@/firebase";
+import { SupabaseService } from "./services/supabase.service";
+
 
 (async () => {
-  await UserSeeder.seed();
-  await ProfilSeeder.seed();
-  // await CompteSeeder.seed();
-  await TypeSignalementSeeder.seed();
-  await SignalementSeeder.seed();
-  await StatusSeeder.seed();
-  await EntrepriseSeeder.seed();
-  await ProblemeSeeder.seed();
-  await ProblemeStatusSeeder.seed();  
 
-  const entreprises = await EntrepriseRepository.getAll();
-  console.log("Entreprises dans la base de données:", entreprises);
+
+  const userCredential = await signInWithEmailAndPassword(
+    auth,
+    "a@gmail.com",
+    "aaaaaa"
+  );
+
+
+  // await CloudinaryService.uploadImage ();
+  try {
+    await SupabaseService.uploadImage();
+  } catch (err) {
+    console.error("Erreur upload Supabase :", err);
+  }
+
+
+  // await ProfilSeeder.seed();
+  // await TypeSignalementSeeder.seed();
+  // await SignalementSeeder.seed();
+  // await StatusSeeder.seed();
+  // await EntrepriseSeeder.seed();
+  // await ProblemeSeeder.seed();
+  // await ProblemeStatusSeeder.seed();
+
 
   console.log("Seeding terminé ✅");
+  await signOut(auth);
   process.exit();
 })();
