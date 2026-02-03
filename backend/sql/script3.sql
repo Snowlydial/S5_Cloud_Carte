@@ -50,3 +50,30 @@ JOIN (
 ) v(rn, description)
 ON d.rn = v.rn
 WHERE s.id_signalement = d.id_signalement;
+
+
+-- Mettre à jour les signalements avec le type correct
+UPDATE signalement
+SET id_type = ts.id_type
+FROM type_signalement ts
+WHERE 
+    -- Nid de poule
+    (signalement.description ILIKE '%nid de poule%' AND ts.nom = 'Nid de poule')
+    OR
+    -- Route dégradée
+    (signalement.description ILIKE '%route fortement degradee%' AND ts.nom = 'Route degradee')
+    OR
+    -- Inondation
+    (signalement.description ILIKE '%inondee%' AND ts.nom = 'Inondation')
+    OR
+    -- Eboulement
+    (signalement.description ILIKE '%eboulement%' AND ts.nom = 'eboulement')
+    OR
+    -- Caniveau bouche
+    (signalement.description ILIKE '%caniveau%' AND ts.nom = 'Caniveau bouche')
+    OR
+    -- Signalisation absente
+    (signalement.description ILIKE '%signalisation absente%' AND ts.nom = 'Signalisation absente')
+    OR
+    -- Chaussée fissurée
+    (signalement.description ILIKE '%chaussee fissuree%' AND ts.nom = 'Chaussee fissuree');
