@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "seed": "tsx src/init.ts",
+    "testFcm": "tsx tests/test-fcm.js",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "test:e2e": "cypress run",
