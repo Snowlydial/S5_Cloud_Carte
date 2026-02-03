@@ -5,5 +5,6 @@ export interface Signalement {
     latitude: number;
     idCompte: string  |  null;
     idTypeSignalement: number | string;
-    idimage?: string | null;
+    // idimage?: string | null;
+    firebaseId:string;
 }
