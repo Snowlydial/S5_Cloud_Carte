@@ -59,8 +59,8 @@ import { auth } from '@/firebase';
 
 
 // Data
-const username = ref('a@gmail.com');
-const password = ref('aaaaaa');
+const username = ref('toto@gmail.com');
+const password = ref('111111');
 const isLoading = ref(false); // État de chargement
 const router = useRouter();
 const { login, error, success } = useAuth();
