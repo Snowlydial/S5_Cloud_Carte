@@ -245,3 +245,34 @@ export const getStatusList = async () => {
         throw new Error(error.response?.data?.message || 'Erreur lors de la récupération des statuts');
     }
 };
+
+//?=== GET PROBLEMES BY STATUS (for filtering)
+export const getProblemesByStatus = async (statusId) => {
+    try {
+        const token = localStorage.getItem("JWT_TOKEN");
+
+        const response = await axios.get(PROBLEME_ENDPOINTS.LIST, { 
+            params: { statusId },
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching problemes by status:', error);
+        throw new Error(error.response?.data?.message || 'Erreur lors de la récupération');
+    }
+};
+
+//?=== GET RECAP DASHBOARD (tableau récapitulatif)
+export const getRecapDashboard = async () => {
+    try {
+        const token = localStorage.getItem("JWT_TOKEN");
+
+        const response = await axios.get(PROBLEME_ENDPOINTS.RECAP, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching recap dashboard:', error);
+        throw new Error(error.response?.data?.message || 'Erreur lors de la récupération du récapitulatif');
+    }
+};
