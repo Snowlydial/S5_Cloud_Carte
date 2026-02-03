@@ -7,4 +7,5 @@ export interface Signalement {
     idTypeSignalement: number | string;
     // idimage?: string | null;
     firebaseId:string;
+    description?: string;
 }
