@@ -17,7 +17,14 @@ import { StatusService } from "./Status.service";
 
 export class CompteService {
 
+    
+
     static async getRecap(): Promise<Recap> {
+        const pourcentageMap  = new Map<string, number>();
+        pourcentageMap.set ('nouveau', 0);
+        pourcentageMap.set ('en_cours', 50);
+        pourcentageMap.set ('termine', 100);
+
         let nbrPoint = 0;
         let totalSurface = 0;
         let totalBudget = 0;
@@ -35,17 +42,19 @@ export class CompteService {
                 const problemeStatus: ProblemeStatus | null = await ProblemeStatusService.getLastByIdProbleme(probleme.idProbleme);
                 console.log ("Problème terminé ID:", problemeStatus);  
                 const status = problemeStatus ? await StatusService.getById(problemeStatus.idStatus) : null;
-
-                if (status && status.nom === "termine") {
-                    totalTermine += 1;
+                if (status){
+                    totalTermine += pourcentageMap.get(status.nom) ?? 0;
                 }
+                // if (status && status.nom === "termine") {
+                //     totalTermine += 1;
+                // }
             }
             totalSurface += probleme.surfaceM2;
             totalBudget += probleme.budget ?? 0;
         }
 
         // }
-        avancement = totalProbleme > 0 ? Math.round((totalTermine / totalProbleme) * 100) : 0;
+        avancement = totalProbleme > 0 ? Math.round((totalTermine / totalProbleme)) : 0;
 
 
 
@@ -58,6 +67,8 @@ export class CompteService {
         };
         return recap;
     }
+    
+
 
     static async create(data: Omit<Compte, "idCompte">): Promise<string> {
         try {

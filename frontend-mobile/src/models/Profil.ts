@@ -1,4 +1,5 @@
 export interface Profil {
-  id?: string;     
+  idProfil?: string;     
   nom: string;
+  lastSync?: Date;
 }

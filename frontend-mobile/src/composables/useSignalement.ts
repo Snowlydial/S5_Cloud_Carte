@@ -53,6 +53,7 @@ const useSignalement = () => {
 
         const myId = await Util.getCompteId();
         compteId.value = myId;
+        console.log ("ID Compte pour le signalement :", compteId.value);
 
         // --- RECHERCHE DE L'ID IMAGE ---
         // On cherche dans la liste des types celui qui correspond à l'ID sélectionné
@@ -73,7 +74,6 @@ const useSignalement = () => {
             longitude: Number(lng),
             idCompte: compteId.value,
             idTypeSignalement: idTypeSignalement,
-            idimage: imageId // <-- Affectation dynamique ici
         };
 
         console.log("Signalement prêt à l'envoi :", signalement);
