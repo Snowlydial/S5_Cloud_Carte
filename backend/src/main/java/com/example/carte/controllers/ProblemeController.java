@@ -27,7 +27,6 @@ public class ProblemeController {
     public ResponseEntity<List<ProblemeDTO>> getAllProblemesRaw(
             @RequestParam(required = false) Integer statusId) throws Exception {
         
-        //*-- If statusId is provided, filter by status
         List<ProblemeDTO> liste;
         if (statusId != null) {
             liste = problemeService.getProblemesByStatus(statusId);
