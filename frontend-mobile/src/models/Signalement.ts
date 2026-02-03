@@ -3,7 +3,8 @@ export interface Signalement {
     dateSignalement: Date;
     longitude: number;
     latitude: number;
-    idCompte: string  |  null;
+    idCompte: string | null;
     idTypeSignalement: number | string;
-    idimage?: string | null;
+    firebaseId?: string;
+    // idimage?: string | null;
 }

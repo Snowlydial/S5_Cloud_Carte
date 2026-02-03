@@ -16,7 +16,9 @@ export class SignalementRepository {
   static COLLECTION = "signalements";
 
   static async create(data: Omit<Signalement, "idSignalement">) {
-    return await addDoc(collection(db, SignalementRepository.COLLECTION), data);
+    const result = await addDoc(collection(db, SignalementRepository.COLLECTION), data);
+    await SignalementRepository.update(result.id, { firebaseId: result.id });
+    return result;
   }
 
   static async findAll(): Promise<Signalement[]> {

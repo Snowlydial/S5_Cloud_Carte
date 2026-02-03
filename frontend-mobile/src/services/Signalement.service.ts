@@ -32,6 +32,10 @@ export class SignalementService {
   static async create(data: Omit<Signalement, "idSignalement">) {
     try {
       const result = await SignalementRepository.create(data);
+      
+      const fireBaseId = result.id;
+      await SignalementService.update(fireBaseId, { firebaseId: fireBaseId });
+
       return result;
     } catch (error) {
       console.error("Erreur lors de la création du signalement:", error);
