@@ -17,8 +17,8 @@ export class ProfilRepository {
     static async getAll(): Promise<Profil[]> {
         const snap = await getDocs(collection(db, ProfilRepository.COLLECTION));
         return snap.docs.map(d => ({
-            id: d.id,
-            ...(d.data() as Omit<Profil, "id">)
+            idProfil: d.id,
+            ...(d.data() as Omit<Profil, "idProfil">)
         }));
     }
 
@@ -32,7 +32,7 @@ export class ProfilRepository {
         const ref = doc(db, ProfilRepository.COLLECTION, id);
         const snap = await getDoc(ref);
         return snap.exists()
-            ? { id: snap.id, ...(snap.data() as Omit<Profil, "id">) }
+            ? { idProfil: snap.id, ...(snap.data() as Omit<Profil, "idProfil">) }
             : null;
     }
 
