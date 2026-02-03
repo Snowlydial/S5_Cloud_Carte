@@ -14,7 +14,7 @@ import { db } from "@/firebase";
 
 
 export class CompteRepository {
-  static COLLECTION = "comptes";
+  static COLLECTION = "compte";
 
   static async create(data: Omit<Compte, "idCompte">) {
     return await addDoc(collection(db, CompteRepository.COLLECTION), data);

@@ -3,6 +3,9 @@ export interface Compte {
     nom: string;
     email: string;
     mdp: string;
-    profilId: string;
+    idProfil: string;
+    isBlocked: boolean;
+    firebaseId: string;
+    lastSync?: Date;
     tentative?: number;
 }
