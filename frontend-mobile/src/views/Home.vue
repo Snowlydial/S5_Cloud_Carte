@@ -53,6 +53,34 @@
               Confirmer le signalement
             </ion-button>
           </ion-list>
+                <ion-modal :is-open="isPhotoModalOpen" @didDismiss="isPhotoModalOpen = false">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>Ajouter des photos</ion-title>
+            <ion-buttons slot="end">
+              <ion-button @click="isPhotoModalOpen = false">Fermer</ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content class="ion-padding">
+          <div class="photo-grid">
+            <div v-for="(photo, index) in selectedPhotos" :key="index" class="photo-item">
+              <img :src="photo.webPath" />
+              <ion-button color="danger" size="small" @click="removePhoto(index)">
+                <ion-icon :icon="trashOutline"></ion-icon>
+              </ion-button>
+            </div>
+            <div class="add-photo-btn" @click="takePhoto">
+            <ion-icon :icon="cameraOutline" size="large"></ion-icon>
+            <p>Ajouter une photo</p>
+          </div>
+          </div>
+          
+          <ion-button expand="block" class="ion-margin-top" @click="finaliserSignalement">
+            Envoyer le signalement final
+          </ion-button>
+        </ion-content>
+      </ion-modal>
 
           <ion-card v-if="recapView">
             <ion-card-header>
@@ -87,6 +115,8 @@
 </template>
 
 <script setup lang="ts">
+
+
   const iconConfigs: Record<string, { icon: string, color: string }> = {
   '2': { icon: '🚧', color: '#e67e22' }, // Route endommagée - Orange
   '7': { icon: '⚠️', color: '#e74c3c' }, // Conducteur en danger - Rouge
@@ -121,6 +151,42 @@ import { SignalementProbleme } from "@/models/SignalementProbleme";
 
 import useSignalementProbleme from '@/composables/useSignalementProbleme' 
 
+import { cameraOutline, trashOutline, /* ... */ } from 'ionicons/icons';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+  // MODAL IMAGE
+const isPhotoModalOpen = ref(false);
+const selectedPhotos = ref<any[]>([]);
+
+const takePhoto = async () => {
+  const photo = await PhotoService.selectFromGallery();
+  if (photo) {
+    // On ajoute l'objet photo à notre liste
+    selectedPhotos.value.push(photo);
+  }
+};
+
+// NOUVEAU : Fonction pour ouvrir la caméra/galerie
+// const takePhoto = async () => {
+//   try {
+//     const image = await Camera.getPhoto({
+//       quality: 90,
+//       allowEditing: false,
+//       resultType: CameraResultType.Uri,
+//       source: CameraSource.Prompt // Propose Galerie ou Appareil photo
+//     });
+//     selectedPhotos.value.push(image);
+//   } catch (err) {
+//     console.log("Utilisateur a annulé la sélection");
+//   }
+// };
+
+const removePhoto = (index: number) => {
+  selectedPhotos.value.splice(index, 1);
+};
+
+  // MODAL IMAGE
+
+
 const recap = ref<Recap | null>(null);
 const { logout   } = useAuth();
 const recapView = computed(() => recap.value);
@@ -132,6 +198,7 @@ const format = (value?: number) => {
 
 import { Signalement } from '@/models/Signalement';
 import { TypeSignalementService } from '@/services/TypeSignalement.service';
+import { PhotoService } from '@/services/Photo.service';
 
 const { typesSignalement,  getListeTypeSignalement, error, success} = useTypeSignalement();
 const {signaler, loading , getAllSignalements, listeSignalement, getAllSignalementsMine} = useSignalement();
@@ -218,16 +285,32 @@ const envoyerSignalement = () => {
     alert('Veuillez sélectionner une position sur la carte.');
     return;
   }
+  isPhotoModalOpen.value = true;
   // Construire coords au format Leaflet et appeler signaler
-  const coords: L.LatLngExpression = [form.value.lat!, form.value.lng!];
-  const idType =  form.value.type;
-  console.log  ("Envoi du signalement :", {
-    type: idType,
-    coords: coords
-  });
-  signaler(idType, coords);
-  loadMapData();
+  // const coords: L.LatLngExpression = [form.value.lat!, form.value.lng!];
+  // const idType =  form.value.type;
+  // console.log  ("Envoi du signalement :", {
+  //   type: idType,
+  //   coords: coords
+  // });
+  // signaler(idType, coords);
+  // loadMapData();
   // alert(`Signalement ${form.value.type} envoyé pour ${form.value.lat}, ${form.value.lng}`);
+};
+
+const finaliserSignalement = async () => {
+  const coords: L.LatLngExpression = [form.value.lat!, form.value.lng!];
+  const idType = form.value.type;
+  
+  // Ici, vous devrez probablement convertir vos images en Base64 ou FormData 
+  // pour les envoyer à votre API via votre composable 'signaler'
+  console.log("Envoi final avec", selectedPhotos.value.length, "photos");
+  
+  await signaler(idType, coords, selectedPhotos.value); // Modifiez votre composable pour accepter les photos
+  
+  isPhotoModalOpen.value = false;
+  selectedPhotos.value = []; // Reset
+  loadMapData();
 };
 
 onMounted(async () => {
@@ -264,6 +347,7 @@ onMounted(async () => {
   }, 500);
   getCurrentLocation();
 });
+
 // Fonction pour ajouter les marqueurs
 const markersLayer = L.layerGroup(); // Pour éviter l'empilement
 
@@ -479,6 +563,44 @@ ion-fab {
 :deep(.custom-marker) {
   background: transparent;
   border: none;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.photo-item {
+  position: relative;
+  height: 150px;
+}
+
+.photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.photo-item ion-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  --padding-start: 5px;
+  --padding-end: 5px;
+}
+
+.add-photo-btn {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 150px;
+  color: #666;
 }
 
 
