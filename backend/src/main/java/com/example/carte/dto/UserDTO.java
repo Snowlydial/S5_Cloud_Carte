@@ -12,6 +12,7 @@ public class UserDTO {
     private LocalDateTime lastSync;
     private Integer tentative;
     private boolean isBlocked;
+    private String password;
     // Getters & Setters
     public String getFirebaseUid() { return firebaseUid; }
     public void setFirebaseUid(String firebaseUid) { this.firebaseUid = firebaseUid; }
