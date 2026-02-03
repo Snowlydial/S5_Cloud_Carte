@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
@@ -53,6 +53,10 @@ import {
 } from '@ionic/vue';
 import { personCircleOutline } from 'ionicons/icons';
 import useAuth from '@/composables/useAuth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/firebase';
+
+
 
 // Data
 const username = ref('a@gmail.com');
@@ -89,7 +93,13 @@ const handlelogin = async () => {
     isLoading.value = false;
   }
 }
+
+// onMounted(async () => {
+//   await signInWithEmailAndPassword(auth, "a@gmail.com", "aaaaaa");
+//   console.log("Auto-login successful"+ auth.currentUser?.email);
+// });
 </script>
+
 
 <style scoped>
 .login-container {

@@ -89,16 +89,16 @@
             <ion-card-content>
               <ion-grid>
                 <ion-row>
-                  <ion-col size="6"><strong>Points :</strong></ion-col>
+                  <ion-col size="6"><strong>Points (problemes) :</strong></ion-col>
                   <ion-col size="6">{{ recapView.nbrPoint }}</ion-col>
                 </ion-row>
                 <ion-row>
                   <ion-col size="6"><strong>Surface totale :</strong></ion-col>
-                  <ion-col size="6">{{ format(recapView.totalSurface) }}</ion-col>
+                  <ion-col size="6">{{ format(recapView.totalSurface) }} m²</ion-col>
                 </ion-row>
                 <ion-row>
                   <ion-col size="6"><strong>Budget total :</strong></ion-col>
-                  <ion-col size="6">{{ format(recapView.totalBudget) }}</ion-col>
+                  <ion-col size="6">{{ format(recapView.totalBudget) }} AR</ion-col>
                 </ion-row>
                 <ion-row>
                   <ion-col size="6"><strong>Avancement :</strong></ion-col>
@@ -513,7 +513,7 @@ const loadMapData = async () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-}
+}3
 
 #map {
   flex: 6; /* Prend 60% de l'espace disponible */

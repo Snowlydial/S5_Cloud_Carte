@@ -7,17 +7,34 @@ import { Compte } from "@/models/Compte";
 import { CompteRepository } from "@/repositories/CompteRepository";
 import { auth } from "@/firebase";
 import { CompteService } from "./Compte.service";
+import { ProfilService } from "./Profil.service";
 
 export async function loginService(email: string, password: string): Promise<ApiResponse> {
     const compte = await CompteRepository.findByEmail(email);
 
     try {
-        if (compte && compte.tentative && compte.tentative >= 10) {
+        if (!compte){
+            throw new Error("Compte non trouvé avec cet email.");
+        }
+        if ((compte && compte.tentative && compte.tentative >= 3 ) || (compte && compte.isBlocked)) {
+
+            await CompteRepository.update(compte.idCompte!, { isBlocked: true });
+
             throw new Error("Compte verrouillé en raison de trop nombreuses tentatives de connexion échouées.");
+        }
+        if (compte.idProfil === undefined || compte.idProfil === null || compte.idProfil === "") {
+            throw new Error("Le profil du compte n'est pas défini.");
+        }
+        const profilCompte = compte ? await ProfilService.getById(compte.idProfil) : null;
+        console.log("Profil du compte lors de la connexion :", profilCompte);
+        if (!profilCompte || profilCompte.nom !== "utilisateur") {
+            throw new Error("Le profil du compte n'est pas autorisé à se connecter.");
         }
         // const testEmail = "testuser123@example.com";
         // const testPassword = "123456";
         // const userCredential = await signInWithEmailAndPassword(auth, testEmail, testPassword);
+        
+        
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
         console.log("Compte trouvé lors de la connexion réussie :", compte);
@@ -81,17 +98,17 @@ export async function signinService(email: string, password: string): Promise<Ap
         if (!profil) {
             throw new Error("Profil 'utilisateur' non trouvé");
         }
-        if (!profil.id) {
+        if (!profil.idProfil) {
             throw new Error("Profil ID non défini");
         }
 
-        const compte: Compte = {
-            email: email,
-            nom: email,
-            mdp: password,
-            profilId: profil.id
-        };
-        await CompteRepository.create(compte);
+        // const compte: Compte = {
+        //     email: email,
+        //     nom: email,
+        //     mdp: password,
+        //     profilId: profil.id
+        // };
+        // await CompteRepository.create(compte);
 
 
 

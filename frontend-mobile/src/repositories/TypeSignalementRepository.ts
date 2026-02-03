@@ -14,10 +14,12 @@ import { db } from "@/firebase";
 
 
 export class TypeSignalementRepository {
-  static COLLECTION = "typeSignalements";
+  static COLLECTION = "type_signalement";
 
   static async create(data: Omit<TypeSignalement, "idTypeSignalement">) {
-    return await addDoc(collection(db, TypeSignalementRepository.COLLECTION), data);
+    const result = await addDoc(collection(db, TypeSignalementRepository.COLLECTION), data);
+    await TypeSignalementRepository.update(result.id, { firebaseId: result.id });
+    return result;
   }
 
   static async findAll(): Promise<TypeSignalement[]> {
