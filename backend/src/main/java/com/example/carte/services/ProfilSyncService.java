@@ -43,7 +43,7 @@ public class ProfilSyncService {
     public List<Profil> getListSyncProfils() throws InterruptedException, ExecutionException {
 
         Firestore db = FirestoreClient.getFirestore();
-        CollectionReference colRef = db.collection("profil");
+        CollectionReference colRef = db.collection("profils");
 
         List<Profil> localProfils = profilRepo.findAll();
 
