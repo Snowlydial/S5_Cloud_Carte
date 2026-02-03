@@ -131,8 +131,9 @@ public class UserService {
         // local makany am firebase
         for (User local : localUsers) {
 
+            String fbId = db.collection("compte").document().getId();
             if (local.getFirebaseUid() == null || local.getFirebaseUid().isBlank()) {
-                local.setFirebaseUid(local.getEmail());
+                local.setFirebaseUid(fbId);
                 userRepo.save(local);
             }
 
