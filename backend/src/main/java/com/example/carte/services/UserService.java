@@ -64,12 +64,21 @@ public class UserService {
         Map<String, User> localByFirebaseUid = localUsers.stream()
                 .filter(u -> u.getFirebaseUid() != null && !u.getFirebaseUid().isBlank())
                 .collect(Collectors.toMap(User::getFirebaseUid, u -> u));
+        
+        // Sync profiles first before syncing users (profiles are required as foreign keys)
+        try {
+            profilSyncService.getListSyncProfils();
+        } catch (Exception e) {
+            System.out.println("Warning: Could not sync profiles: " + e.getMessage());
+        }
+        
         // alaina ireo avy am firebase
         CollectionReference colRef = db.collection("compte");
         List<UserDTO> firebaseUsers = colRef.get().get().getDocuments()
                 .stream()
                 .map(this::mapFirestoreToUserDTO)
                 .toList();
+        System.out.println("Firebase users fetched: " + firebaseUsers.size());
         for (UserDTO dto : firebaseUsers) {
 
             String fbUid = dto.getFirebaseUid();
@@ -80,7 +89,7 @@ public class UserService {
             LocalDateTime fbLastSync = dto.getLastSync();
 
             if (local != null) {
-
+                System.out.println("Syncing existing user: " + local.getEmail());
                 if (isFirebaseNewer(fbLastSync, local.getLastSync())) {
 
                     local.setEmail(dto.getEmail());
@@ -107,6 +116,7 @@ public class UserService {
                 }
 
             } else {
+                System.out.println("Existe pas en local");
                 // Firebase existe mais pas en local
                 User newUser = new User();
                 newUser.setFirebaseUid(fbUid);
@@ -117,9 +127,9 @@ public class UserService {
 
                 Profil profil = profilRepository.findByNom(dto.getRole())
                         .orElseGet(this::getdefaultProfil);
-                if (profil.getFirebaseId() == null) {
-                    profilSyncService.getListSyncProfils();
-                }
+                // if (profil.getFirebaseId() == null) {
+                //     profilSyncService.getListSyncProfils();
+                // }
                 newUser.setProfil(profil);
 
                 newUser.setLastSync(fbLastSync != null ? fbLastSync : LocalDateTime.now());
@@ -174,10 +184,12 @@ public class UserService {
     }
 
     private boolean isFirebaseNewer(LocalDateTime fb, LocalDateTime local) {
-        if (fb == null)
-            return false;
+        // If local is null, Firebase data should be pulled (local doesn't exist or never synced)
         if (local == null)
             return true;
+        // If Firebase lastSync is null but local exists, treat as equal (don't overwrite)
+        if (fb == null)
+            return false;
         return fb.isAfter(local);
     }
 
@@ -220,6 +232,10 @@ public class UserService {
         Boolean blocked = doc.getBoolean("isBlocked");
         dto.setBlocked(blocked != null ? blocked : false);
         dto.setPassword(doc.getString("password"));
+
+        // Fetch tentative (login attempts) from Firestore
+        Long tentative = doc.getLong("tentative");
+        dto.setTentative(tentative != null ? tentative.intValue() : 0);
         Object lastSyncObj = doc.get("lastSync");
         if (lastSyncObj != null) {
             if (lastSyncObj instanceof com.google.cloud.Timestamp ts) {
@@ -399,7 +415,15 @@ public class UserService {
 
     public Profil getdefaultProfil() {
         Optional<Profil> profilOpt = profilRepository.findByNom("MANAGER");
-        return profilOpt.orElseThrow(() -> new RuntimeException("Profil par défaut introuvable"));
+        if (profilOpt.isPresent()) {
+            return profilOpt.get();
+        }
+        // If MANAGER profile doesn't exist, try to create it
+        System.out.println("Creating default MANAGER profile as it doesn't exist");
+        Profil defaultProfil = new Profil();
+        defaultProfil.setNom("MANAGER");
+        defaultProfil.setLastSync(LocalDateTime.now());
+        return profilRepository.save(defaultProfil);
     }
 
     public void saveUser(User user) {
@@ -453,6 +477,7 @@ public class UserService {
         try {
             return java.net.InetAddress.getByName("firebase.google.com").isReachable(1000);
         } catch (Exception e) {
+            System.out.println("isOnline check failed: " + e.getMessage());
             return false;
         }
     }
