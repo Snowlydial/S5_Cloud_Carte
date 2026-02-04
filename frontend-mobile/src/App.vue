@@ -17,7 +17,7 @@ const user = ref<User | null>(null);
 
 onMounted(() => {
   onAuthStateChanged(auth, async (u) => {
-     requestNotificationPermission();
+   
     if (u && await Util.checkSession()) {
       user.value = u;
       console.log("Utilisateur connecté :", u);

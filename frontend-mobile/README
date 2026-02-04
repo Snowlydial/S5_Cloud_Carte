@@ -1,0 +1,5 @@
+ionic build
+# si il n'y a pas dossier android
+npx cap  android
+npx cap sync android
+npx cap open android

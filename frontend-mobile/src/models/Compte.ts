@@ -6,6 +6,7 @@ export interface Compte {
     idProfil: string;
     isBlocked: boolean;
     firebaseId: string;
+    fcmTokens?: string [];
     lastSync?: Date;
     tentative?: number;
 }
