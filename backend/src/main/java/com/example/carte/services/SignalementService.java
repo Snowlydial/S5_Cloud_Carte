@@ -344,7 +344,7 @@ public class SignalementService {
         local.setDateSignalement(firebaseDto.getDateSignalement());
         local.setDescription(firebaseDto.getDescription());
         local.setLastSync(firebaseDto.getLastSync());
-
+        local.setDescription(firebaseDto.getDescription());
         if (firebaseDto.getIdTypeSignalement() != null) {
             TypeSignalement type = typeSignalementRepository
                     .findByFirebaseId(firebaseDto.getIdTypeSignalement())
@@ -444,7 +444,7 @@ public class SignalementService {
         dto.setCompteEmail(s.getCompte().getEmail());
         dto.setIdTypeSignalement(s.getTypeSignalement().getFirebaseId());
         String entrepriseNom = null;
-        if (s.getProbleme() != null) {
+        if (s.getProbleme() != null && s.getProbleme().getEntreprise()!=null) {
             entrepriseNom = s.getProbleme().getEntreprise().getNom();
         }
         dto.setEntreprise(entrepriseNom);

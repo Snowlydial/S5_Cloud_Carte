@@ -2,6 +2,7 @@ package com.example.carte.services;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -100,13 +101,7 @@ public class ProblemeService {
             System.out.println("en ligne " + isOnline());
 
             Map<String, Probleme> processedProblemes = new HashMap<>();
-            // 3️⃣ SYNC FIREBASE → LOCAL
-            System.out.println("🔍 === PHASE FIREBASE → LOCAL ===");
-            List<ProblemeDTO> firebaseList = colRef.get().get()
-                    .getDocuments()
-                    .stream()
-                    .map(this::mapFirestoreToProblemeDTO)
-                    .collect(Collectors.toList());
+
             // 2️⃣ SYNC LOCAL → FIREBASE
             System.out.println("🔍 === PHASE LOCAL → FIREBASE ===");
             for (Probleme local : localProblemes) {
@@ -153,10 +148,9 @@ public class ProblemeService {
                 System.out.println(
                         "🔍   Firebase lastSync: " + firebaseLastSync + ", Local lastSync: " + local.getLastSync());
 
-                // if (local.getLastSync() != null &&
-                // (firebaseLastSync == null ||
-                // local.getLastSync().isAfter(firebaseLastSync))) {
-                if (local.getLastSync() != null) {
+                if (local.getLastSync() != null &&
+                        (firebaseLastSync == null ||
+                                local.getLastSync().isAfter(firebaseLastSync))) {
 
                     System.out.println("🔍   ⬆️ Local plus récent, UPDATE Firebase");
                     local.setLastSync(LocalDateTime.now());
@@ -176,6 +170,14 @@ public class ProblemeService {
 
             System.out.println("🔍 Cache size après LOCAL→FIREBASE: " + processedProblemes.size());
             System.out.println("🔍 Cache keys: " + processedProblemes.keySet());
+
+            // 3️⃣ SYNC FIREBASE → LOCAL
+            System.out.println("🔍 === PHASE FIREBASE → LOCAL ===");
+            List<ProblemeDTO> firebaseList = colRef.get().get()
+                    .getDocuments()
+                    .stream()
+                    .map(this::mapFirestoreToProblemeDTO)
+                    .collect(Collectors.toList());
 
             System.out.println("🔍 Nombre de problèmes Firebase: " + firebaseList.size());
 
@@ -252,7 +254,30 @@ public class ProblemeService {
                         newLocal.setEntreprise(entreprise);
                     }
 
+                    // 🆕 Gérer le statut
+                    ProblemeStatus problemeStatus = new ProblemeStatus();
+                    System.out.println("statutus " + firebaseDto.getStatutNom());
+                    if (firebaseDto.getStatutNom() != null) {
+                        Status status = statutRepo.findByNom(firebaseDto.getStatutNom())
+                                .orElse(null);
+
+                        if (status != null) {
+                            // Créer un ProblemeStatus pour le problème
+                            problemeStatus.setProbleme(newLocal);
+                            problemeStatus.setStatus(status);
+                            problemeStatus.setDateStatus(LocalDateTime.now());
+                            // problemeStatus.setEtat(true); // statut actuel
+                            // Initialiser la liste si null
+                            if (newLocal.getStatusList() == null) {
+                                newLocal.setStatusList(new ArrayList<>());
+                            }
+                            newLocal.getStatusList().add(problemeStatus);
+                        }
+                    }
+
                     problemeRepo.save(newLocal);
+                    problemeStatusRepository.save(problemeStatus);
+
                     System.out.println("🔍   ✅ Créé en local");
                 }
             }
@@ -264,10 +289,11 @@ public class ProblemeService {
                     .map(this::mapToDTO)
                     .collect(Collectors.toList());
         } finally {
-            // 🔒 Toujours libérer le verrou
             syncLock.unlock();
         }
     }
+
+    // ========== MÉTHODES UTILITAIRES MISES À JOUR ==========
 
     private void updateLocalProblemeFromFirebase(Probleme local, ProblemeDTO firebaseDto) {
         local.setSurfaceM2(firebaseDto.getSurfaceM2());
@@ -275,7 +301,7 @@ public class ProblemeService {
         local.setDateProbleme(firebaseDto.getDateProbleme());
         local.setLastSync(firebaseDto.getLastSync());
 
-        // Mettre à jour le compte si nécessaire
+        // Mettre à jour le compte
         if (firebaseDto.getCompteEmail() != null) {
             User compte = utilisateurRepository.findByEmail(firebaseDto.getCompteEmail())
                     .orElse(null);
@@ -284,7 +310,7 @@ public class ProblemeService {
             }
         }
 
-        // Mettre à jour le signalement si nécessaire
+        // Mettre à jour le signalement
         if (firebaseDto.getIdSignalement() != null) {
             Signalement signalement = signalementRepo.findByFirebaseId(firebaseDto.getIdSignalement())
                     .orElse(null);
@@ -293,12 +319,48 @@ public class ProblemeService {
             }
         }
 
-        // Mettre à jour l'entreprise si nécessaire
+        // Mettre à jour l'entreprise
         if (firebaseDto.getIdEntreprise() != null) {
             Entreprise entreprise = entrepriseRepo.findByFirebaseId(firebaseDto.getIdEntreprise())
                     .orElse(null);
             if (entreprise != null) {
                 local.setEntreprise(entreprise);
+            }
+        }
+
+        // 🆕 Mettre à jour le statut si différent
+        if (firebaseDto.getStatutNom() != null) {
+            // Récupérer le dernier statut local
+            String currentStatutNom = null;
+            if (local.getStatusList() != null && !local.getStatusList().isEmpty()) {
+                currentStatutNom = local.getStatusList().getLast().getStatus().getNom();
+            }
+
+            // Si le statut a changé
+            if (!firebaseDto.getStatutNom().equals(currentStatutNom)) {
+                Status newStatus = statutRepo.findByNom(firebaseDto.getStatutNom())
+                        .orElse(null);
+
+                if (newStatus != null) {
+                    // Marquer tous les anciens statuts comme inactifs
+                    // if (local.getStatusList() != null) {
+                    // for (ProblemeStatus ps : local.getStatusList()) {
+                    // // ps.setEtat(false);
+                    // }
+                    // }
+
+                    // Ajouter le nouveau statut
+                    ProblemeStatus problemeStatus = new ProblemeStatus();
+                    problemeStatus.setProbleme(local);
+                    problemeStatus.setStatus(newStatus);
+                    problemeStatus.setDateStatus(LocalDateTime.now());
+                    // problemeStatus.setEtat(true);
+
+                    if (local.getStatusList() == null) {
+                        local.setStatusList(new ArrayList<>());
+                    }
+                    local.getStatusList().add(problemeStatus);
+                }
             }
         }
     }
@@ -395,7 +457,7 @@ public class ProblemeService {
         dto.setIdSignalement(doc.getString("idSignalement"));
         dto.setSignalementId(doc.contains("signalementId") ? doc.getLong("signalementId").intValue() : null);
         dto.setFirebaseId(doc.getId());
-
+        dto.setStatutNom(doc.getString("statutNom") != null ? doc.getString("statutNom") : "nouveau");
         return dto;
     }
 
@@ -654,9 +716,11 @@ public class ProblemeService {
             totalBudget += probleme.getBudget();
 
             // 🔹 Récupérer le dernier status du problème
-            Pageable topOne = PageRequest.of(0, 1, Sort.by("dateStatus").descending().and(Sort.by("idProblemeStatus").descending()));
+            Pageable topOne = PageRequest.of(0, 1,
+                    Sort.by("dateStatus").descending().and(Sort.by("idProblemeStatus").descending()));
             ProblemeStatus status = problemeStatusRepository.findByProbleme(probleme, topOne).get(0);
-            // ProblemeStatus lastStatus = problemeStatusRepository.findTopByProblemeOrderByDateStatusDesc(probleme);
+            // ProblemeStatus lastStatus =
+            // problemeStatusRepository.findTopByProblemeOrderByDateStatusDesc(probleme);
             ProblemeStatus lastStatus = status;
             if (lastStatus != null) {
                 switch (lastStatus.getStatus().getNom().toLowerCase()) {
