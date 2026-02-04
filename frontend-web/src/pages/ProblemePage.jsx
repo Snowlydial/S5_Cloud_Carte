@@ -167,7 +167,7 @@ const ProblemePage = () => {
             await updateProblemeStatus(selectedProblemeId, {
                 etat: statusFormData.etat,
                 dateStatus: statusFormData.dateStatus,
-                idStatus: statusList.find(s => s.nom === statusFormData.etat)?.idStatus || 1
+                statutId: statusList.find(s => s.nom === statusFormData.etat)?.idStatus || 1
             });
 
             setSuccess('Statut mis à jour');

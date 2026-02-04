@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import com.example.carte.dto.ProblemeDTO;
 import com.example.carte.dto.SignalementDTO;
 import com.example.carte.dto.UserDTO;
+import com.example.carte.entities.Probleme;
 import com.example.carte.entities.Signalement;
 import com.example.carte.entities.TypeSignalement;
 import com.example.carte.entities.User;
@@ -42,8 +43,8 @@ public class SignalementService {
     @Autowired
     private TypeSignalementRepository typeSignalementRepository;
 
-    @Autowired
-    private ProblemeService problemeService;
+    // @Autowired
+    // private ProblemeService problemeService;
 
     @Autowired
     private TypeSignalementService typeSignalementService;
@@ -449,7 +450,7 @@ public class SignalementService {
         }
         dto.setEntreprise(entrepriseNom);
         if (s.getProbleme() != null) {
-            ProblemeDTO pDto = problemeService.mapToDTO(s.getProbleme());
+            ProblemeDTO pDto = this.mapToDTO(s.getProbleme());
             dto.setProblemeDTO(pDto);
         }
         return dto;
@@ -496,5 +497,21 @@ public class SignalementService {
         // Compte à résoudre via email localement
         // s.setCompte(userRepo.findByEmail(dto.getCompteEmail()).orElseThrow(...));
         return s;
+    }
+        public ProblemeDTO mapToDTO(Probleme probleme) {
+        ProblemeDTO dto = new ProblemeDTO();
+        dto.setIdProbleme(probleme.getIdProbleme());
+        dto.setDateProbleme(probleme.getDateProbleme());
+        dto.setSurfaceM2(probleme.getSurfaceM2());
+        dto.setBudget(probleme.getBudget());
+        dto.setEntrepriseNom(probleme.getEntreprise() != null ? probleme.getEntreprise().getIdEntreprise() : null);
+        dto.setCompteEmail(probleme.getCompte() != null ? probleme.getCompte().getEmail() : null);
+        dto.setSignalementId(probleme.getSignalement() != null ? probleme.getSignalement().getIdSignalement() : null);
+        dto.setStatut(probleme.getStatusList().getLast().getStatus().getIdStatus());
+        if(probleme.getStatusList().getLast()!=null){
+            
+            dto.setStatutNom(probleme.getStatusList().getLast().getStatus().getNom());
+        }
+        return dto;
     }
 }

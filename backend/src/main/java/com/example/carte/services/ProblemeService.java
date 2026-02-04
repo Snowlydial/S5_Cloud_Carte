@@ -40,8 +40,10 @@ import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import com.google.firebase.cloud.FirestoreClient;
-
+import com.example.carte.services.ProblemeStatusService;
 import jakarta.transaction.Transactional;
+
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Service
@@ -53,22 +55,29 @@ public class ProblemeService {
     private final EntrepriseRepository entrepriseRepo;
     private final StatutRepository statutRepo;
     @Autowired
+    private StatusService statusService;
+    @Autowired
     private ProblemeStatusRepository problemeStatusRepository;
     @Autowired
     private EntrepriseService entrepriseService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private SignalementService signalementService;
+
+    private final ProblemeStatusService problemeStatusService;
     private final ReentrantLock syncLock = new ReentrantLock();
 
     public ProblemeService(ProblemeRepository problemeRepo, SignalementRepository signalementRepo,
             UtilisateurRepository utilisateurRepository,
             EntrepriseRepository entrepriseRepo,
-            StatutRepository statutRepo) {
+            StatutRepository statutRepo, ProblemeStatusService problemeStatusService) {
         this.problemeRepo = problemeRepo;
         this.signalementRepo = signalementRepo;
         this.utilisateurRepository = utilisateurRepository;
         this.entrepriseRepo = entrepriseRepo;
         this.statutRepo = statutRepo;
+        this.problemeStatusService = problemeStatusService;
     }
 
     public List<Probleme> getAllProblemesRaw() {
@@ -101,6 +110,10 @@ public class ProblemeService {
             System.out.println("en ligne " + isOnline());
 
             Map<String, Probleme> processedProblemes = new HashMap<>();
+            // 🔥 SYNC DES STATUS AVANT LES PROBLEMES
+            System.out.println("🔄 Synchronisation des STATUS...");
+            statusService.getListSyncStatus(); // méthode que tu as déjà ou que tu viens de créer
+            System.out.println("✅ STATUS synchronisés");
 
             // 2️⃣ SYNC LOCAL → FIREBASE
             System.out.println("🔍 === PHASE LOCAL → FIREBASE ===");
@@ -238,45 +251,31 @@ public class ProblemeService {
                         newLocal.setCompte(compte);
                     }
 
-                    if (firebaseDto.getIdSignalement() != null) {
-                        Signalement signalement = signalementRepo
-                                .findByFirebaseId(firebaseDto.getIdSignalement())
-                                .orElseThrow(() -> new RuntimeException(
-                                        "Signalement introuvable : " + firebaseDto.getIdSignalement()));
-                        newLocal.setSignalement(signalement);
-                    }
-
-                    if (firebaseDto.getIdEntreprise() != null) {
-                        Entreprise entreprise = entrepriseRepo
-                                .findByFirebaseId(firebaseDto.getIdEntreprise())
-                                .orElseThrow(() -> new RuntimeException(
-                                        "Entreprise introuvable : " + firebaseDto.getIdEntreprise()));
-                        newLocal.setEntreprise(entreprise);
-                    }
-
-                    // 🆕 Gérer le statut
+                   
                     ProblemeStatus problemeStatus = new ProblemeStatus();
                     System.out.println("statutus " + firebaseDto.getStatutNom());
-                    if (firebaseDto.getStatutNom() != null) {
-                        Status status = statutRepo.findByNom(firebaseDto.getStatutNom())
-                                .orElse(null);
-
-                        if (status != null) {
-                            // Créer un ProblemeStatus pour le problème
-                            problemeStatus.setProbleme(newLocal);
-                            problemeStatus.setStatus(status);
-                            problemeStatus.setDateStatus(LocalDateTime.now());
-                            // problemeStatus.setEtat(true); // statut actuel
-                            // Initialiser la liste si null
-                            if (newLocal.getStatusList() == null) {
-                                newLocal.setStatusList(new ArrayList<>());
-                            }
-                            newLocal.getStatusList().add(problemeStatus);
-                        }
-                    }
-
                     problemeRepo.save(newLocal);
-                    problemeStatusRepository.save(problemeStatus);
+                    // if (firebaseDto.getStatutNom() != null) {
+                    //     Status status = statutRepo.findByNom(firebaseDto.getStatutNom())
+                    //             .orElse(null);
+
+                    //     if (status != null) {
+                    //         // Créer un ProblemeStatus pour le problème
+                    //         problemeStatus.setProbleme(newLocal);
+                    //         problemeStatus.setStatus(status);
+                    //         problemeStatus.setDateStatus(LocalDateTime.now());
+                    //         // problemeStatus.setEtat(true); // statut actuel
+                    //         // Initialiser la liste si null
+                    //         if (newLocal.getStatusList() == null) {
+                    //             newLocal.setStatusList(new ArrayList<>());
+                    //         }
+                    //         newLocal.getStatusList().add(problemeStatus);
+                    //     }
+                    // }
+
+                    // regarder les status du probleme dans firebase
+                    // problemeStatusRepository.save(problemeStatus);
+                    problemeStatusService.getListSyncProblemeStatus();
 
                     System.out.println("🔍   ✅ Créé en local");
                 }
@@ -370,6 +369,7 @@ public class ProblemeService {
         if (local.getEntreprise() != null &&
                 (local.getEntreprise().getFirebaseId() == null ||
                         local.getEntreprise().getFirebaseId().isBlank())) {
+            System.out.println("🔄 Sync entreprise pour problème " + local.getIdProbleme());
             entrepriseService.getListSyncEntreprises();
         }
 
@@ -377,16 +377,32 @@ public class ProblemeService {
         if (local.getCompte() != null &&
                 (local.getCompte().getFirebaseUid() == null ||
                         local.getCompte().getFirebaseUid().isBlank())) {
+            System.out.println("🔄 Sync compte pour problème " + local.getIdProbleme());
             User u = userService.getById(local.getCompte().getId());
             userService.syncCompteLocalToFirebase(u);
         }
 
-        // Synchroniser le signalement si nécessaire (si non null)
+        // Synchroniser le signalement si nécessaire
         if (local.getSignalement() != null &&
                 (local.getSignalement().getFirebaseId() == null ||
                         local.getSignalement().getFirebaseId().isBlank())) {
-            // Appeler la synchronisation des signalements si nécessaire
+            System.out.println("🔄 Sync signalement pour problème " + local.getIdProbleme());
             // signalementService.getListSyncSignalements();
+        }
+
+        // 🆕 Synchroniser les status du problème
+        if (local.getStatusList() != null &&
+                !local.getStatusList().isEmpty()) {
+
+            ProblemeStatus lastStatus = local.getStatusList().getLast();
+
+            // Vérifier si le dernier statut a un firebaseId
+            if (lastStatus != null &&
+                    (lastStatus.getFirebaseId() == null ||
+                            lastStatus.getFirebaseId().isBlank())) {
+                System.out.println("🔄 Sync status pour problème " + local.getIdProbleme());
+                problemeStatusService.getListSyncProblemeStatus();
+            }
         }
     }
 
@@ -475,15 +491,38 @@ public class ProblemeService {
 
         }
 
-        if (dto.getSignalementId() != null) {
-            Signalement s = signalementRepo.findById(dto.getSignalementId())
-                    .orElseThrow(() -> new RuntimeException("Signalement introuvable"));
-            p.setSignalement(s);
+        if (dto.getIdSignalement() != null ) {
+            Signalement signalement = signalementRepo
+                    .findByFirebaseId(dto.getIdSignalement())
+                    .orElseGet(() -> {
+                        try {
+                            signalementService.getListSyncSignalements();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        return signalementRepo.findByFirebaseId(dto.getIdSignalement())
+                                .orElseThrow(() -> new RuntimeException(
+                                        "Signalement introuvable après sync : "
+                                                + dto.getIdSignalement()));
+                    });
+            p.setSignalement(signalement);
         }
         if (dto.getEntrepriseNom() != null) {
-            Entreprise e = entrepriseRepo.findById(dto.getEntrepriseNom())
-                    .orElseThrow(() -> new RuntimeException("entreprise introuvable"));
-            p.setEntreprise(e);
+            Entreprise entreprise = entrepriseRepo
+                                .findByFirebaseId(dto.getIdEntreprise())
+                                .orElseGet(() -> {
+                                    try {
+                                        entrepriseService.getListSyncEntreprises();
+                                    } catch (InterruptedException | ExecutionException e) {
+                                        e.printStackTrace();
+                                    }
+                                    return entrepriseRepo.findByFirebaseId(dto.getIdEntreprise())
+                                            .orElseThrow(() -> new RuntimeException(
+                                                    "Entreprise introuvable après sync : "
+                                                            + dto.getIdEntreprise()));
+                                });
+
+            p.setEntreprise(entreprise);
         }
 
         return p;
@@ -748,7 +787,7 @@ public class ProblemeService {
         Probleme probleme = problemeRepo.findById(idProbleme)
                 .orElseThrow(() -> new RuntimeException("Problème introuvable"));
 
-        Status status = statutRepo.findById(statusData.getIdStatus())
+        Status status = statutRepo.findById(statusData.getStatutId())
                 .orElseThrow(() -> new RuntimeException("Status introuvable : " + statusData.getIdStatus()));
 
         ProblemeStatus problemeStatus = new ProblemeStatus();
