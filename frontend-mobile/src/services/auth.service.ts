@@ -55,6 +55,8 @@ export async function loginService(email: string, password: string): Promise<Api
         const token = await initPushNotifications ();
         if (token && compte) {
             compte.fcmTokens = compte.fcmTokens ? [...compte.fcmTokens, token] : [token];
+            const tokens = compte.fcmTokens || [];
+            compte.fcmTokens = Array.from(new Set([...tokens, token]));
             await CompteRepository.update(compte.idCompte!, { fcmTokens: compte.fcmTokens });
         }
 
