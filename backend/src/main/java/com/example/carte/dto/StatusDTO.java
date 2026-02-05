@@ -1,10 +1,13 @@
 package com.example.carte.dto;
 
+import lombok.Data;
+
+@Data
 public class StatusDTO {
 
     private Integer idStatus;
     private String nom;
-
+    private String firebaseId;
     public Integer getIdStatus() {
         return idStatus;
     }

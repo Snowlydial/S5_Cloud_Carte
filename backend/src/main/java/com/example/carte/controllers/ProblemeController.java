@@ -12,7 +12,6 @@ import com.example.carte.entities.Probleme;
 import com.example.carte.security.SecurityUtils;
 import com.example.carte.services.ProblemeService;
 import com.example.carte.services.ProblemeStatusDTO;
-
 @RestController
 @RequestMapping("/api/problemes")
 public class ProblemeController {
@@ -31,7 +30,7 @@ public class ProblemeController {
         if (statusId != null) {
             liste = problemeService.getProblemesByStatus(statusId);
         } else {
-            liste = problemeService.getListSyncProblemes();
+            liste = problemeService.getAllProblemes();
         }
         
         return ResponseEntity.ok(liste);

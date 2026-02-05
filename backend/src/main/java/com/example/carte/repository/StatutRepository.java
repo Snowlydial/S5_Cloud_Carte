@@ -10,4 +10,5 @@ import com.example.carte.entities.Status;
 @Repository
 public interface StatutRepository extends JpaRepository<Status, Integer> {
     Optional<Status> findByNom(String nom);
+    Optional<Status> findByFirebaseId(String firebaseId);
 }

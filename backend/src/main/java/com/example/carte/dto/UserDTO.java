@@ -1,6 +1,7 @@
 package com.example.carte.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.Data;
 
@@ -14,6 +15,7 @@ public class UserDTO {
     private Integer tentative;
     private boolean isBlocked;
     private String password;
+    private List<String> fmcTocken;
     // Getters & Setters
     public String getFirebaseUid() { return firebaseUid; }
     public void setFirebaseUid(String firebaseUid) { this.firebaseUid = firebaseUid; }

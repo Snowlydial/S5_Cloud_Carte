@@ -9,7 +9,10 @@ export const PROBLEME_ENDPOINTS = {
     LIST: `${API_BASE_URL}/problemes`,
     UPDATE: `${API_BASE_URL}/problemes`,
     DELETE: `${API_BASE_URL}/problemes`,
-    UPDATE_STATUS: `${API_BASE_URL}/problemes/update-status`
+    UPDATE_STATUS: `${API_BASE_URL}/problemes/update-status`,
+    RECAP : `${API_BASE_URL}/problemes/recap`,
+    SYNC: `${API_BASE_URL}/problemes/sync`
+
 };
 
 //*-- API Endpoints for related entities
@@ -109,6 +112,24 @@ export const getAllProblemes = async (filters = {}) => {
     }
 };
 
+export const asyncProblemes = async () => {
+    try {
+        // TODO: Uncomment when backend ready
+        const token = localStorage.getItem("JWT_TOKEN");
+
+        const response = await axios.get(PROBLEME_ENDPOINTS.SYNC, {
+            headers: {
+                Authorization: `Bearer ${token}`, 
+            },
+        });
+        return response.data;
+
+
+    } catch (error) {
+        console.error('Error syncing signalements:', error);
+        throw new Error(error.response?.data?.message || 'Erreur lors de la synchronisation');
+    }
+};
 //?=== GET PROBLEMES FOR SIGNALEMENT
 export const getProblemesBySignalement = async (signalementId) => {
     try {

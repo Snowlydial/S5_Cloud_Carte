@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import com.example.carte.dto.ProblemeDTO;
 import com.example.carte.dto.SignalementDTO;
 import com.example.carte.dto.UserDTO;
+import com.example.carte.entities.Probleme;
 import com.example.carte.entities.Signalement;
 import com.example.carte.entities.TypeSignalement;
 import com.example.carte.entities.User;
@@ -23,10 +25,12 @@ import com.example.carte.repository.SignalementRepository;
 import com.example.carte.repository.TypeSignalementRepository;
 import com.example.carte.repository.UtilisateurRepository;
 import com.google.firebase.cloud.FirestoreClient;
+import java.util.concurrent.locks.ReentrantLock;
 
 import jakarta.transaction.Transactional;
 
 import com.google.cloud.firestore.CollectionReference;
+import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 
@@ -39,8 +43,8 @@ public class SignalementService {
     @Autowired
     private TypeSignalementRepository typeSignalementRepository;
 
-    @Autowired
-    private ProblemeService problemeService;
+    // @Autowired
+    // private ProblemeService problemeService;
 
     @Autowired
     private TypeSignalementService typeSignalementService;
@@ -48,9 +52,14 @@ public class SignalementService {
     @Autowired
     private UserService userService;
 
+    private final ReentrantLock syncLock = new ReentrantLock();
+
     public SignalementService(SignalementRepository signalementRepo, UtilisateurRepository utilisateurRepository) {
         this.signalementRepo = signalementRepo;
         this.utilisateurRepository = utilisateurRepository;
+    }
+    public void syncer() throws Exception{
+        this.getListSyncSignalements();
     }
 
     // @Transactional
@@ -155,102 +164,229 @@ public class SignalementService {
     // }
     @Transactional
     public List<SignalementDTO> getListSyncSignalements() throws Exception {
-        Firestore db = FirestoreClient.getFirestore();
-        CollectionReference colRef = db.collection("signalements");
+        syncLock.lock();
+        try {
+            Firestore db = FirestoreClient.getFirestore();
+            CollectionReference colRef = db.collection("signalements");
 
-        // 1️⃣ Récupérer tous les signalements locaux
-        List<Signalement> localSignalements = signalementRepo.findAll();
-    
-        if (!isOnline()) {
-            // Offline fallback : juste retourner les locaux
-            return localSignalements.stream()
+            // 1️⃣ Récupérer tous les signalements locaux
+            List<Signalement> localSignalements = signalementRepo.findAll();
+
+            if (!isOnline()) {
+                return localSignalements.stream()
+                        .map(this::mapToDTO)
+                        .collect(Collectors.toList());
+            }
+
+            System.out.println("en ligne " + isOnline());
+            typeSignalementService.syncer();
+
+            // 🔑 CACHE pour tracker les firebaseId déjà traités
+            Map<String, Signalement> processedSignalements = new HashMap<>();
+
+            // 2️⃣ SYNC LOCAL → FIREBASE D'ABORD
+            for (Signalement local : localSignalements) {
+                String fbId = local.getFirebaseId();
+
+                if (fbId == null || fbId.isBlank()) {
+                    // Pas encore de Firebase ID → CREATE dans Firebase
+                    fbId = db.collection("signalements").document().getId();
+                    local.setFirebaseId(fbId);
+                    local.setLastSync(LocalDateTime.now());
+
+                    // Synchroniser le compte si nécessaire
+                    if (local.getCompte() != null &&
+                            (local.getCompte().getFirebaseUid() == null ||
+                                    local.getCompte().getFirebaseUid().isBlank())) {
+                        userService.syncCompteLocalToFirebase(local.getCompte());
+                    }
+
+                    // Créer dans Firebase
+                    Map<String, Object> signalementMap = buildFirebaseMap(local, fbId);
+                    db.collection("signalements").document(fbId).set(signalementMap);
+
+                    signalementRepo.save(local);
+
+                    // 🔑 Ajouter au cache
+                    processedSignalements.put(fbId, local);
+
+                } else {
+                    // Firebase ID existe → vérifier si UPDATE nécessaire
+                    DocumentSnapshot firebaseDoc = db.collection("signalements")
+                            .document(fbId)
+                            .get()
+                            .get();
+
+                    if (firebaseDoc.exists()) {
+                        LocalDateTime firebaseLastSync = parseFirebaseTimestamp(
+                                firebaseDoc.getString("lastSync"));
+
+                        // Local plus récent que Firebase ?
+                        if (local.getLastSync() != null &&
+                                (firebaseLastSync == null ||
+                                        local.getLastSync().isAfter(firebaseLastSync))) {
+
+                            // Local est plus récent → UPDATE Firebase
+                            local.setLastSync(LocalDateTime.now());
+
+                            if (local.getCompte() != null &&
+                                    (local.getCompte().getFirebaseUid() == null ||
+                                            local.getCompte().getFirebaseUid().isBlank())) {
+                                userService.syncCompteLocalToFirebase(local.getCompte());
+                            }
+
+                            Map<String, Object> signalementMap = buildFirebaseMap(local, fbId);
+                            db.collection("signalements").document(fbId).set(signalementMap);
+
+                            signalementRepo.save(local);
+                        }
+
+                    } else {
+                        // Document n'existe pas dans Firebase → CREATE
+                        local.setLastSync(LocalDateTime.now());
+
+                        if (local.getCompte() != null &&
+                                (local.getCompte().getFirebaseUid() == null ||
+                                        local.getCompte().getFirebaseUid().isBlank())) {
+                            userService.syncCompteLocalToFirebase(local.getCompte());
+                        }
+
+                        Map<String, Object> signalementMap = buildFirebaseMap(local, fbId);
+                        db.collection("signalements").document(fbId).set(signalementMap);
+
+                        signalementRepo.save(local);
+                    }
+
+                    // 🔑 Ajouter au cache
+                    processedSignalements.put(fbId, local);
+                }
+            }
+
+            // 3️⃣ SYNC FIREBASE → LOCAL (APRÈS avoir pushé le local)
+            // Récupérer à nouveau les données Firebase (maintenant à jour avec nos pushs)
+            List<SignalementDTO> firebaseList = colRef.get().get()
+                    .getDocuments()
+                    .stream()
+                    .map(this::mapFirestoreToDTO)
+                    .collect(Collectors.toList());
+
+            for (SignalementDTO firebaseDto : firebaseList) {
+                String fbId = firebaseDto.getFirebaseId();
+                if (fbId == null || fbId.isBlank()) {
+                    continue;
+                }
+
+                // 🔑 VÉRIFIER D'ABORD LE CACHE
+                if (processedSignalements.containsKey(fbId)) {
+                    // Ce signalement a déjà été traité dans LOCAL → FIREBASE
+                    // On vérifie juste si Firebase a une version plus récente
+                    Signalement existingLocal = processedSignalements.get(fbId);
+
+                    if (firebaseDto.getLastSync() != null &&
+                            (existingLocal.getLastSync() == null ||
+                                    firebaseDto.getLastSync().isAfter(existingLocal.getLastSync()))) {
+                        // Firebase est plus récent → UPDATE local
+                        updateLocalFromFirebase(existingLocal, firebaseDto);
+                        signalementRepo.save(existingLocal);
+                    }
+                    continue; // ⚠️ NE PAS créer de doublon
+                }
+
+                // Chercher dans la base de données (pour les signalements d'autres
+                // utilisateurs)
+                Optional<Signalement> localOpt = signalementRepo.findByFirebaseId(fbId);
+
+                if (localOpt.isPresent()) {
+                    // L'instance existe localement
+                    Signalement existingLocal = localOpt.get();
+
+                    // Comparer les timestamps (Firebase plus récent ?)
+                    if (firebaseDto.getLastSync() != null &&
+                            (existingLocal.getLastSync() == null ||
+                                    firebaseDto.getLastSync().isAfter(existingLocal.getLastSync()))) {
+
+                        // Firebase est plus récent → UPDATE local
+                        updateLocalFromFirebase(existingLocal, firebaseDto);
+                        signalementRepo.save(existingLocal);
+                    }
+
+                } else {
+                    // Nouveau signalement créé par un autre utilisateur → CREATE local
+                    Signalement newLocal = mapDTOToEntity(firebaseDto);
+                    newLocal.setFirebaseId(fbId);
+                    newLocal.setLastSync(firebaseDto.getLastSync());
+
+                    if (firebaseDto.getCompteEmail() != null) {
+                        User compte = utilisateurRepository.findByEmail(firebaseDto.getCompteEmail())
+                                .orElseThrow(() -> new RuntimeException(
+                                        "Compte introuvable pour email: " + firebaseDto.getCompteEmail()));
+                        newLocal.setCompte(compte);
+                    }
+
+                    signalementRepo.save(newLocal);
+                }
+            }
+
+            // 4️⃣ Retourner la liste locale finale
+            return signalementRepo.findAll().stream()
                     .map(this::mapToDTO)
                     .collect(Collectors.toList());
+        } finally {
+            syncLock.unlock();
         }
-        System.out.println("en ligne "+isOnline());
-        typeSignalementService.syncer();
+    }
 
-        List<SignalementDTO> firebaseList = colRef.get().get()
-                .getDocuments()
-                .stream()
-                .map(this::mapFirestoreToDTO)
-                .collect(Collectors.toList());
+    // ========== MÉTHODES UTILITAIRES ==========
 
-        // Créer un mapping FirebaseId -> SignalementDTO
-        Map<String, SignalementDTO> firebaseById = firebaseList.stream()
-                .filter(dto -> dto.getFirebaseId() != null && !dto.getFirebaseId().isBlank())
-                .collect(Collectors.toMap(SignalementDTO::getFirebaseId, dto -> dto));
-
-        // Créer un mapping FirebaseId -> Signalement local
-        Map<String, Signalement> localByFirebaseId = localSignalements.stream()
-                .filter(s -> s.getFirebaseId() != null && !s.getFirebaseId().isBlank())
-                .collect(Collectors.toMap(Signalement::getFirebaseId, s -> s));
-
-        // 4️⃣ Mettre à jour ou créer les signalements locaux depuis Firebase
-        for (SignalementDTO dto : firebaseList) {
-            String fbId = dto.getFirebaseId();
-            if (fbId == null || fbId.isBlank())
-                continue;
-
-            Signalement existingLocal = signalementRepo.findByFirebaseId(fbId).orElse(null);
-            if (existingLocal != null) {
-                // Mise à jour des champs
-                existingLocal.setLatitude(dto.getLatitude());
-                existingLocal.setLongitude(dto.getLongitude());
-                existingLocal.setSurfaceM2(dto.getSurfaceM2());
-                existingLocal.setDateSignalement(dto.getDateSignalement());
-                signalementRepo.save(existingLocal);
-                localByFirebaseId.put(fbId, existingLocal);
-            } else {
-                // Créer local uniquement si FirebaseId existe
-                Signalement newLocal = mapDTOToEntity(dto);
-                if (dto.getCompteEmail() != null) {
-                    User compte = utilisateurRepository.findByEmail(dto.getCompteEmail())
-                            .orElseThrow(() -> new RuntimeException(
-                                    "Compte introuvable pour email: " + dto.getCompteEmail()));
-                    newLocal.setCompte(compte);
-                }
-                signalementRepo.save(newLocal);
-                localByFirebaseId.put(fbId, newLocal);
+    private void updateLocalFromFirebase(Signalement local, SignalementDTO firebaseDto) {
+        local.setLatitude(firebaseDto.getLatitude());
+        local.setLongitude(firebaseDto.getLongitude());
+        local.setSurfaceM2(firebaseDto.getSurfaceM2());
+        local.setDateSignalement(firebaseDto.getDateSignalement());
+        local.setDescription(firebaseDto.getDescription());
+        local.setLastSync(firebaseDto.getLastSync());
+        local.setDescription(firebaseDto.getDescription());
+        if (firebaseDto.getIdTypeSignalement() != null) {
+            TypeSignalement type = typeSignalementRepository
+                    .findByFirebaseId(firebaseDto.getIdTypeSignalement())
+                    .orElse(null);
+            if (type != null) {
+                local.setTypeSignalement(type);
             }
         }
+    }
 
-        // 5️⃣ Synchroniser local -> Firebase
-        for (Signalement local : localSignalements) {
-            String fbId = local.getFirebaseId();
-            if (fbId == null || fbId.isBlank()) {
-                // Générer fbId uniquement si pas déjà défini
-                fbId = db.collection("signalements").document().getId();
-                local.setFirebaseId(fbId);
-                signalementRepo.save(local);
-            }
+    // Méthodes utilitaires
 
-            // S'assurer que le compte est synchronisé
-            if (local.getCompte() != null
-                    && (local.getCompte().getFirebaseUid() == null || local.getCompte().getFirebaseUid().isBlank())) {
-                userService.syncCompteLocalToFirebase(local.getCompte());
-            }
+    private Map<String, Object> buildFirebaseMap(Signalement local, String fbId) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("idSignalement", local.getIdSignalement());
+        map.put("dateSignalement", local.getDateSignalement().toString());
+        map.put("longitude", local.getLongitude());
+        map.put("latitude", local.getLatitude());
+        map.put("surfaceM2", local.getSurfaceM2());
+        map.put("description", local.getDescription());
+        map.put("firebaseId", fbId);
+        map.put("lastSync", local.getLastSync().toString());
+        map.put("idTypeSignalement",
+                local.getTypeSignalement() != null ? local.getTypeSignalement().getFirebaseId() : null);
+        map.put("compteEmail",
+                local.getCompte() != null ? local.getCompte().getEmail() : null);
+        map.put("idCompte",
+                local.getCompte() != null ? local.getCompte().getFirebaseUid() : null);
 
-            Map<String, Object> signalementMap = new HashMap<>();
-            signalementMap.put("idSignalement", local.getIdSignalement());
-            signalementMap.put("dateSignalement", local.getDateSignalement().toString());
-            signalementMap.put("longitude", local.getLongitude());
-            signalementMap.put("latitude", local.getLatitude());
-            signalementMap.put("surfaceM2", local.getSurfaceM2());
-            signalementMap.put("description", local.getDescription());
-            signalementMap.put("firebaseId", fbId);
-            signalementMap.put("idTypeSignalement", local.getTypeSignalement().getFirebaseId());
-            signalementMap.put("compteEmail", local.getCompte() != null ? local.getCompte().getEmail() : null);
-            signalementMap.put("idCompte", local.getCompte() != null ? local.getCompte().getFirebaseUid() : null);
+        return map;
+    }
 
-            // Enregistrer/mettre à jour dans Firebase
-            db.collection("signalements").document(fbId).set(signalementMap);
+    private LocalDateTime parseFirebaseTimestamp(String timestamp) {
+        if (timestamp == null || timestamp.isBlank()) {
+            return null;
         }
-
-        // 6️⃣ Retourner la liste locale mise à jour
-        return signalementRepo.findAll().stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+        try {
+            return LocalDateTime.parse(timestamp);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Transactional
@@ -308,8 +444,13 @@ public class SignalementService {
         dto.setDescription(s.getDescription());
         dto.setCompteEmail(s.getCompte().getEmail());
         dto.setIdTypeSignalement(s.getTypeSignalement().getFirebaseId());
+        String entrepriseNom = null;
+        if (s.getProbleme() != null && s.getProbleme().getEntreprise()!=null) {
+            entrepriseNom = s.getProbleme().getEntreprise().getNom();
+        }
+        dto.setEntreprise(entrepriseNom);
         if (s.getProbleme() != null) {
-            ProblemeDTO pDto = problemeService.mapToDTO(s.getProbleme());
+            ProblemeDTO pDto = this.mapToDTO(s.getProbleme());
             dto.setProblemeDTO(pDto);
         }
         return dto;
@@ -356,5 +497,21 @@ public class SignalementService {
         // Compte à résoudre via email localement
         // s.setCompte(userRepo.findByEmail(dto.getCompteEmail()).orElseThrow(...));
         return s;
+    }
+        public ProblemeDTO mapToDTO(Probleme probleme) {
+        ProblemeDTO dto = new ProblemeDTO();
+        dto.setIdProbleme(probleme.getIdProbleme());
+        dto.setDateProbleme(probleme.getDateProbleme());
+        dto.setSurfaceM2(probleme.getSurfaceM2());
+        dto.setBudget(probleme.getBudget());
+        dto.setEntrepriseNom(probleme.getEntreprise() != null ? probleme.getEntreprise().getIdEntreprise() : null);
+        dto.setCompteEmail(probleme.getCompte() != null ? probleme.getCompte().getEmail() : null);
+        dto.setSignalementId(probleme.getSignalement() != null ? probleme.getSignalement().getIdSignalement() : null);
+        dto.setStatut(probleme.getStatusList().getLast().getStatus().getIdStatus());
+        if(probleme.getStatusList().getLast()!=null){
+            
+            dto.setStatutNom(probleme.getStatusList().getLast().getStatus().getNom());
+        }
+        return dto;
     }
 }

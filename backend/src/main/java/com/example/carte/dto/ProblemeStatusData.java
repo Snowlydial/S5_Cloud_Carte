@@ -11,8 +11,10 @@ import lombok.Data;
 public class ProblemeStatusData {
     private String etat; // "en_cours", "termine", etc.
     private LocalDateTime dateStatus;
-    private Integer idStatus;
-
+    private String idStatus;
+    private String idProbleme;
+    private Integer statutId;
+    private LocalDateTime lastSync;
     public String toJsonString() {
         ObjectMapper mapper = new ObjectMapper();
         try {

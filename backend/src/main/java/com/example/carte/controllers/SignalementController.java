@@ -23,8 +23,18 @@ public class SignalementController {
     @GetMapping
     public ResponseEntity<List<SignalementDTO>> getAllSignalements() throws InterruptedException, ExecutionException,Exception {
 
-        List<SignalementDTO> signalements = signalementService.getListSyncSignalements();
+        List<SignalementDTO> signalements = signalementService.getAllSignalements();
         return ResponseEntity.ok(signalements);
+    }
+ @GetMapping("/sync")
+    public ResponseEntity<?> syncProblemes() {
+        try {
+            signalementService.syncer();
+        } catch (Exception e) {
+            e.printStackTrace();
+            ResponseEntity.status(500).build();
+        }
+        return ResponseEntity.ok(true);
     }
 
     // /** GET : Signalement par ID */
