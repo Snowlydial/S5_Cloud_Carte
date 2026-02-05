@@ -9,7 +9,6 @@ import com.example.carte.repository.EntrepriseRepository;
 import com.example.carte.repository.ProfilRepository;
 import com.example.carte.repository.StatutRepository;
 import com.example.carte.repository.TypeSignalementRepository;
-import com.google.cloud.firestore.CollectionReference;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.firebase.cloud.FirestoreClient;

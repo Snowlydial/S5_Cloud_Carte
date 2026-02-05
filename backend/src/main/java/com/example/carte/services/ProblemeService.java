@@ -15,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import com.example.carte.dto.EntrepriseDTO;
 import com.example.carte.dto.ProblemeDTO;
 import com.example.carte.dto.ProblemeStatusData;
 import com.example.carte.dto.RecapDashboardDTO;
@@ -40,7 +39,6 @@ import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseToken;
 import com.google.firebase.cloud.FirestoreClient;
-import com.example.carte.services.ProblemeStatusService;
 import jakarta.transaction.Transactional;
 
 import java.util.concurrent.ExecutionException;
