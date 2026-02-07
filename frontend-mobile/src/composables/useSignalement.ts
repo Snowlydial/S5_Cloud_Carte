@@ -42,7 +42,7 @@ const useSignalement = () => {
   }
 
  
-  const signaler = async (idTypeSignalement: string, coords: L.LatLngExpression, selectedPhotos: any[]) => {
+  const signaler = async (idTypeSignalement: string, coords: L.LatLngExpression, selectedPhotos: any[], description: string) => {
     const [lat, lng] = Array.isArray(coords) ? coords : [(coords as any).lat, (coords as any).lng];
     loading.value = true;
 
@@ -75,6 +75,7 @@ const useSignalement = () => {
             longitude: Number(lng),
             idCompte: compteId.value,
             idTypeSignalement: idTypeSignalement,
+            description: description
         };
 
         const base64Images = await Promise.all(
