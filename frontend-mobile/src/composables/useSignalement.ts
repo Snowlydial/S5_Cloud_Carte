@@ -7,6 +7,7 @@ import { TypeSignalement } from "@/models/TypeSignalement";
 import { Signalement } from "@/models/Signalement";
 import { SignalementService } from "@/services/Signalement.service";
 import { Util } from "@/utils/util";
+import { FirebaseImageService } from "@/services/FirebaseImage.service";
 
 const typesSignalement = ref<TypeSignalement[] | null>(null);
 const error = ref<string | null>(null);
@@ -76,8 +77,12 @@ const useSignalement = () => {
             idTypeSignalement: idTypeSignalement,
         };
 
+        const base64Images = await Promise.all(
+        selectedPhotos.map(p => FirebaseImageService.processAndCompress(p))
+    );
+
         console.log("Signalement prêt à l'envoi :", signalement);
-        await SignalementService.create(signalement);
+        await SignalementService.create(signalement, base64Images);
         success.value = "Signalement envoyé avec succès";
 
     } catch (err) {

@@ -305,7 +305,7 @@ const finaliserSignalement = async () => {
     // 1. Envoyer les images à Supabase et récupérer les URLs
     let imageUrls: string[] = [];
     if (selectedPhotos.value.length > 0) {
-      imageUrls = await SupabaseService.uploadCapacitorPhotos(selectedPhotos.value);
+      // imageUrls = await SupabaseService.uploadCapacitorPhotos(selectedPhotos.value);
     }
     
   const coords: L.LatLngExpression = [form.value.lat!, form.value.lng!];
@@ -325,8 +325,6 @@ const finaliserSignalement = async () => {
 onMounted(async () => {
   const tanaCoords: L.LatLngExpression = [-18.8792, 47.5079];
   recap.value = await CompteService.getRecap();
-
-
 
   // Initialisation
   map = L.map('map').setView(tanaCoords, 13);
