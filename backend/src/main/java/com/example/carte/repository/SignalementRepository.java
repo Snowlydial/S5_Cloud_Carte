@@ -11,5 +11,5 @@ import com.example.carte.entities.Signalement;
 public interface SignalementRepository extends JpaRepository<Signalement, Integer> {
 
     Optional<Signalement> findByFirebaseId(String firebaseId);
-
+    
 }

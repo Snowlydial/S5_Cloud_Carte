@@ -11,7 +11,7 @@ public class ProblemeDTO {
     private LocalDateTime dateProbleme;
     private Double surfaceM2;
     private Double budget;
-    private Integer entrepriseNom;
+    private String entrepriseNom;
     private String compteEmail;
     private Integer signalementId;
     private Integer statut; // un seul statut
@@ -34,8 +34,8 @@ public class ProblemeDTO {
     public Double getBudget() { return budget; }
     public void setBudget(Double budget) { this.budget = budget; }
 
-    public Integer getEntrepriseNom() { return entrepriseNom; }
-    public void setEntrepriseNom(Integer entrepriseNom) { this.entrepriseNom = entrepriseNom; }
+    // public Integer getEntrepriseNom() { return entrepriseNom; }
+    // public void setEntrepriseNom(Integer entrepriseNom) { this.entrepriseNom = entrepriseNom; }
 
     public String getCompteEmail() { return compteEmail; }
     public void setCompteEmail(String compteEmail) { this.compteEmail = compteEmail; }

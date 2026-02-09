@@ -1,6 +1,7 @@
 package com.example.carte.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.example.carte.entities.Probleme;
 
@@ -22,6 +23,7 @@ public class SignalementDTO {
     private String entreprise;
     private String idCompte;
     private LocalDateTime lastSync;
+    private List<String> lienImage;
     // Getters et Setters
     public Integer getIdSignalement() {
         return idSignalement;

@@ -9,7 +9,7 @@ import { getRecapDashboard, getStatusList } from '../services/problemeService';
 import { useOfflineMap } from '../hooks/useOfflineMap';
 import 'leaflet/dist/leaflet.css';
 import '../styles/Map.css';
-
+import '../styles/ModalImage.css'
 //*-- Fix Leaflet default icon issue with React
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -34,7 +34,10 @@ const MapPage = () => {
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('');
     const [error, setError] = useState('');
-
+    //pour afficher les images
+    const [showImageModal, setShowImageModal] = useState(false);
+    const [selectedImages, setSelectedImages] = useState([]);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
     //*-- Antananarivo center coordinates (Leaflet uses [lat, lon] format)
     const center = [-18.91425, 47.52817];
 
@@ -75,11 +78,11 @@ const MapPage = () => {
 
             const signalementsData = await getAllSignalements(filters);
             // Dans loadSignalements, après avoir reçu les data :
-            console.log("filtre ",signalementsData);
+            console.log("filtre ", signalementsData);
             const filteredData = statusFilter
                 ? signalementsData.filter(s => s.problemeDTO?.statut == statusFilter)
                 : signalementsData;
-            
+
             setSignalements(filteredData);
             // setSignalements(signalementsData.data || signalementsData);
         } catch (err) {
@@ -135,6 +138,35 @@ const MapPage = () => {
             popupAnchor: [1, -34],
             shadowSize: [41, 41]
         });
+    };
+    const handleViewPhotos = (images) => {
+        console.log("jdbnv;bv")
+        if (images && images.length > 0) {
+            console.log("hargbvsivbp " + images)
+            setSelectedImages(images);
+            setCurrentImageIndex(0);
+            setShowImageModal(true);
+        }
+    };
+
+    // 🆕 Fonction pour fermer le modal
+    const closeModal = () => {
+        setShowImageModal(false);
+        setSelectedImages([]);
+        setCurrentImageIndex(0);
+    };
+
+    // 🆕 Navigation entre les images
+    const nextImage = () => {
+        setCurrentImageIndex((prev) =>
+            prev === selectedImages.length - 1 ? 0 : prev + 1
+        );
+    };
+
+    const prevImage = () => {
+        setCurrentImageIndex((prev) =>
+            prev === 0 ? selectedImages.length - 1 : prev - 1
+        );
     };
     const getMarkerColor = (signalement) => {
         // Si pas de problème associé = non-commencé (Bleu)
@@ -284,7 +316,27 @@ const MapPage = () => {
                                                     <>
                                                         <p><strong>Surface:</strong> {signalement.problemeDTO.surfaceM2} m²</p>
                                                         <p><strong>Budget:</strong> {signalement.problemeDTO.budget?.toLocaleString()} Ar</p>
+                                                        <p><strong>Entreprise:</strong> {signalement.problemeDTO.entrepriseNom} </p>
                                                     </>
+                                                )}
+                                                {/* 🆕 Lien pour voir les photos */}
+                                                {signalement.lienImage && signalement.lienImage.length > 0 && (
+                                                    <button
+                                                        onClick={() => handleViewPhotos(signalement.lienImage)}
+                                                        className="btn-view-photos"
+                                                        style={{
+                                                            marginTop: '10px',
+                                                            padding: '5px 10px',
+                                                            backgroundColor: color,
+                                                            color: 'white',
+                                                            border: 'none',
+                                                            borderRadius: '4px',
+                                                            cursor: 'pointer',
+                                                            fontSize: '12px'
+                                                        }}
+                                                    >
+                                                        📷 Voir photos ({signalement.lienImage.length})
+                                                    </button>
                                                 )}
                                             </div>
                                         </Popup>
@@ -293,8 +345,38 @@ const MapPage = () => {
                             })}
                         </MapContainer>
                     )}
+
                 </div>
             </div>
+            {/* 🆕 MODAL D'IMAGES */}
+            {showImageModal && (
+                <div className="image-modal-overlay" onClick={closeModal}>
+                    <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
+                        <button className="modal-close-btn" onClick={closeModal}>×</button>
+
+                        <div className="image-modal-body">
+                            {selectedImages.length > 1 && (
+                                <button className="nav-btn prev-btn" onClick={prevImage}>‹</button>
+                            )}
+
+                            <div className="image-container">
+                                <img
+                                    src={selectedImages[currentImageIndex]}
+                                    alt={`Photo ${currentImageIndex + 1}`}
+                                    className="modal-image"
+                                />
+                                <div className="image-counter">
+                                    {currentImageIndex + 1} / {selectedImages.length}
+                                </div>
+                            </div>
+
+                            {selectedImages.length > 1 && (
+                                <button className="nav-btn next-btn" onClick={nextImage}>›</button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
