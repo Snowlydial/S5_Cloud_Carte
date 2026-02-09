@@ -16,16 +16,16 @@ const Sidebar = () => {
     const getNavItems = () => {
         const baseItems = [
             { path: '/dashboard', label: 'Dashboard', icon: '■' },
-            { path: '/map', label: 'Map', icon: '▲' }
+            { path: '/map', label: 'Carte', icon: '▲' }
         ];
 
         //*-- Manager specific routes
         if (user?.role === 'MANAGER') {
             return [
                 ...baseItems,
-                { path: '/problemes', label: 'Problems', icon: '●' },
-                { path: '/signalements', label: 'Reports', icon: '◆' },
-                { path: '/users', label: 'Users', icon: '▼' }
+                { path: '/problemes', label: 'Problemes', icon: '●' },
+                { path: '/signalements', label: 'Signalement', icon: '◆' },
+                { path: '/users', label: 'Utilisateurs', icon: '▼' }
             ];
         }
 
