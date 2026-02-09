@@ -731,19 +731,32 @@ public class SignalementService {
         dto.setIdTypeSignalement(doc.getString("idTypeSignalement"));
         dto.setIdCompte(doc.getString("idCompte"));
         dto.setDescription(doc.getString("description"));
-        // Gestion safe de la date
-        String dateStr = doc.getString("dateSignalement");
-
-        if (dateStr != null) {
-            dto.setDateSignalement(LocalDateTime.parse(dateStr));
-            // dto.setDateSignalement(
-            //         doc.getTimestamp("dateSignalement")
-            //                 .toDate()
-            //                 .toInstant()
-            //                 .atZone(java.time.ZoneId.systemDefault())
-            //                 .toLocalDateTime());
-        } else {
-            dto.setDateSignalement(LocalDateTime.now()); // ou LocalDateTime.now() si tu veux une valeur par défaut
+        // Gestion safe de la date - handle both Timestamp and String formats
+        try {
+            // Try to get as Timestamp first (correct Firestore type)
+            com.google.cloud.Timestamp fbTimestamp = doc.getTimestamp("dateSignalement");
+            if (fbTimestamp != null) {
+                dto.setDateSignalement(
+                        fbTimestamp
+                                .toDate()
+                                .toInstant()
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDateTime());
+            } else {
+                dto.setDateSignalement(LocalDateTime.now());
+            }
+        } catch (Exception e) {
+            // Fallback for legacy string format
+            try {
+                String dateStr = doc.getString("dateSignalement");
+                if (dateStr != null) {
+                    dto.setDateSignalement(LocalDateTime.parse(dateStr));
+                } else {
+                    dto.setDateSignalement(LocalDateTime.now());
+                }
+            } catch (Exception ex) {
+                dto.setDateSignalement(LocalDateTime.now());
+            }
         }
 
         dto.setLatitude(doc.getDouble("latitude"));
