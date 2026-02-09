@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import com.example.carte.dto.BlockedUserDTO;
 import com.example.carte.dto.UserDTO;
 import com.example.carte.entities.Profil;
-import com.example.carte.entities.Signalement;
 import com.example.carte.entities.User;
 import com.example.carte.repository.ProfilRepository;
 import com.example.carte.repository.UtilisateurRepository;

@@ -10,13 +10,14 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { onMounted } from 'vue';
 import { ref } from 'vue';
 import router from './router';
-import { auth } from './firebase';
+import { auth, requestNotificationPermission } from './firebase';
 import { Util } from './utils/util';
 
 const user = ref<User | null>(null);
 
 onMounted(() => {
   onAuthStateChanged(auth, async (u) => {
+     requestNotificationPermission();
     if (u && await Util.checkSession()) {
       user.value = u;
       console.log("Utilisateur connecté :", u);

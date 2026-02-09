@@ -27,7 +27,7 @@ export async function loginService(email: string, password: string): Promise<Api
         }
         const profilCompte = compte ? await ProfilService.getById(compte.idProfil) : null;
         console.log("Profil du compte lors de la connexion :", profilCompte);
-        if (!profilCompte || profilCompte.nom !== "utilisateur") {
+        if (!profilCompte || profilCompte.nom !== "USER") {
             throw new Error("Le profil du compte n'est pas autorisé à se connecter.");
         }
         // const testEmail = "testuser123@example.com";

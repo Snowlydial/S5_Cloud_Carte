@@ -6,5 +6,6 @@ export interface Signalement {
     idCompte: string | null;
     idTypeSignalement: number | string;
     firebaseId?: string;
+    description?: string;
     // idimage?: string | null;
 }

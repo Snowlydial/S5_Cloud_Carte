@@ -2,7 +2,6 @@ package com.example.carte.entities;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import jakarta.persistence.*;
 

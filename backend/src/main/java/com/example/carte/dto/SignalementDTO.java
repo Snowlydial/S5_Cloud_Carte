@@ -3,7 +3,6 @@ package com.example.carte.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.example.carte.entities.Probleme;
 
 import lombok.Data;
 

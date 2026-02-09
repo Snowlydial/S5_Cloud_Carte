@@ -49,6 +49,16 @@
               </ion-select>
             </ion-item>
 
+            <ion-item fill="outline" class="ion-margin-bottom">
+              <ion-input 
+                :value="form.description" 
+                @ionInput="form.description = ($event.target as unknown as HTMLInputElement).value || ''"
+                label="Description" 
+                label-placement="floating"
+                placeholder="Description">
+              </ion-input>
+            </ion-item>
+            
             <ion-button expand="block" :disabled="!form.lat" @click="envoyerSignalement">
               Confirmer le signalement
             </ion-button>
@@ -133,7 +143,7 @@ const defaultIconConfig = { icon: '📍', color: '#2ecc71' };
 import { computed, onMounted, ref } from 'vue';
 import { 
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, 
-  IonList, IonItem, IonLabel, IonSelect, IonSelectOption, IonButton,
+  IonList, IonItem, IonLabel, IonSelect, IonSelectOption, IonButton, IonInput,
   IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonGrid, IonRow, IonCol
 } from '@ionic/vue';
 import { Geolocation } from '@capacitor/geolocation'; // Importation du plugin
@@ -199,6 +209,7 @@ const format = (value?: number) => {
 import { Signalement } from '@/models/Signalement';
 import { TypeSignalementService } from '@/services/TypeSignalement.service';
 import { PhotoService } from '@/services/Photo.service';
+import { SupabaseService } from '@/services/supabase.service';
 
 const { typesSignalement,  getListeTypeSignalement, error, success} = useTypeSignalement();
 const {signaler, loading , getAllSignalements, listeSignalement, getAllSignalementsMine} = useSignalement();
@@ -211,7 +222,8 @@ const listeSignalementEffectif = ref<Signalement[]>([]);
 const form = ref({
   lat: null as number | null,
   lng: null as number | null,
-  type: 'accident'
+  type: 'accident',
+  description: ''
 });
 
 const typesSignalementListe = ref([]);
@@ -299,14 +311,23 @@ const envoyerSignalement = () => {
 };
 
 const finaliserSignalement = async () => {
+  loading.value = true; // Si vous avez un état de chargement
+    
+    // 1. Envoyer les images à Supabase et récupérer les URLs
+    let imageUrls: string[] = [];
+    if (selectedPhotos.value.length > 0) {
+      // imageUrls = await SupabaseService.uploadCapacitorPhotos(selectedPhotos.value);
+    }
+    
   const coords: L.LatLngExpression = [form.value.lat!, form.value.lng!];
   const idType = form.value.type;
+  const desc = form.value.description;
   
   // Ici, vous devrez probablement convertir vos images en Base64 ou FormData 
   // pour les envoyer à votre API via votre composable 'signaler'
   console.log("Envoi final avec", selectedPhotos.value.length, "photos");
   
-  await signaler(idType, coords, selectedPhotos.value); // Modifiez votre composable pour accepter les photos
+  await signaler(idType, coords, selectedPhotos.value, desc); // Modifiez votre composable pour accepter les photos
   
   isPhotoModalOpen.value = false;
   selectedPhotos.value = []; // Reset
@@ -316,8 +337,6 @@ const finaliserSignalement = async () => {
 onMounted(async () => {
   const tanaCoords: L.LatLngExpression = [-18.8792, 47.5079];
   recap.value = await CompteService.getRecap();
-
-
 
   // Initialisation
   map = L.map('map').setView(tanaCoords, 13);
@@ -513,7 +532,7 @@ const loadMapData = async () => {
   display: flex;
   flex-direction: column;
   height: 100%;
-}3
+}
 
 #map {
   flex: 6; /* Prend 60% de l'espace disponible */

@@ -1,6 +1,5 @@
 package com.example.carte.repository;
 
-import com.example.carte.entities.Signalement;
 import com.example.carte.entities.TypeSignalement;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

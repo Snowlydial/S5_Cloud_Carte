@@ -11,7 +11,6 @@ import com.example.carte.dto.UpdateProblemeStatusRequest;
 import com.example.carte.entities.Probleme;
 import com.example.carte.security.SecurityUtils;
 import com.example.carte.services.ProblemeService;
-import com.example.carte.services.ProblemeStatusDTO;
 @RestController
 @RequestMapping("/api/problemes")
 public class ProblemeController {

@@ -1,5 +1,7 @@
 import { SignalementRepository } from "@/repositories/SignalementRepository";
 import { Signalement } from "@/models/Signalement";
+import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
+import { db } from "@/firebase";
 
 export class SignalementService {
   static async getAll(): Promise<Signalement[]> {
@@ -29,14 +31,42 @@ export class SignalementService {
     }
   }
 
-  static async create(data: Omit<Signalement, "idSignalement">) {
-    try {
-      const result = await SignalementRepository.create(data);
+  // static async create(data: Omit<Signalement, "idSignalement">) {
+  //   try {
+  //     const result = await SignalementRepository.create(data);
       
-      const fireBaseId = result.id;
-      await SignalementService.update(fireBaseId, { firebaseId: fireBaseId });
+  //     const fireBaseId = result.id;
+  //     await SignalementService.update(fireBaseId, { firebaseId: fireBaseId });
 
-      return result;
+  //     return result;
+  //   } catch (error) {
+  //     console.error("Erreur lors de la création du signalement:", error);
+  //     throw error;
+  //   }
+  // }
+
+  static async create(data: any, base64Images: string[]) {
+    try {
+      // 1. Créer le document principal du signalement
+      const signalementRef = await addDoc(collection(db, "signalements"), data);
+      const fireBaseId = signalementRef.id;
+
+      // 2. Ajouter les images dans une sous-collection
+      if (base64Images.length > 0) {
+        const imagesSubCollection = collection(db, "signalements", fireBaseId, "images");
+        const imagePromises = base64Images.map(imgStr => 
+          addDoc(imagesSubCollection, { 
+            content: imgStr, 
+            createdAt: new Date() 
+          })
+        );
+        await Promise.all(imagePromises);
+      }
+
+      // 3. Mettre à jour l'ID (optionnel selon votre logique actuelle)
+      await updateDoc(doc(db, "signalements", fireBaseId), { firebaseId: fireBaseId });
+
+      return signalementRef;
     } catch (error) {
       console.error("Erreur lors de la création du signalement:", error);
       throw error;

@@ -7,6 +7,7 @@ import { TypeSignalement } from "@/models/TypeSignalement";
 import { Signalement } from "@/models/Signalement";
 import { SignalementService } from "@/services/Signalement.service";
 import { Util } from "@/utils/util";
+import { FirebaseImageService } from "@/services/FirebaseImage.service";
 
 const typesSignalement = ref<TypeSignalement[] | null>(null);
 const error = ref<string | null>(null);
@@ -41,7 +42,7 @@ const useSignalement = () => {
   }
 
  
-  const signaler = async (idTypeSignalement: string, coords: L.LatLngExpression, selectedPhotos: any[]) => {
+  const signaler = async (idTypeSignalement: string, coords: L.LatLngExpression, selectedPhotos: any[], description: string) => {
     const [lat, lng] = Array.isArray(coords) ? coords : [(coords as any).lat, (coords as any).lng];
     loading.value = true;
 
@@ -74,10 +75,15 @@ const useSignalement = () => {
             longitude: Number(lng),
             idCompte: compteId.value,
             idTypeSignalement: idTypeSignalement,
+            description: description
         };
 
+        const base64Images = await Promise.all(
+        selectedPhotos.map(p => FirebaseImageService.processAndCompress(p))
+    );
+
         console.log("Signalement prêt à l'envoi :", signalement);
-        await SignalementService.create(signalement);
+        await SignalementService.create(signalement, base64Images);
         success.value = "Signalement envoyé avec succès";
 
     } catch (err) {
