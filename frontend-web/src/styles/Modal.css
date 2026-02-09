@@ -8,7 +8,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(44, 58, 71, 0.7);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -18,9 +18,9 @@
 }
 
 .modal-container {
-    background: #fff;
-    border: 4px solid #000;
-    box-shadow: 12px 12px 0 #000;
+    background: #F5F6FA;
+    border: 4px solid #2C3A47;
+    box-shadow: 12px 12px 0 #2C3A47;
     max-width: 600px;
     width: 100%;
     max-height: 90vh;
@@ -33,8 +33,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 24px 32px;
-    border-bottom: 4px solid #000;
-    background: #ffeb3b;
+    border-bottom: 4px solid #2C3A47;
+    background: #FFC312;
 }
 
 .modal-header h2 {
@@ -43,14 +43,14 @@
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: -1px;
-    color: #000;
+    color: #2C3A47;
 }
 
 .modal-close {
     width: 40px;
     height: 40px;
-    border: 3px solid #000;
-    background: #fff;
+    border: 3px solid #2C3A47;
+    background: #F5F6FA;
     font-size: 28px;
     font-weight: 900;
     cursor: pointer;
@@ -63,10 +63,10 @@
 }
 
 .modal-close:hover {
-    background: #ff5252;
-    color: #fff;
+    background: #FF6F61;
+    color: #F5F6FA;
     transform: translate(-2px, -2px);
-    box-shadow: 3px 3px 0 #000;
+    box-shadow: 3px 3px 0 #2C3A47;
 }
 
 .modal-content {
@@ -93,15 +93,15 @@
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #000;
+    color: #2C3A47;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
     padding: 12px;
-    border: 3px solid #000;
-    background: #fff;
+    border: 3px solid #2C3A47;
+    background: #F5F6FA;
     font-family: inherit;
     font-size: 14px;
     font-weight: 600;
@@ -112,8 +112,8 @@
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    background: #ffeb3b;
-    box-shadow: 4px 4px 0 #000;
+    background: #FFC312;
+    box-shadow: 4px 4px 0 #2C3A47;
     transform: translate(-2px, -2px);
 }
 
@@ -124,11 +124,11 @@
 
 .form-note {
     padding: 16px;
-    background: #f5f5f5;
-    border: 3px solid #000;
+    background: #F5F6FA;
+    border: 3px solid #2C3A47;
     font-size: 12px;
     line-height: 1.6;
-    color: #666;
+    color: #2C3A47;
     margin: 0;
 }
 
@@ -138,13 +138,13 @@
     gap: 12px;
     margin-top: 24px;
     padding-top: 24px;
-    border-top: 3px solid #000;
+    border-top: 3px solid #2C3A47;
 }
 
 .modal-actions button {
     flex: 1;
     padding: 14px;
-    border: 3px solid #000;
+    border: 3px solid #2C3A47;
     font-weight: 900;
     font-size: 14px;
     cursor: pointer;
@@ -155,24 +155,24 @@
 }
 
 .modal-actions .btn-cancel {
-    background: #fff;
-    color: #000;
+    background: #F5F6FA;
+    color: #2C3A47;
 }
 
 .modal-actions .btn-cancel:hover {
-    background: #f5f5f5;
+    background: #4ECDC4;
     transform: translate(-2px, -2px);
-    box-shadow: 4px 4px 0 #000;
+    box-shadow: 4px 4px 0 #2C3A47;
 }
 
 .modal-actions .btn-submit {
-    background: #ffeb3b;
-    color: #000;
+    background: #FFC312;
+    color: #2C3A47;
 }
 
 .modal-actions .btn-submit:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 4px 4px 0 #000;
+    box-shadow: 4px 4px 0 #2C3A47;
 }
 
 /* Responsive */
