@@ -5,6 +5,8 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Data
@@ -34,7 +36,7 @@ public class Signalement implements Syncable, Serializable {
     @ManyToOne
     @JoinColumn(name = "id_type", nullable = false)
     private TypeSignalement typeSignalement;
-    
+
     @OneToOne(mappedBy = "signalement")
     private Probleme probleme;
     @Column(name = "firebase_id")
@@ -45,6 +47,8 @@ public class Signalement implements Syncable, Serializable {
 
     @Column(name = "description")
     private String description;
+    @OneToMany(mappedBy = "signalement", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SignalementImage> images = new ArrayList<>();
 
     // Constructors
     public Signalement() {

@@ -1,6 +1,7 @@
 package com.example.carte.services;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -673,4 +674,20 @@ public class UserService {
         return mapToDTO(user);
     }
 
+    public List<String> getFcmTokensByUid(String firebaseUid) throws Exception {
+
+        Firestore db = FirestoreClient.getFirestore();
+
+        // 🔎 Supposons que le doc ID = firebaseUid
+        DocumentReference docRef = db.collection("compte").document(firebaseUid);
+        DocumentSnapshot snapshot = docRef.get().get();
+
+        if (!snapshot.exists()) {
+            throw new RuntimeException("Utilisateur introuvable sur Firebase");
+        }
+
+        List<String> tokens = (List<String>) snapshot.get("fcmTokens");
+
+        return tokens != null ? tokens : new ArrayList<>();
+    }
 }

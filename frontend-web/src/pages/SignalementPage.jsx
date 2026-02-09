@@ -9,6 +9,9 @@ import {
     deleteSignalement,
     syncSignalements
 } from '../services/signalementService';
+import {
+    getEntreprises,
+} from '../services/problemeService';
 import { createProbleme } from '../services/problemeService';
 import Modal from '../components/Modal';
 import { SIGNALEMENT_STATUS } from '../config/constants';
@@ -23,6 +26,8 @@ const SignalementPage = () => {
     const [syncing, setSyncing] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({});
+    const [entreprises, setEntreprises] = useState([]);
+
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
@@ -44,6 +49,7 @@ const SignalementPage = () => {
 
     useEffect(() => {
         loadSignalements();
+        loadEntreprises();
     }, []);
 
     const loadSignalements = async () => {
@@ -57,6 +63,24 @@ const SignalementPage = () => {
         } finally {
             setLoading(false);
         }
+    };
+    const loadEntreprises = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const response = await getEntreprises(); // on attend la promesse
+            setEntreprises(response.data || response);
+            console.log("Entreprises :", response);
+        } catch (err) {
+            console.error("Erreur lors du chargement des entreprises :", err);
+            setError(err.message || "Erreur lors du chargement");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEditInputChange = (field, value) => {
+        setEditForm(prev => ({ ...prev, [field]: value }));
     };
 
     const handleSync = async () => {
@@ -235,21 +259,16 @@ const SignalementPage = () => {
                                                 sig.description
                                             )}
                                         </td>
-                                        <td>{sig.dateSignalement}</td>
+                                        <td>{new Date(sig.dateSignalement).toLocaleDateString()}</td>
                                         <td>
-                                            {editingId === sig.idSignalement ? (
-                                                <select
-                                                    value={editForm.status}
-                                                    onChange={(e) => handleInputChange('status', e.target.value)}
-                                                    className="edit-select"
-                                                >
-                                                    <option value={SIGNALEMENT_STATUS.NOUVEAU}>Nouveau</option>
-                                                    <option value={SIGNALEMENT_STATUS.EN_COURS}>En cours</option>
-                                                    <option value={SIGNALEMENT_STATUS.TERMINE}>Terminé</option>
-                                                </select>
+                                            {/* ✅ Afficher le statut en fonction de l'existence du problème */}
+                                            {sig.problemeDTO ? (
+                                                <span className="status-badge status-traite">
+                                                    Déjà traité
+                                                </span>
                                             ) : (
-                                                <span className={`status-badge status-${sig.status}`}>
-                                                    {sig.status}
+                                                <span className="status-badge status-non-traite">
+                                                    Non traité
                                                 </span>
                                             )}
                                         </td>
@@ -257,38 +276,14 @@ const SignalementPage = () => {
                                             {editingId === sig.idSignalement ? (
                                                 <input
                                                     type="number"
-                                                    value={editForm.surface}
+                                                    value={editForm.problemeDTO.surfaceM2}
                                                     onChange={(e) => handleInputChange('surface', Number(e.target.value))}
                                                     className="edit-input"
                                                 />
                                             ) : (
-                                                sig.surfaceM2
+                                                sig.problemeDTO?.surfaceM2
                                             )}
                                         </td>
-                                        {/* <td>
-                                            {editingId === sig.idSignalement ? (
-                                                <input
-                                                    type="number"
-                                                    value={editForm.budget}
-                                                    onChange={(e) => handleInputChange('budget', Number(e.target.value))}
-                                                    className="edit-input"
-                                                />
-                                            ) : (
-                                                sig.budget
-                                            )}
-                                        </td>
-                                        <td>
-                                            {editingId === sig.idSignalement ? (
-                                                <input
-                                                    type="text"
-                                                    value={editForm.entreprise}
-                                                    onChange={(e) => handleInputChange('entreprise', e.target.value)}
-                                                    className="edit-input"
-                                                />
-                                            ) : (
-                                                sig.entreprise
-                                            )}
-                                        </td> */}
                                         <td>
                                             <div className="action-buttons">
                                                 {editingId === sig.idSignalement ? (
@@ -305,12 +300,17 @@ const SignalementPage = () => {
                                                         <button onClick={() => handleEdit(sig)} className="btn-edit">
                                                             Modifier
                                                         </button>
-                                                        <button
-                                                            onClick={() => handleOpenModal(sig.idSignalement)}
-                                                            className="btn-add-probleme"
-                                                        >
-                                                            Ajouter Problème
-                                                        </button>
+
+                                                        {/* ✅ Afficher le bouton seulement si pas encore de problème */}
+                                                        {!sig.problemeDTO && (
+                                                            <button
+                                                                onClick={() => handleOpenModal(sig.idSignalement)}
+                                                                className="btn-add-probleme"
+                                                            >
+                                                                Ajouter Problème
+                                                            </button>
+                                                        )}
+
                                                         <button onClick={() => handleDelete(sig.idSignalement)} className="btn-delete">
                                                             Supprimer
                                                         </button>
@@ -369,14 +369,27 @@ const SignalementPage = () => {
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="budget">Entreprise Id</label>
-                        <input
+                        <label htmlFor="budget">Entreprise </label>
+                        {/* <input
                             type="number"
                             id="entrepriseId"
                             onChange={(e) => handleProblemeInputChange('entrepriseId', e.target.value)}
                             min="0"
                             required
-                        />
+                        /> */}
+                        <select name="entrepriseId" id="entrepriseId" value={editForm.entrepriseNom}
+                            onChange={(e) => handleProblemeInputChange('entrepriseId', e.target.value)}>
+                            <option value="">-- Sélectionner une entreprise --</option>
+
+                            {entreprises.map((entreprise) => (
+                                <option
+                                    key={entreprise.idEntreprise}
+                                    value={entreprise.idEntreprise}
+                                >
+                                    {entreprise.nom}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                     <div className="modal-actions">
                         <button type="button" onClick={handleCloseModal} className="btn-cancel">

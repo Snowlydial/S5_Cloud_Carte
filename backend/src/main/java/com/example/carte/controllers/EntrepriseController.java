@@ -9,6 +9,10 @@ import org.springframework.web.bind.annotation.*;
 import com.example.carte.dto.EntrepriseDTO;
 import com.example.carte.services.EntrepriseService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+
 @RestController
 @RequestMapping("/api/entreprises")
 @CrossOrigin(origins = "*")
@@ -20,9 +24,11 @@ public class EntrepriseController {
         this.entrepriseService = entrepriseService;
     }
 
-    // ===============================
-    // GET : liste des entreprises (sync Firebase si online)
-    // ===============================
+     @Operation(summary = "Voir la liste des entreprises", description = "retourne la liste des entreprises sous forme de DTO")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Liste recupere avec succes"),
+            @ApiResponse(responseCode = "500", description = "recuperation de la liste avec succes")
+    })
     @GetMapping
     public ResponseEntity<List<EntrepriseDTO>> getAllEntreprises() throws InterruptedException, ExecutionException {
         List<EntrepriseDTO> entreprises = entrepriseService.getListSyncEntreprises();

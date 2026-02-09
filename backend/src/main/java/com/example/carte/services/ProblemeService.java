@@ -249,37 +249,37 @@ public class ProblemeService {
                         newLocal.setCompte(compte);
                     }
 
-                   
                     ProblemeStatus problemeStatus = new ProblemeStatus();
                     System.out.println("statutus " + firebaseDto.getStatutNom());
                     problemeRepo.save(newLocal);
                     // if (firebaseDto.getStatutNom() != null) {
-                    //     Status status = statutRepo.findByNom(firebaseDto.getStatutNom())
-                    //             .orElse(null);
+                    // Status status = statutRepo.findByNom(firebaseDto.getStatutNom())
+                    // .orElse(null);
 
-                    //     if (status != null) {
-                    //         // Créer un ProblemeStatus pour le problème
-                    //         problemeStatus.setProbleme(newLocal);
-                    //         problemeStatus.setStatus(status);
-                    //         problemeStatus.setDateStatus(LocalDateTime.now());
-                    //         // problemeStatus.setEtat(true); // statut actuel
-                    //         // Initialiser la liste si null
-                    //         if (newLocal.getStatusList() == null) {
-                    //             newLocal.setStatusList(new ArrayList<>());
-                    //         }
-                    //         newLocal.getStatusList().add(problemeStatus);
-                    //     }
+                    // if (status != null) {
+                    // // Créer un ProblemeStatus pour le problème
+                    // problemeStatus.setProbleme(newLocal);
+                    // problemeStatus.setStatus(status);
+                    // problemeStatus.setDateStatus(LocalDateTime.now());
+                    // // problemeStatus.setEtat(true); // statut actuel
+                    // // Initialiser la liste si null
+                    // if (newLocal.getStatusList() == null) {
+                    // newLocal.setStatusList(new ArrayList<>());
+                    // }
+                    // newLocal.getStatusList().add(problemeStatus);
+                    // }
                     // }
 
                     // regarder les status du probleme dans firebase
                     // problemeStatusRepository.save(problemeStatus);
-                    problemeStatusService.getListSyncProblemeStatus();
+                    // problemeStatusService.getListSyncProblemeStatus();
 
                     System.out.println("🔍   ✅ Créé en local");
                 }
             }
 
             System.out.println("🔍 ========== FIN SYNC PROBLEMES ========== " + LocalDateTime.now());
+            problemeStatusService.getListSyncProblemeStatus();
 
             return problemeRepo.findAll()
                     .stream()
@@ -420,7 +420,7 @@ public class ProblemeService {
                 local.getCompte() != null ? local.getCompte().getFirebaseUid() : null);
 
         // Entreprise
-        map.put("entrepriseNom",
+        map.put("idEntreprise",
                 local.getEntreprise() != null ? local.getEntreprise().getFirebaseId() : null);
 
         // Signalement
@@ -464,7 +464,7 @@ public class ProblemeService {
                         LocalDateTime.parse(dateStr));
             }
         }
-
+        dto.setIdEntreprise(doc.contains("idEntreprise") ? doc.getString("idEntreprise") : "null");
         dto.setSurfaceM2(doc.contains("surfaceM2") ? doc.getDouble("surfaceM2") : 0.0);
         dto.setBudget(doc.contains("budget") ? doc.getDouble("budget") : 0.0);
         dto.setCompteEmail(doc.getString("compteEmail"));
@@ -489,7 +489,7 @@ public class ProblemeService {
 
         }
 
-        if (dto.getIdSignalement() != null ) {
+        if (dto.getIdSignalement() != null) {
             Signalement signalement = signalementRepo
                     .findByFirebaseId(dto.getIdSignalement())
                     .orElseGet(() -> {
@@ -505,20 +505,20 @@ public class ProblemeService {
                     });
             p.setSignalement(signalement);
         }
-        if (dto.getEntrepriseNom() != null) {
+        if (dto.getIdEntreprise() != null) {
             Entreprise entreprise = entrepriseRepo
-                                .findByFirebaseId(dto.getIdEntreprise())
-                                .orElseGet(() -> {
-                                    try {
-                                        entrepriseService.getListSyncEntreprises();
-                                    } catch (InterruptedException | ExecutionException e) {
-                                        e.printStackTrace();
-                                    }
-                                    return entrepriseRepo.findByFirebaseId(dto.getIdEntreprise())
-                                            .orElseThrow(() -> new RuntimeException(
-                                                    "Entreprise introuvable après sync : "
-                                                            + dto.getIdEntreprise()));
-                                });
+                    .findByFirebaseId(dto.getIdEntreprise())
+                    .orElseGet(() -> {
+                        try {
+                            entrepriseService.getListSyncEntreprises();
+                        } catch (InterruptedException | ExecutionException e) {
+                            e.printStackTrace();
+                        }
+                        return entrepriseRepo.findByFirebaseId(dto.getIdEntreprise())
+                                .orElseThrow(() -> new RuntimeException(
+                                        "Entreprise introuvable après sync : "
+                                                + dto.getIdEntreprise()));
+                    });
 
             p.setEntreprise(entreprise);
         }
@@ -605,7 +605,9 @@ public class ProblemeService {
         dto.setDateProbleme(probleme.getDateProbleme());
         dto.setSurfaceM2(probleme.getSurfaceM2());
         dto.setBudget(probleme.getBudget());
-        dto.setEntrepriseNom(probleme.getEntreprise() != null ? probleme.getEntreprise().getIdEntreprise() : null);
+        dto.setEntrepriseNom(probleme.getEntreprise() != null ? probleme.getEntreprise().getNom() : null);
+        dto.setIdEntreprise(probleme.getEntreprise() != null ? probleme.getEntreprise().getFirebaseId() : null);
+
         dto.setCompteEmail(probleme.getCompte() != null ? probleme.getCompte().getEmail() : null);
         dto.setSignalementId(probleme.getSignalement() != null ? probleme.getSignalement().getIdSignalement() : null);
         dto.setStatut(probleme.getStatusList().getLast().getStatus().getIdStatus());
@@ -868,4 +870,15 @@ public class ProblemeService {
         return problemes.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
+    // fonction pour calculer le delai de traitement moyen des travaux
+    public double getDelaiTraitementMoyen() {
+        List<Probleme> problemes = problemeRepo.findAll();
+        // pour chaque probleme on calcule le delai de traitement moyen
+        Integer total = 0;
+        for (Probleme probleme : problemes) {
+            Integer diff = problemeStatusRepository.findDiffDate(probleme.getIdProbleme());
+            total += diff;
+        }
+        return (total / problemes.size());
+    }
 }
