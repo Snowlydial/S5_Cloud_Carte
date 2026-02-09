@@ -15,7 +15,7 @@ import {
 import { createProbleme } from '../services/problemeService';
 import Modal from '../components/Modal';
 import { SIGNALEMENT_STATUS } from '../config/constants';
-import '../styles/Signalement.css';
+import '../styles/SharedPages.css';
 
 const SignalementPage = () => {
     const { user, hasRole } = useAuth();
@@ -186,9 +186,10 @@ const SignalementPage = () => {
                 budget: Number(problemeForm.budget),
                 entrepriseId: Number(problemeForm.entrepriseId)
             });
+
             setSuccess('Problème ajouté avec succès');
             handleCloseModal();
-            loadSignalements(); // Reload to show updated data
+            loadSignalements();
         } catch (err) {
             setError(err.message);
         }
@@ -197,9 +198,9 @@ const SignalementPage = () => {
     return (
         <div className="page-container">
             <div className="page-header">
-                <div>
+                <div className="header-title">
                     <h1>Gestion des Signalements</h1>
-                    <p>Gérer les informations des problèmes routiers</p>
+                    <p>CRUD des signalements et synchronisation Firebase</p>
                 </div>
                 <div className="header-actions">
                     <button
@@ -207,13 +208,7 @@ const SignalementPage = () => {
                         className="btn-primary"
                         disabled={syncing}
                     >
-                        {syncing ? 'Synchronisation...' : 'Synchroniser'}
-                    </button>
-                    <button onClick={() => navigate('/map')} className="btn-secondary">
-                        Voir la carte
-                    </button>
-                    <button onClick={() => navigate('/dashboard')} className="btn-secondary">
-                        Retour
+                        {syncing ? 'SYNC...' : 'SYNCHRONISER'}
                     </button>
                 </div>
             </div>
@@ -238,8 +233,6 @@ const SignalementPage = () => {
                                     <th>Date</th>
                                     <th>Statut</th>
                                     <th>Surface (m²)</th>
-                                    {/* <th>Budget (Ar)</th>
-                                    <th>Entreprise</th> */}
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -370,13 +363,6 @@ const SignalementPage = () => {
                     </div>
                     <div className="form-group">
                         <label htmlFor="budget">Entreprise </label>
-                        {/* <input
-                            type="number"
-                            id="entrepriseId"
-                            onChange={(e) => handleProblemeInputChange('entrepriseId', e.target.value)}
-                            min="0"
-                            required
-                        /> */}
                         <select name="entrepriseId" id="entrepriseId" value={editForm.entrepriseNom}
                             onChange={(e) => handleProblemeInputChange('entrepriseId', e.target.value)}>
                             <option value="">-- Sélectionner une entreprise --</option>
