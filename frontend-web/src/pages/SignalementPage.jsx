@@ -24,12 +24,15 @@ const SignalementPage = () => {
     const [signalements, setSignalements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
-    const [editingId, setEditingId] = useState(null);
-    const [editForm, setEditForm] = useState({});
     const [entreprises, setEntreprises] = useState([]);
 
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+
+    //*-- Modal state for editing signalement
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [editForm, setEditForm] = useState({});
 
     //*-- Modal state for adding probleme
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -98,22 +101,27 @@ const SignalementPage = () => {
         }
     };
 
-    const handleEdit = (signalement) => {
-        setEditingId(signalement.id);
+    //?=== EDIT MODAL HANDLERS
+    const handleOpenEditModal = (signalement) => {
+        setEditingId(signalement.idSignalement);
         setEditForm({ ...signalement });
+        setIsEditModalOpen(true);
     };
 
-    const handleCancelEdit = () => {
+    const handleCloseEditModal = () => {
+        setIsEditModalOpen(false);
         setEditingId(null);
         setEditForm({});
     };
 
-    const handleSaveEdit = async () => {
+    const handleSaveEdit = async (e) => {
+        e.preventDefault();
         setError('');
         setSuccess('');
         try {
             await updateSignalement(editingId, editForm);
             setSuccess('Signalement mis à jour');
+            setIsEditModalOpen(false);
             setEditingId(null);
             setEditForm({});
             loadSignalements();
@@ -136,10 +144,6 @@ const SignalementPage = () => {
         } catch (err) {
             setError(err.message);
         }
-    };
-
-    const handleInputChange = (field, value) => {
-        setEditForm(prev => ({ ...prev, [field]: value }));
     };
 
     //?=== PROBLEME MODAL HANDLERS
@@ -240,18 +244,7 @@ const SignalementPage = () => {
                                 {signalements.map((sig) => (
                                     <tr key={sig.idSignalement}>
                                         <td>{sig.idSignalement}</td>
-                                        <td>
-                                            {editingId === sig.idSignalement ? (
-                                                <input
-                                                    type="text"
-                                                    value={editForm.description}
-                                                    onChange={(e) => handleInputChange('description', e.target.value)}
-                                                    className="edit-input"
-                                                />
-                                            ) : (
-                                                sig.description
-                                            )}
-                                        </td>
+                                        <td>{sig.description}</td>
                                         <td>{new Date(sig.dateSignalement).toLocaleDateString()}</td>
                                         <td>
                                             {/* ✅ Afficher le statut en fonction de l'existence du problème */}
@@ -265,50 +258,26 @@ const SignalementPage = () => {
                                                 </span>
                                             )}
                                         </td>
-                                        <td>
-                                            {editingId === sig.idSignalement ? (
-                                                <input
-                                                    type="number"
-                                                    value={editForm.problemeDTO.surfaceM2}
-                                                    onChange={(e) => handleInputChange('surface', Number(e.target.value))}
-                                                    className="edit-input"
-                                                />
-                                            ) : (
-                                                sig.problemeDTO?.surfaceM2
-                                            )}
-                                        </td>
+                                        <td>{sig.problemeDTO?.surfaceM2}</td>
                                         <td>
                                             <div className="action-buttons">
-                                                {editingId === sig.idSignalement ? (
-                                                    <>
-                                                        <button onClick={handleSaveEdit} className="btn-save">
-                                                            Sauver
-                                                        </button>
-                                                        <button onClick={handleCancelEdit} className="btn-cancel">
-                                                            Annuler
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <button onClick={() => handleEdit(sig)} className="btn-edit">
-                                                            Modifier
-                                                        </button>
+                                                <button onClick={() => handleOpenEditModal(sig)} className="btn-edit">
+                                                    Modifier
+                                                </button>
 
-                                                        {/* ✅ Afficher le bouton seulement si pas encore de problème */}
-                                                        {!sig.problemeDTO && (
-                                                            <button
-                                                                onClick={() => handleOpenModal(sig.idSignalement)}
-                                                                className="btn-add-probleme"
-                                                            >
-                                                                Ajouter Problème
-                                                            </button>
-                                                        )}
-
-                                                        <button onClick={() => handleDelete(sig.idSignalement)} className="btn-delete">
-                                                            Supprimer
-                                                        </button>
-                                                    </>
+                                                {/* ✅ Afficher le bouton seulement si pas encore de problème */}
+                                                {!sig.problemeDTO && (
+                                                    <button
+                                                        onClick={() => handleOpenModal(sig.idSignalement)}
+                                                        className="btn-add-probleme"
+                                                    >
+                                                        Ajouter Problème
+                                                    </button>
                                                 )}
+
+                                                <button onClick={() => handleDelete(sig.idSignalement)} className="btn-delete">
+                                                    Supprimer
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -318,6 +287,34 @@ const SignalementPage = () => {
                     </div>
                 )}
             </div>
+
+            {/* Modal for editing signalement */}
+            <Modal
+                isOpen={isEditModalOpen}
+                onClose={handleCloseEditModal}
+                title="Modifier le Signalement"
+            >
+                <form onSubmit={handleSaveEdit} className="modal-form">
+                    <div className="form-group">
+                        <label htmlFor="description">Description</label>
+                        <input
+                            type="text"
+                            id="description"
+                            value={editForm.description || ''}
+                            onChange={(e) => handleEditInputChange('description', e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="modal-actions">
+                        <button type="button" onClick={handleCloseEditModal} className="btn-cancel">
+                            Annuler
+                        </button>
+                        <button type="submit" className="btn-submit">
+                            Mettre à jour
+                        </button>
+                    </div>
+                </form>
+            </Modal>
 
             {/* Modal for adding probleme */}
             <Modal
