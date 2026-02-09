@@ -1,201 +1,449 @@
+/* ==========================================
+   NEOBRUTALISM MAP STYLES
+   ========================================== */
+
 .map-page {
-  min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
+    min-height: 100vh;
+    background-color: #fafafa;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Space Mono', 'Courier New', monospace;
 }
 
+/* Map Header */
 .map-header {
-  background: white;
-  padding: 20px 30px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    background: #fff;
+    padding: 24px 32px;
+    border: 4px solid #000;
+    box-shadow: 6px 6px 0 #000;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    flex-wrap: wrap;
 }
 
 .map-header h1 {
-  margin: 0 0 5px 0;
-  font-size: 24px;
-  color: #333;
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    font-weight: 900;
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: -1px;
 }
 
 .map-header p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
+    margin: 0;
+    color: #666;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
 }
 
+/* Header Actions */
+.header-actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.btn-primary,
+.btn-secondary {
+    padding: 12px 20px;
+    font-weight: 900;
+    font-size: 13px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: inherit;
+    transition: all 0.1s ease;
+    border: 3px solid #000;
+}
+
+.btn-primary {
+    background: #ffeb3b;
+    color: #000;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 #000;
+}
+
+.btn-primary:disabled {
+    background: #f5f5f5;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: #fff;
+    color: #000;
+}
+
+.btn-secondary:hover {
+    background: #f5f5f5;
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 #000;
+}
+
+/* Container Wrapper */
 .map-container-wrapper {
-  flex: 1;
-  display: flex;
-  padding: 20px;
-  gap: 20px;
+    flex: 1;
+    display: flex;
+    padding: 0;
+    gap: 24px;
+    min-height: 0;
 }
 
+/* Sidebar */
 .map-sidebar {
-  width: 300px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex-shrink: 0;
 }
 
 .filter-section,
 .stats-section,
 .legend-section {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: #fff;
+    padding: 20px;
+    border: 4px solid #000;
+    box-shadow: 6px 6px 0 #000;
 }
 
 .filter-section h3,
 .stats-section h3,
 .legend-section h3 {
-  margin: 0 0 15px 0;
-  font-size: 16px;
-  color: #333;
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 900;
+    color: #000;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 3px solid #000;
+    padding-bottom: 8px;
 }
 
+/* Filter Select */
 .filter-select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
+    width: 100%;
+    padding: 12px;
+    border: 3px solid #000;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.1s ease;
 }
 
+.filter-select:hover {
+    background: #ffeb3b;
+}
+
+.filter-select:focus {
+    outline: none;
+    box-shadow: 4px 4px 0 #000;
+    transform: translate(-2px, -2px);
+}
+
+/* Stats */
 .stat-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 2px solid #000;
 }
 
 .stat-item:last-child {
-  border-bottom: none;
+    border-bottom: none;
 }
 
 .stat-label {
-  font-size: 14px;
-  color: #666;
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
 }
 
 .stat-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
+    font-size: 14px;
+    font-weight: 900;
+    color: #000;
 }
 
+/* Legend */
 .legend-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 8px;
+    background: #f5f5f5;
+    border: 2px solid #000;
+}
+
+.legend-item:last-child {
+    margin-bottom: 0;
 }
 
 .legend-color {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    border: 3px solid #000;
+    flex-shrink: 0;
 }
 
+.legend-item span:last-child {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Map Wrapper */
 .map-wrapper {
-  flex: 1;
-  position: relative;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+    flex: 1;
+    position: relative;
+    background: #fff;
+    border: 4px solid #000;
+    box-shadow: 8px 8px 0 #000;
+    overflow: hidden;
+    min-height: 500px;
 }
 
+/* Loading Overlay */
 .loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: white;
-  color: #666;
-  font-size: 16px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: #000;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    z-index: 999;
 }
 
+/* Error Message */
+.error-message {
+    background: #ff5252;
+    color: #fff;
+    padding: 16px 24px;
+    border: 4px solid #000;
+    box-shadow: 6px 6px 0 #000;
+    margin-bottom: 20px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Marker Popup */
 .marker-popup {
-  font-size: 14px;
+    font-size: 13px;
+    font-family: 'Space Mono', 'Courier New', monospace;
 }
 
 .marker-popup h4 {
-  margin: 0 0 10px 0;
-  color: #333;
+    margin: 0 0 12px 0;
+    color: #000;
+    font-size: 14px;
+    font-weight: 900;
+    text-transform: uppercase;
+    border-bottom: 2px solid #000;
+    padding-bottom: 6px;
 }
 
 .marker-popup p {
-  margin: 5px 0;
-  color: #666;
+    margin: 8px 0;
+    color: #333;
+    font-size: 12px;
+    line-height: 1.4;
 }
 
 .marker-popup strong {
-  color: #333;
+    color: #000;
+    font-weight: 900;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.5px;
 }
 
+/* View Photos Button */
+.btn-view-photos {
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: #000;
+    color: #fff;
+    border: 3px solid #000;
+    font-weight: 900;
+    font-size: 11px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: inherit;
+    transition: all 0.1s ease;
+    width: 100%;
+}
+
+.btn-view-photos:hover {
+    background: #ffeb3b;
+    color: #000;
+    transform: translate(-2px, -2px);
+    box-shadow: 3px 3px 0 #000;
+}
+
+/* Status Indicator */
 .map-status-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 5px;
-  font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
 }
 
 .status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid #000;
+    display: inline-block;
 }
 
 .status-dot.online {
-  background-color: #27ae60;
+    background-color: #27ae60;
 }
 
 .status-dot.offline {
-  background-color: #e74c3c;
+    background-color: #ff5252;
 }
 
 .status-text {
-  color: #666;
+    color: #000;
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.5px;
 }
 
 .status-note {
-  color: #3498db;
-  font-style: italic;
+    color: #666;
+    font-style: normal;
+    font-size: 11px;
 }
 
+/* Error Overlay */
 .map-error-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.98);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
 }
 
 .map-error-content {
-  text-align: center;
-  padding: 30px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    padding: 40px;
+    background: #fff;
+    border: 4px solid #000;
+    box-shadow: 8px 8px 0 #000;
+    max-width: 400px;
 }
 
 .map-error-content p {
-  margin-bottom: 20px;
-  color: #e74c3c;
-  font-size: 16px;
+    margin-bottom: 20px;
+    color: #ff5252;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Custom Marker Icon */
+.custom-marker-icon {
+    filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.3));
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .map-container-wrapper {
+        flex-direction: column;
+    }
+
+    .map-sidebar {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+    }
+
+    .filter-section,
+    .stats-section,
+    .legend-section {
+        min-width: 280px;
+    }
+
+    .map-wrapper {
+        min-height: 400px;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .header-actions .btn-primary,
+    .header-actions .btn-secondary {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .map-header {
+        padding: 20px;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .map-header h1 {
+        font-size: 24px;
+    }
+
+    .map-sidebar {
+        flex-direction: column;
+    }
+
+    .filter-section,
+    .stats-section,
+    .legend-section {
+        min-width: auto;
+    }
+
+    .header-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .header-actions .btn-primary,
+    .header-actions .btn-secondary {
+        width: 100%;
+    }
 }
