@@ -1,2 +1,432 @@
-/* For information on how to create your own theme, please refer to:
-http://ionicframework.com/docs/theming/ */
+/* ==========================================
+   NEOBRUTALISM THEME FOR IONIC MOBILE APP
+   Adapted from web frontend styling
+   ========================================== */
+
+/* Import Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+/* Neobrutalism Color Palette */
+:root {
+  /* Primary Colors */
+  --neo-background: #F5F6FA;
+  --neo-dark: #2C3A47;
+  --neo-primary: #FFC312;
+  --neo-secondary: #4ECDC4;
+  --neo-error: #FF6F61;
+  --neo-info: #3F88C5;
+  
+  /* Typography */
+  --neo-font: 'Space Mono', 'Courier New', monospace;
+  --neo-font-weight-normal: 600;
+  --neo-font-weight-bold: 700;
+  --neo-font-weight-black: 900;
+  
+  /* Borders & Shadows */
+  --neo-border-width: 3px;
+  --neo-border: var(--neo-border-width) solid var(--neo-dark);
+  --neo-shadow-sm: 3px 3px 0 var(--neo-dark);
+  --neo-shadow-md: 4px 4px 0 var(--neo-dark);
+  --neo-shadow-lg: 6px 6px 0 var(--neo-dark);
+  --neo-shadow-xl: 8px 8px 0 var(--neo-dark);
+  
+  /* Ionic Color Overrides */
+  --ion-color-primary: #FFC312;
+  --ion-color-primary-rgb: 255, 195, 18;
+  --ion-color-primary-contrast: #2C3A47;
+  --ion-color-primary-contrast-rgb: 44, 58, 71;
+  --ion-color-primary-shade: #e0ac10;
+  --ion-color-primary-tint: #ffc92a;
+
+  --ion-color-secondary: #4ECDC4;
+  --ion-color-secondary-rgb: 78, 205, 196;
+  --ion-color-secondary-contrast: #2C3A47;
+  --ion-color-secondary-contrast-rgb: 44, 58, 71;
+  --ion-color-secondary-shade: #45b4ac;
+  --ion-color-secondary-tint: #60d2ca;
+
+  --ion-color-tertiary: #3F88C5;
+  --ion-color-tertiary-rgb: 63, 136, 197;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #3778ad;
+  --ion-color-tertiary-tint: #5294cb;
+
+  --ion-color-success: #4ECDC4;
+  --ion-color-success-rgb: 78, 205, 196;
+  --ion-color-success-contrast: #2C3A47;
+  --ion-color-success-contrast-rgb: 44, 58, 71;
+  --ion-color-success-shade: #45b4ac;
+  --ion-color-success-tint: #60d2ca;
+
+  --ion-color-warning: #FFC312;
+  --ion-color-warning-rgb: 255, 195, 18;
+  --ion-color-warning-contrast: #2C3A47;
+  --ion-color-warning-contrast-rgb: 44, 58, 71;
+  --ion-color-warning-shade: #e0ac10;
+  --ion-color-warning-tint: #ffc92a;
+
+  --ion-color-danger: #FF6F61;
+  --ion-color-danger-rgb: 255, 111, 97;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #e06255;
+  --ion-color-danger-tint: #ff7d71;
+
+  --ion-color-dark: #2C3A47;
+  --ion-color-dark-rgb: 44, 58, 71;
+  --ion-color-dark-contrast: #F5F6FA;
+  --ion-color-dark-contrast-rgb: 245, 246, 250;
+  --ion-color-dark-shade: #27333e;
+  --ion-color-dark-tint: #414e59;
+
+  --ion-color-medium: #92949c;
+  --ion-color-medium-rgb: 146, 148, 156;
+  --ion-color-medium-contrast: #2C3A47;
+  --ion-color-medium-contrast-rgb: 44, 58, 71;
+  --ion-color-medium-shade: #808289;
+  --ion-color-medium-tint: #9d9fa6;
+
+  --ion-color-light: #F5F6FA;
+  --ion-color-light-rgb: 245, 246, 250;
+  --ion-color-light-contrast: #2C3A47;
+  --ion-color-light-contrast-rgb: 44, 58, 71;
+  --ion-color-light-shade: #d8d9dc;
+  --ion-color-light-tint: #f6f7fb;
+
+  /* Background & Text */
+  --ion-background-color: #F5F6FA;
+  --ion-background-color-rgb: 245, 246, 250;
+  --ion-text-color: #2C3A47;
+  --ion-text-color-rgb: 44, 58, 71;
+
+  /* Toolbar & Header */
+  --ion-toolbar-background: #FFC312;
+  --ion-toolbar-color: #2C3A47;
+  --ion-toolbar-border-color: #2C3A47;
+
+  /* Card */
+  --ion-card-background: #F5F6FA;
+
+  /* Item */
+  --ion-item-background: #F5F6FA;
+  --ion-item-border-color: #2C3A47;
+}
+
+/* ==========================================
+   GLOBAL COMPONENT STYLES
+   ========================================== */
+
+/* Apply neobrutalism font globally */
+ion-app {
+  font-family: var(--neo-font);
+}
+
+/* Header / Toolbar */
+ion-toolbar {
+  --background: var(--neo-primary);
+  --color: var(--neo-dark);
+  --border-width: 0 0 var(--neo-border-width) 0;
+  --border-color: var(--neo-dark);
+  --border-style: solid;
+}
+
+ion-toolbar ion-title {
+  font-weight: var(--neo-font-weight-black);
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+  font-family: var(--neo-font);
+}
+
+ion-toolbar ion-back-button {
+  --color: var(--neo-dark);
+  font-weight: var(--neo-font-weight-bold);
+}
+
+/* Content */
+ion-content {
+  --background: var(--neo-background);
+}
+
+/* Buttons */
+ion-button {
+  --background: var(--neo-primary);
+  --background-activated: var(--neo-primary);
+  --background-hover: var(--neo-primary);
+  --color: var(--neo-dark);
+  --border-radius: 0;
+  --border-width: var(--neo-border-width);
+  --border-style: solid;
+  --border-color: var(--neo-dark);
+  --box-shadow: var(--neo-shadow-md);
+  font-weight: var(--neo-font-weight-black);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: var(--neo-font);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+ion-button:hover {
+  --box-shadow: var(--neo-shadow-lg);
+  transform: translate(-2px, -2px);
+}
+
+ion-button:active {
+  --box-shadow: 2px 2px 0 var(--neo-dark);
+  transform: translate(0, 0);
+}
+
+ion-button.button-clear {
+  --box-shadow: none;
+  --border-width: 0;
+}
+
+ion-button[color="secondary"] {
+  --background: var(--neo-secondary);
+  --background-activated: var(--neo-secondary);
+  --background-hover: var(--neo-secondary);
+}
+
+ion-button[color="danger"] {
+  --background: var(--neo-error);
+  --background-activated: var(--neo-error);
+  --background-hover: var(--neo-error);
+  --color: white;
+}
+
+ion-button[color="light"] {
+  --background: var(--neo-background);
+  --background-activated: var(--neo-background);
+  --background-hover: var(--neo-secondary);
+}
+
+/* FAB Buttons */
+ion-fab-button {
+  --background: var(--neo-background);
+  --color: var(--neo-dark);
+  --border-radius: 0;
+  --box-shadow: var(--neo-shadow-sm);
+  border: var(--neo-border);
+}
+
+ion-fab-button:hover {
+  --background: var(--neo-primary);
+}
+
+/* Input Items */
+ion-item {
+  --background: var(--neo-background);
+  --border-width: var(--neo-border-width);
+  --border-color: var(--neo-dark);
+  --border-style: solid;
+  --border-radius: 0;
+  --highlight-color-focused: var(--neo-primary);
+  --padding-start: 12px;
+  --inner-padding-end: 12px;
+  font-family: var(--neo-font);
+}
+
+ion-item[fill="outline"] {
+  --background: var(--neo-background);
+  --border-width: var(--neo-border-width);
+  --border-color: var(--neo-dark);
+  --border-radius: 0;
+}
+
+ion-item.item-has-focus {
+  --background: var(--neo-primary);
+  --box-shadow: var(--neo-shadow-sm);
+  transform: translate(-2px, -2px);
+}
+
+/* Input/Label Styles */
+ion-input,
+ion-select,
+ion-textarea {
+  --color: var(--neo-dark);
+  --placeholder-color: var(--neo-dark);
+  --placeholder-opacity: 0.6;
+  font-family: var(--neo-font);
+  font-weight: var(--neo-font-weight-normal);
+}
+
+ion-label {
+  font-weight: var(--neo-font-weight-bold) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: var(--neo-font);
+  color: var(--neo-dark) !important;
+}
+
+/* Cards */
+ion-card {
+  --background: var(--neo-background);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow-lg);
+  border-radius: 0;
+  margin: 16px;
+}
+
+ion-card-header {
+  background: var(--neo-primary);
+  border-bottom: var(--neo-border);
+  padding: 16px;
+}
+
+ion-card-title {
+  font-weight: var(--neo-font-weight-black);
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+  color: var(--neo-dark);
+  font-family: var(--neo-font);
+  font-size: 18px;
+}
+
+ion-card-subtitle {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--neo-dark);
+  font-family: var(--neo-font);
+  font-weight: var(--neo-font-weight-bold);
+}
+
+ion-card-content {
+  padding: 16px;
+  font-family: var(--neo-font);
+}
+
+/* List */
+ion-list {
+  background: transparent;
+  padding: 0;
+}
+
+/* Selects */
+ion-select {
+  --placeholder-color: var(--neo-dark);
+  --placeholder-opacity: 0.6;
+  font-family: var(--neo-font);
+}
+
+/* Modals */
+ion-modal {
+  --background: var(--neo-background);
+  --border-radius: 0;
+}
+
+ion-modal ion-toolbar {
+  --background: var(--neo-primary);
+  --border-width: 0 0 var(--neo-border-width) 0;
+  --border-color: var(--neo-dark);
+  --border-style: solid;
+}
+
+/* Alerts */
+ion-alert {
+  --background: var(--neo-background);
+}
+
+ion-alert .alert-wrapper {
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow-lg);
+  border-radius: 0;
+}
+
+ion-alert .alert-head {
+  background: var(--neo-primary);
+  border-bottom: var(--neo-border);
+  padding: 16px;
+}
+
+ion-alert .alert-title {
+  font-weight: var(--neo-font-weight-black);
+  text-transform: uppercase;
+  font-family: var(--neo-font);
+  color: var(--neo-dark);
+}
+
+ion-alert .alert-button {
+  font-weight: var(--neo-font-weight-bold);
+  text-transform: uppercase;
+  font-family: var(--neo-font);
+  color: var(--neo-dark);
+}
+
+/* Toast */
+ion-toast {
+  --background: var(--neo-dark);
+  --color: var(--neo-background);
+  --border-radius: 0;
+  --box-shadow: var(--neo-shadow-md);
+  font-family: var(--neo-font);
+  font-weight: var(--neo-font-weight-bold);
+  text-transform: uppercase;
+}
+
+ion-toast.toast-success {
+  --background: var(--neo-secondary);
+  --color: var(--neo-dark);
+}
+
+ion-toast.toast-error {
+  --background: var(--neo-error);
+  --color: white;
+}
+
+/* Loading */
+ion-loading {
+  --background: var(--neo-background);
+  font-family: var(--neo-font);
+}
+
+ion-loading .loading-wrapper {
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow-md);
+  border-radius: 0;
+}
+
+/* Spinner */
+ion-spinner {
+  --color: var(--neo-dark);
+}
+
+/* Grid */
+ion-grid {
+  font-family: var(--neo-font);
+}
+
+/* Icons in context */
+ion-icon {
+  color: var(--neo-dark);
+}
+
+/* ==========================================
+   DARK MODE - Inverted Neobrutalism
+   ========================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --neo-background: #1a1a2e;
+    --neo-dark: #F5F6FA;
+    --neo-shadow-sm: 3px 3px 0 rgba(245, 246, 250, 0.8);
+    --neo-shadow-md: 4px 4px 0 rgba(245, 246, 250, 0.8);
+    --neo-shadow-lg: 6px 6px 0 rgba(245, 246, 250, 0.8);
+    --neo-shadow-xl: 8px 8px 0 rgba(245, 246, 250, 0.8);
+    
+    --ion-background-color: #1a1a2e;
+    --ion-background-color-rgb: 26, 26, 46;
+    --ion-text-color: #F5F6FA;
+    --ion-text-color-rgb: 245, 246, 250;
+    
+    --ion-color-dark: #F5F6FA;
+    --ion-color-dark-contrast: #1a1a2e;
+    --ion-color-light: #2d2d44;
+    --ion-color-light-contrast: #F5F6FA;
+    
+    --ion-toolbar-background: #FFC312;
+    --ion-toolbar-color: #2C3A47;
+    
+    --ion-card-background: #2d2d44;
+    --ion-item-background: #2d2d44;
+  }
+}
