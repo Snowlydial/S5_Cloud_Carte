@@ -85,6 +85,9 @@ const LoginPage = () => {
 
                 <div className="auth-footer">
                     <p>Pas encore de compte ? <Link to="/register">S'inscrire</Link></p>
+                    <p className="guest-link">
+                        <Link to="/guest-map">Consulter en tant qu'invité</Link>
+                    </p>
                 </div>
             </div>
         </div>

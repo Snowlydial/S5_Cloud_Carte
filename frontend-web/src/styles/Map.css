@@ -208,6 +208,39 @@
     letter-spacing: 0.5px;
 }
 
+/* Guest Info Section */
+.guest-info-section {
+    background: #4ECDC4;
+    padding: 16px;
+    border: 4px solid #2C3A47;
+    box-shadow: 6px 6px 0 #2C3A47;
+    text-align: center;
+}
+
+.guest-info-section p {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #2C3A47;
+}
+
+.guest-info-section p:last-child {
+    margin-bottom: 0;
+}
+
+.guest-info-section a {
+    color: #2C3A47;
+    font-weight: 900;
+    text-decoration: none;
+    border-bottom: 2px solid #2C3A47;
+}
+
+.guest-info-section a:hover {
+    background: #FFC312;
+}
+
 /* Map Wrapper */
 .map-wrapper {
     flex: 1;

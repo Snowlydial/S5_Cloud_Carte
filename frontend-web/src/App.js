@@ -9,6 +9,7 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import UserManagementPage from "./pages/UserManagementPage";
 import MapPage from "./pages/MapPage";
+import GuestMapPage from "./pages/GuestMapPage";
 import SignalementPage from "./pages/SignalementPage";
 import ProblemePage from "./pages/ProblemePage";
 import "./App.css";
@@ -60,6 +61,9 @@ function App() {
                             </PublicRoute>
                         }
                     />
+
+                    {/* Guest map route (public, no auth required) */}
+                    <Route path="/guest-map" element={<GuestMapPage />} />
                     
                     {/* Protected routes with Layout */}
                     <Route element={
