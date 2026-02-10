@@ -25,8 +25,8 @@ const ConfigurationPage = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setConfig({
-                    m2_forfaitaire: response.data.m2_forfaitaire,
-                    tentative_max: response.data.tentative_max
+                    m2_forfaitaire: response.data.m2Forfaitaire,
+                    tentative_max: response.data.tentativeMax
                 });
             } catch (err) {
                 setError('Erreur lors du chargement de la configuration');

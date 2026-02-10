@@ -81,6 +81,8 @@ const LoginPage = () => {
                     >
                         {isLoading ? 'Connexion...' : 'Se connecter'}
                     </button>
+                    <p>Veuillez executer le script "user-insert.sql" pour faire marcher le projet correctement</p>
+                    <p>le boutton "synchroniser" dans probleme permet de synchroniser toutes les donnees testes</p>
                 </form>
 
                 <div className="auth-footer">

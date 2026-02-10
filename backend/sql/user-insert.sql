@@ -16,3 +16,8 @@ VALUES
     (30, '2026-02-10 08:39:15.937705', 'ryan@gmail.com', 'FFNgyMqRrYU2dDfu9apSCmtvfcB2', FALSE, '2026-02-03 08:36:26.966513', 0, '111111', 'MANAGER', 7),
     (31, '2026-02-10 08:39:15.945695', 'nyavo@gmail.com', 'kE9zsmGOHn71zqY7pseb', FALSE, '2026-02-10 05:11:45.758262', 0, '111111', 'USER', 8),
     (32, '2026-02-10 08:39:15.954464', 'mimi@gmail.com', 'zuHQGNm0ejQlE9J0EVdMYMlH7Aj1', FALSE, '2026-02-03 04:51:10.794587', 0, '111111', 'MANAGER', 7);
+
+INSERT INTO configuration (tentative_max, m2_forfaitaire)
+VALUES (3, 15000.0);
+
+

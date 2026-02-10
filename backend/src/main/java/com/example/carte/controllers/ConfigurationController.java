@@ -39,7 +39,7 @@ public class ConfigurationController {
     // Configuration updated = configurationService.updateConfiguration(config);
     // return ResponseEntity.ok(updated);
     // }
-    @PutMapping("/update")
+    @PutMapping
     public ResponseEntity<Configuration> updateConfiguration(
             @RequestParam(required = false) Integer tentativeMax,
             @RequestParam(required = false) Double m2Forfaitaire) {
