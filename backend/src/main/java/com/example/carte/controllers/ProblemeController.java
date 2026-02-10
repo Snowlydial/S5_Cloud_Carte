@@ -66,11 +66,17 @@ public class ProblemeController {
 
     @PostMapping("/update-status")
     public ResponseEntity<ProblemeDTO> updateProblemeStatus(
-            @RequestBody UpdateProblemeStatusRequest request) {
+            @RequestBody UpdateProblemeStatusRequest request) throws Exception {
 
-        ProblemeDTO dto = problemeService.updateStatus(request.getIdProbleme(), request.getStatusData());
-
-        return ResponseEntity.ok(dto);
+        ProblemeDTO dto;
+        try {
+            dto = problemeService.updateStatus(request.getIdProbleme(), request.getStatusData());
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
     }
 
     @PutMapping("/{id}")
