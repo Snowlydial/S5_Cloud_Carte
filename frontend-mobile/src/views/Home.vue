@@ -162,7 +162,7 @@
 <script setup lang="ts">
 
 
-const iconConfigs: Record<string, { icon: string, color: string }> = {
+  const iconConfigs: Record<string, { icon: string, color: string }> = {
   '2': { icon: '🚧', color: '#e67e22' }, // Route endommagée - Orange
   '7': { icon: '⚠️', color: '#e74c3c' }, // Conducteur en danger - Rouge
   '3': { icon: '💡', color: '#f1c40f' }, // Éclairage défaillant - Jaune
@@ -176,10 +176,10 @@ const iconConfigs: Record<string, { icon: string, color: string }> = {
 const defaultIconConfig = { icon: '📍', color: '#2ecc71' };
 
 import { computed, onMounted, ref } from 'vue';
-import {
-  IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
-  IonList, IonItem, IonLabel, IonSelect, IonSelectOption, IonButton, IonInput,
-  IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonGrid, IonRow, IonCol
+import { 
+  IonPage, IonHeader, IonToolbar, IonTitle, IonContent, 
+  IonButton,
+  IonModal, IonButtons, IonIcon
 } from '@ionic/vue';
 import { Geolocation } from '@capacitor/geolocation'; // Importation du plugin
 import L from 'leaflet';
@@ -194,7 +194,7 @@ import { CompteService } from '@/services/Compte.service';
 
 import { SignalementProbleme } from "@/models/SignalementProbleme";
 
-import useSignalementProbleme from '@/composables/useSignalementProbleme'
+import useSignalementProbleme from '@/composables/useSignalementProbleme' 
 
 import { cameraOutline, trashOutline } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
@@ -238,20 +238,6 @@ const removePhoto = (index: number) => {
   selectedPhotos.value.splice(index, 1);
 };
 
-// MODAL IMAGE
-
-
-const recap = ref<Recap | null>(null);
-const { logout } = useAuth();
-const recapView = computed(() => recap.value);
-
-const format = (value?: number) => {
-  if (value === undefined || value === null) return "0.00";
-  return value.toFixed(2);
-};
-
-import { Signalement } from '@/models/Signalement';
-import { TypeSignalementService } from '@/services/TypeSignalement.service';
 const { typesSignalement, getListeTypeSignalement } = useTypeSignalement();
 const { 
   signaler, 
@@ -263,12 +249,10 @@ const {
 import { PhotoService } from '@/services/Photo.service';
 import { TypeSignalementService } from '@/services/TypeSignalement.service';
 
-const { typesSignalement, getListeTypeSignalement, error, success } = useTypeSignalement();
-const { signaler, loading, getAllSignalements, listeSignalement, getAllSignalementsMine } = useSignalement();
-
-const { listeSignalementProbleme, fetchAllData } = useSignalementProbleme();
-// getAllSignalements();
-const listeSignalementEffectif = ref<Signalement[]>([]);
+const { 
+  listeSignalementProbleme, 
+  fetchAllData 
+} = useSignalementProbleme();
 
 const { logout, currentUser } = useAuth();
 const router = useRouter();
@@ -287,10 +271,6 @@ const mapContainer = ref();
 const loading = ref(false);
 const recap = ref<Recap>();
 
-const callGetTypesSignalement = async () => {
-  const result = await getListeTypeSignalement();
-  typesSignalementListe.value = typesSignalementListe.value || [];
-}
 const recapView = computed(() => {
   return recap.value || null;
 });
@@ -316,17 +296,6 @@ const filterMySignalement = async () => {
 // Fonction pour récupérer la position actuelle
 const getCurrentLocation = async () => {
   try {
-    // Ajouter un timeout
-    const coordinates = await Promise.race([
-      Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 10000, // 10 secondes max
-        maximumAge: 0
-      }),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout GPS')), 10000)
-      )
-    ]) as any;
     // 1️⃣ Demande de permission si besoin
     const permission = await Geolocation.requestPermissions();
     if (permission.location !== 'granted') {
@@ -382,23 +351,23 @@ const envoyerSignalement = () => {
 
 const finaliserSignalement = async () => {
   loading.value = true; // Si vous avez un état de chargement
-
-  // 1. Envoyer les images à Supabase et récupérer les URLs
-  let imageUrls: string[] = [];
-  if (selectedPhotos.value.length > 0) {
-    // imageUrls = await SupabaseService.uploadCapacitorPhotos(selectedPhotos.value);
-  }
-
+    
+    // 1. Envoyer les images à Supabase et récupérer les URLs
+    let imageUrls: string[] = [];
+    if (selectedPhotos.value.length > 0) {
+      // imageUrls = await SupabaseService.uploadCapacitorPhotos(selectedPhotos.value);
+    }
+    
   const coords: L.LatLngExpression = [form.value.lat!, form.value.lng!];
   const idType = form.value.type;
   const desc = form.value.description;
-
+  
   // Ici, vous devrez probablement convertir vos images en Base64 ou FormData 
   // pour les envoyer à votre API via votre composable 'signaler'
   console.log("Envoi final avec", selectedPhotos.value.length, "photos");
-
+  
   await signaler(idType, coords, selectedPhotos.value, desc); // Modifiez votre composable pour accepter les photos
-
+  
   isPhotoModalOpen.value = false;
   selectedPhotos.value = []; // Reset
   loadMapData();
@@ -408,16 +377,19 @@ onMounted(async () => {
   const tanaCoords: L.LatLngExpression = [-18.8792, 47.5079];
   recap.value = await CompteService.getRecap();
 
+  // Initialisation
   map = L.map('map').setView(tanaCoords, 13);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
   }).addTo(map);
 
+  // Événement clic
   map.on('click', (e: L.LeafletMouseEvent) => {
     form.value.lat = e.latlng.lat;
     form.value.lng = e.latlng.lng;
 
+    // Mise à jour du marqueur visuel
     if (marker) {
       marker.setLatLng(e.latlng);
     } else {
@@ -462,13 +434,12 @@ const renderSignalementMarkers = async (signalements: SignalementProbleme[]) => 
         <strong>Signalement #${sig.idSignalement}</strong><br>
 
         <strong>Type :</strong> ${sig.typeNom ?? "—"}<br>
-        <strong>Description :</strong> ${sig.description ?? "—"}<br>
-
 
         <hr style="margin:6px 0"/>
 
-        ${hasProbleme
-        ? `
+        ${
+          hasProbleme
+            ? `
               <strong>🛠 Problème associé</strong><br>
               Surface : ${sig.surfaceM2 ?? 0} m²<br>
               Budget : ${sig.budget ?? 0} Ar<br>
@@ -476,16 +447,16 @@ const renderSignalementMarkers = async (signalements: SignalementProbleme[]) => 
               Statut : ${sig.statusActuel ?? "—"}<br>
               <small>
                 ${sig.statusDate
-          ? new Date(sig.statusDate).toLocaleDateString()
-          : ""}
+                  ? new Date(sig.statusDate).toLocaleDateString()
+                  : ""}
               </small>
             `
-        : `
+            : `
               <em style="color:#e67e22;">
                 ⚠️ Le signalement n'a pas encore été traité
               </em>
             `
-      }
+        }
       </div>
     `;
 
@@ -506,9 +477,9 @@ const renderSignalementMarkers = async (signalements: SignalementProbleme[]) => 
 const createCustomIcon = (typeId: string, hasProbleme: boolean) => {
   const config = iconConfigs[typeId] || defaultIconConfig;
 
-  console.log("Création icône pour typeId:", typeId, "avec config:", config, "et hasProbleme:", hasProbleme);
+  console.log ("Création icône pour typeId:", typeId, "avec config:", config, "et hasProbleme:", hasProbleme);
 
-
+  
 
   return L.divIcon({
     className: 'custom-marker',
@@ -530,8 +501,9 @@ const createCustomIcon = (typeId: string, hasProbleme: boolean) => {
           ${config.icon}
         </span>
 
-        ${hasProbleme
-        ? `
+        ${
+          hasProbleme
+            ? `
               <span style="
                 position: absolute;
                 top: -6px;
@@ -549,8 +521,8 @@ const createCustomIcon = (typeId: string, hasProbleme: boolean) => {
                 transform: rotate(45deg);
               ">!</span>
             `
-        : ''
-      }
+            : ''
+        }
       </div>
     `,
     iconSize: [40, 40],

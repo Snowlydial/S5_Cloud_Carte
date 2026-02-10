@@ -8,25 +8,11 @@ import { CompteRepository } from "@/repositories/CompteRepository";
 import { auth, initPushNotifications } from "@/firebase";
 import { CompteService } from "./Compte.service";
 import { ProfilService } from "./Profil.service";
-import { Preferences } from '@capacitor/preferences';
-import { ConfigurationRepository } from "@/repositories/ConfigurationRepository";
-
 export async function loginService(email: string, password: string): Promise<ApiResponse> {
     async function checkInternet(timeoutMs = 5000): Promise<boolean> {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-
-
-
-        try {
-            const res = await fetch("https://1.1.1.1/cdn-cgi/trace", {
-                cache: "no-store",
-                signal: controller.signal
-            });
-
-            return res.ok;
-        } catch (e) {
+        // In browser environments, use navigator.onLine as primary check
+        // The fetch approach fails due to CORS restrictions
+        if (!navigator.onLine) {
             return false;
         }
         return true;
@@ -37,28 +23,19 @@ export async function loginService(email: string, password: string): Promise<Api
     // if (!isOnline){
     //     throw new Error("Aucune connexion internet. Veuillez vérifier votre connexion et réessayer.");
     // }
-
+    
     let compte = null;
     try {
         const isOnline = await checkInternet();
         if (!isOnline) {
-            console.log("totototot")
+            console.log ("totototot")
             throw new Error("Aucune connexion internet. Veuillez vérifier votre connexion et réessayer.");
         }
         compte = await CompteRepository.findByEmail(email);
         if (!compte) {
             throw new Error("Compte non trouvé avec cet email.");
         }
-        let tentative = 1;
-        const allConfig = await ConfigurationRepository.findAll();
-
-        if (allConfig.length > 0) {
-            tentative = allConfig[0].tentative_max;
-        }
-
-        console.log("Configurations récupérées lors de la connexion :", allConfig[0]);
-        console.log("Tentative max autorisée :", tentative);
-        if ((compte && compte.tentative && compte.tentative >= tentative) || (compte && compte.isBlocked)) {
+        if ((compte && compte.tentative && compte.tentative >= 3) || (compte && compte.isBlocked)) {
 
             await CompteRepository.update(compte.idCompte!, { isBlocked: true });
 
@@ -80,13 +57,8 @@ export async function loginService(email: string, password: string): Promise<Api
         // const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
         console.log("Compte trouvé lors de la connexion réussie :", compte);
-        if (compte.password !== password) {
-            throw new Error("mot de passe incorrect.");
-        }
         if (compte) {
-
-            // localStorage.setItem("compteId", compte.idCompte!);
-            await Preferences.set({ key: 'compteId', value: compte.idCompte! });
+            localStorage.setItem("compteId", compte.idCompte!);
         }
 
         // const recap = await CompteService.getRecap();
@@ -99,7 +71,7 @@ export async function loginService(email: string, password: string): Promise<Api
 
         // const profils : Profil[] = await ProfilRepository.getAll();
         // console.log("Profils récupérés lors de la connexion :",     profils);
-        const token = await initPushNotifications();
+        const token = await initPushNotifications ();
         if (token && compte) {
             compte.fcmTokens = compte.fcmTokens ? [...compte.fcmTokens, token] : [token];
             const tokens = compte.fcmTokens || [];
@@ -108,9 +80,7 @@ export async function loginService(email: string, password: string): Promise<Api
         }
 
 
-        // localStorage.setItem("loginTime", Date.now().toString());
-        // await Preferences.set({ key: 'loginTime', value: Date.now().toString() });
-
+        localStorage.setItem("loginTime", Date.now().toString());
         return {
             success: true,
             code: 200,
@@ -125,7 +95,7 @@ export async function loginService(email: string, password: string): Promise<Api
         console.log("Compte trouvé lors de l'échec de connexion :", compte);
         const isOnline = await checkInternet();
 
-        if (compte && compte.password !== password && isOnline) {
+        if (compte && compte.mdp !== password && isOnline) {
             const tentative = compte.tentative || 0;
 
             await CompteRepository.update(compte.idCompte!, { tentative: tentative + 1 });
@@ -196,13 +166,10 @@ export async function signinService(email: string, password: string): Promise<Ap
 
 export async function logoutService(): Promise<ApiResponse> {
     try {
-        // await signOut(auth);
+        await signOut(auth);
 
-        // localStorage.removeItem("compteId");
-        // localStorage.removeItem("loginTime");
-
-        await Preferences.remove({ key: 'compteId' });
-        // await Preferences.remove({ key: 'loginTime' });
+        localStorage.removeItem("compteId");
+        localStorage.removeItem("loginTime");
 
         return {
             success: true,

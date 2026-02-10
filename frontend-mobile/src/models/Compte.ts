@@ -2,7 +2,7 @@ export interface Compte {
     idCompte?: string;
     nom: string;
     email: string;
-    password: string;
+    mdp: string;
     profil: string;
     isBlocked: boolean;
     firebaseId: string;
