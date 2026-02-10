@@ -1,3 +1,10 @@
+# PROJET CLOUD CARTE
+# Instruction de lancement 
+docker-compose up --build -d
+partir sur http://localhost:3000/
+
+
+
 # IMPORTANT:
 Before starting up the docker with ```docker compose up --build -d``` make sure to change ```./backend/sql/script_pg.sql```. 
 And if you update the script mid-coding then read the instructions below.
