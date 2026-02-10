@@ -1,123 +1,160 @@
 <template>
   <ion-page>
     <ion-header>
-      <ion-toolbar color="primary">
-        <ion-title>Accueil - Antananarivo</ion-title>
+      <ion-toolbar>
+        <ion-title>Carte d'Antananarivo</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content :scroll-y="false">
       <div class="main-wrapper">
+        <!-- Fullscreen Map -->
         <div id="map" ref="mapContainer"></div>
-          <div class="fab-container fab-location">
-          <span class="fab-label">Ma position</span>
-          <ion-fab-button size="small" @click="getCurrentLocation" color="light">
+        
+        <!-- FAB Buttons with Neobrutalism styling -->
+        <div class="neo-fab-container fab-location">
+          <span class="neo-fab-label">Position</span>
+          <button class="neo-fab-button" @click="getCurrentLocation">
             <ion-icon :icon="locateOutline"></ion-icon>
-          </ion-fab-button>
+          </button>
         </div>
 
-        <div class="fab-container fab-logout">
-          <span class="fab-label">Déconnexion</span>
-          <ion-fab-button size="small" @click="handleLogout" color="light">
+        <div class="neo-fab-container fab-logout">
+          <span class="neo-fab-label">Déconnexion</span>
+          <button class="neo-fab-button neo-fab-danger" @click="handleLogout">
             <ion-icon :icon="logOutOutline"></ion-icon>
-          </ion-fab-button>
+          </button>
         </div>
 
-        <div class="fab-container fab-filter">
-          <span class="fab-label">Mes signalements</span>
-          <ion-fab-button size="small" @click="filterMySignalement" color="light">
+        <div class="neo-fab-container fab-filter">
+          <span class="neo-fab-label">Mes signalements</span>
+          <button class="neo-fab-button neo-fab-info" @click="filterMySignalement">
             <ion-icon :icon="filterOutline"></ion-icon>
-          </ion-fab-button>
+          </button>
         </div>
-      
-        <div class="form-container">
-          <ion-list>
-            <ion-item lines="none">
-              <ion-label>
-                <h2 v-if="form.lat !== null && form.lng !== null">
-  📍 Position : {{ form.lat.toFixed(4) }}, {{ form.lng.toFixed(4) }}
-</h2>
-                <h2 v-else>Sélectionnez un point sur la carte</h2>
-              </ion-label>
-            </ion-item>
 
-            <ion-item fill="outline" class="ion-margin-bottom">
-              <ion-select v-model="form.type" label="Nature du danger" label-placement="floating">
-                <ion-select-option v-for="t in typesSignalement" :key="t.idTypeSignalement" :value="t.idTypeSignalement">
-                  {{ t.nom }}
-                </ion-select-option>
-              </ion-select>
-            </ion-item>
+        <!-- Recap FAB Button -->
+        <div v-if="recapView" class="neo-fab-container fab-recap">
+          <span class="neo-fab-label">Récapitulatif</span>
+          <button class="neo-fab-button neo-fab-secondary" @click="isRecapModalOpen = true">
+            <ion-icon :icon="statsChartOutline"></ion-icon>
+          </button>
+        </div>
 
-            <ion-item fill="outline" class="ion-margin-bottom">
-              <ion-input 
-                :value="form.description" 
-                @ionInput="form.description = ($event.target as unknown as HTMLInputElement).value || ''"
-                label="Description" 
-                label-placement="floating"
-                placeholder="Description">
-              </ion-input>
-            </ion-item>
-            
-            <ion-button expand="block" :disabled="!form.lat" @click="envoyerSignalement">
-              Confirmer le signalement
-            </ion-button>
-          </ion-list>
-                <ion-modal :is-open="isPhotoModalOpen" @didDismiss="isPhotoModalOpen = false">
-        <ion-header>
-          <ion-toolbar>
-            <ion-title>Ajouter des photos</ion-title>
-            <ion-buttons slot="end">
-              <ion-button @click="isPhotoModalOpen = false">Fermer</ion-button>
-            </ion-buttons>
-          </ion-toolbar>
-        </ion-header>
-        <ion-content class="ion-padding">
-          <div class="photo-grid">
-            <div v-for="(photo, index) in selectedPhotos" :key="index" class="photo-item">
-              <img :src="photo.webPath" />
-              <ion-button color="danger" size="small" @click="removePhoto(index)">
-                <ion-icon :icon="trashOutline"></ion-icon>
+        <!-- Bottom Sheet -->
+        <div class="bottom-sheet" :class="{ 'sheet-expanded': isSheetExpanded }">
+          <!-- Handle to drag/toggle -->
+          <div class="sheet-handle" @click="isSheetExpanded = !isSheetExpanded">
+            <div class="handle-bar"></div>
+            <span class="handle-text">{{ isSheetExpanded ? 'Réduire' : 'Nouveau signalement' }}</span>
+            <ion-icon :icon="isSheetExpanded ? chevronDownOutline : chevronUpOutline" class="handle-icon"></ion-icon>
+          </div>
+
+          <!-- Sheet Content (scrollable) -->
+          <div class="sheet-content">
+            <!-- Position Badge -->
+            <div class="neo-position-badge">
+              <span class="badge-label">Position sélectionnée</span>
+              <span class="badge-value" v-if="form.lat !== null && form.lng !== null">
+                📍 {{ form.lat.toFixed(4) }}, {{ form.lng.toFixed(4) }}
+              </span>
+              <span class="badge-value badge-warning" v-else>
+                Touchez la carte pour sélectionner
+              </span>
+            </div>
+
+            <!-- Form Card -->
+            <div class="neo-form-card">
+              <div class="form-group">
+                <label class="form-label">Nature du danger</label>
+                <ion-item fill="outline" class="neo-input">
+                  <ion-select v-model="form.type" placeholder="Sélectionner">
+                    <ion-select-option v-for="t in typesSignalement" :key="t.idTypeSignalement" :value="t.idTypeSignalement">
+                      {{ t.nom }}
+                    </ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Description</label>
+                <ion-item fill="outline" class="neo-input">
+                  <ion-input 
+                    :value="form.description" 
+                    @ionInput="form.description = ($event.target as unknown as HTMLInputElement).value || ''"
+                    placeholder="Décrivez le signalement">
+                  </ion-input>
+                </ion-item>
+              </div>
+              
+              <ion-button expand="block" :disabled="!form.lat" @click="envoyerSignalement" class="neo-submit-btn">
+                Confirmer le signalement
               </ion-button>
             </div>
-            <div class="add-photo-btn" @click="takePhoto">
-            <ion-icon :icon="cameraOutline" size="large"></ion-icon>
-            <p>Ajouter une photo</p>
           </div>
-          </div>
-          
-          <ion-button expand="block" class="ion-margin-top" @click="finaliserSignalement">
-            Envoyer le signalement final
-          </ion-button>
-        </ion-content>
-      </ion-modal>
-
-          <ion-card v-if="recapView">
-            <ion-card-header>
-              <ion-card-title>Récapitulatif</ion-card-title>
-            </ion-card-header>
-            <ion-card-content>
-              <ion-grid>
-                <ion-row>
-                  <ion-col size="6"><strong>Points (problemes) :</strong></ion-col>
-                  <ion-col size="6">{{ recapView.nbrPoint }}</ion-col>
-                </ion-row>
-                <ion-row>
-                  <ion-col size="6"><strong>Surface totale :</strong></ion-col>
-                  <ion-col size="6">{{ format(recapView.totalSurface) }} m²</ion-col>
-                </ion-row>
-                <ion-row>
-                  <ion-col size="6"><strong>Budget total :</strong></ion-col>
-                  <ion-col size="6">{{ format(recapView.totalBudget) }} AR</ion-col>
-                </ion-row>
-                <ion-row>
-                  <ion-col size="6"><strong>Avancement :</strong></ion-col>
-                  <ion-col size="6">{{ recapView.avancement }} %</ion-col>
-                </ion-row>
-              </ion-grid>
-            </ion-card-content>
-          </ion-card>
         </div>
+
+        <!-- Recap Modal -->
+        <ion-modal :is-open="isRecapModalOpen" @didDismiss="isRecapModalOpen = false">
+          <ion-header>
+            <ion-toolbar>
+              <ion-title>Récapitulatif global</ion-title>
+              <ion-buttons slot="end">
+                <ion-button @click="isRecapModalOpen = false">Fermer</ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content class="ion-padding recap-modal-content">
+            <div v-if="recapView" class="recap-modal-grid">
+              <div class="recap-modal-item">
+                <span class="recap-modal-label">Points signalés</span>
+                <span class="recap-modal-value">{{ recapView.nbrPoint }}</span>
+              </div>
+              <div class="recap-modal-item">
+                <span class="recap-modal-label">Surface totale</span>
+                <span class="recap-modal-value">{{ format(recapView.totalSurface) }} m²</span>
+              </div>
+              <div class="recap-modal-item recap-modal-highlight">
+                <span class="recap-modal-label">Budget total</span>
+                <span class="recap-modal-value">{{ format(recapView.totalBudget) }} AR</span>
+              </div>
+              <div class="recap-modal-item recap-modal-success">
+                <span class="recap-modal-label">Avancement</span>
+                <span class="recap-modal-value">{{ recapView.avancement }} %</span>
+              </div>
+            </div>
+          </ion-content>
+        </ion-modal>
+
+        <!-- Photo Modal -->
+        <ion-modal :is-open="isPhotoModalOpen" @didDismiss="isPhotoModalOpen = false">
+          <ion-header>
+            <ion-toolbar>
+              <ion-title>Ajouter des photos</ion-title>
+              <ion-buttons slot="end">
+                <ion-button @click="isPhotoModalOpen = false">Fermer</ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content class="ion-padding">
+            <div class="photo-grid">
+              <div v-for="(photo, index) in selectedPhotos" :key="index" class="photo-item">
+                <img :src="photo.webPath" />
+                <button class="neo-photo-delete" @click="removePhoto(index)">
+                  <ion-icon :icon="trashOutline"></ion-icon>
+                </button>
+              </div>
+              <div class="add-photo-btn" @click="takePhoto">
+                <ion-icon :icon="cameraOutline" size="large"></ion-icon>
+                <p>Ajouter une photo</p>
+              </div>
+            </div>
+            
+            <ion-button expand="block" class="ion-margin-top" @click="finaliserSignalement">
+              Envoyer le signalement
+            </ion-button>
+          </ion-content>
+        </ion-modal>
         
       </div>
     </ion-content>
@@ -143,15 +180,15 @@ const defaultIconConfig = { icon: '📍', color: '#2ecc71' };
 import { computed, onMounted, ref } from 'vue';
 import { 
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent, 
-  IonList, IonItem, IonLabel, IonSelect, IonSelectOption, IonButton, IonInput,
-  IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonGrid, IonRow, IonCol
+  IonItem, IonSelect, IonSelectOption, IonButton, IonInput,
+  IonModal, IonButtons, IonIcon
 } from '@ionic/vue';
 import { Geolocation } from '@capacitor/geolocation'; // Importation du plugin
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import useTypeSignalement from '@/composables/useTypeSignalement';
 import useSignalement from '@/composables/useSignalement';
-import { filterOutline, locateOutline, logOutOutline } from 'ionicons/icons';
+import { filterOutline, locateOutline, logOutOutline, chevronUpOutline, chevronDownOutline, statsChartOutline } from 'ionicons/icons';
 import useAuth from '@/composables/useAuth';
 import { useRouter } from 'vue-router';
 import { Recap } from '@/types/Recap';
@@ -161,9 +198,16 @@ import { SignalementProbleme } from "@/models/SignalementProbleme";
 
 import useSignalementProbleme from '@/composables/useSignalementProbleme' 
 
-import { cameraOutline, trashOutline, /* ... */ } from 'ionicons/icons';
+import { cameraOutline, trashOutline } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-  // MODAL IMAGE
+
+// Bottom sheet state
+const isSheetExpanded = ref(false);
+
+// Recap modal state
+const isRecapModalOpen = ref(false);
+
+// MODAL IMAGE
 const isPhotoModalOpen = ref(false);
 const selectedPhotos = ref<any[]>([]);
 
@@ -526,101 +570,4 @@ const loadMapData = async () => {
 
 </script>
 
-<style scoped>
-/* Wrapper pour occuper tout l'écran disponible */
-.main-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-#map {
-  flex: 6; /* Prend 60% de l'espace disponible */
-  width: 100%;
-}
-
-.fab-container {
-  position: absolute;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  z-index: 1000; /* Pour passer au dessus de la carte Leaflet */
-}
-
-.fab-label {
-  background: rgba(255, 255, 255, 0.9);
-  padding: 4px 8px;
-  border-radius: 4px;
-  margin-right: 10px;
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: #333;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  pointer-events: none; /* Le clic traverse le texte vers le bouton si besoin */
-  opacity: 0.8;
-  transition: opacity 0.2s;
-}
-
-.fab-container:hover .fab-label {
-  opacity: 1;
-}
-
-ion-fab {
-  margin-top: 10px;
-}
-
-/* Position the first button normally */
-.fab-location { top: 10px; }
-.fab-logout   { top: 60px; }
-.fab-filter   { top: 110px; }
-
-
-#map { flex: 6; width: 100%; position: relative; }
-.main-wrapper { display: flex; flex-direction: column; height: 100%; }
-.form-container { flex: 4; background: white; padding: 10px; z-index: 10; overflow-y: auto;}
-
-:deep(.custom-marker) {
-  background: transparent;
-  border: none;
-}
-
-.photo-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.photo-item {
-  position: relative;
-  height: 150px;
-}
-
-.photo-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.photo-item ion-button {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  --padding-start: 5px;
-  --padding-end: 5px;
-}
-
-.add-photo-btn {
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 150px;
-  color: #666;
-}
-
-
-</style>
+<style scoped src="./Home.css"></style>
