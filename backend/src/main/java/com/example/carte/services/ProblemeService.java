@@ -301,7 +301,7 @@ public class ProblemeService {
         local.setBudget(firebaseDto.getBudget());
         local.setDateProbleme(firebaseDto.getDateProbleme());
         local.setLastSync(firebaseDto.getLastSync());
-
+        local.setNiveau(firebaseDto.getNiveau());
         // Mettre à jour le compte
         if (firebaseDto.getCompteEmail() != null) {
             User compte = utilisateurRepository.findByEmail(firebaseDto.getCompteEmail())
@@ -416,7 +416,7 @@ public class ProblemeService {
         map.put("budget", local.getBudget());
         map.put("firebaseId", fbId);
         map.put("lastSync", local.getLastSync().toString());
-        map.put("niveau",local.getNiveau());
+        map.put("niveau", local.getNiveau());
         // Compte
         map.put("compteEmail",
                 local.getCompte() != null ? local.getCompte().getEmail() : null);
@@ -453,8 +453,10 @@ public class ProblemeService {
         ProblemeDTO dto = new ProblemeDTO();
 
         dto.setIdProbleme(doc.contains("idProbleme") ? doc.getLong("idProbleme").intValue() : null);
-        if(doc.contains("niveau")){
-            dto.setNiveau((Integer)doc.get("niveau"));
+        dto.setNiveau(1); 
+        if (doc.contains("niveau")) {
+            Long niveau = (Long) doc.get("niveau");
+            dto.setNiveau(niveau.intValue());
         }
         if (doc.contains("dateProbleme")) {
             Object rawDate = doc.get("dateProbleme");
@@ -487,7 +489,8 @@ public class ProblemeService {
         p.setDateProbleme(dto.getDateProbleme() != null ? dto.getDateProbleme() : LocalDateTime.now());
         p.setSurfaceM2(dto.getSurfaceM2());
         p.setBudget(dto.getBudget());
-        if(p.getNiveau()!=null){
+        p.setNiveau(dto.getNiveau());
+        if (p.getNiveau() != null) {
             p.setNiveau(dto.getNiveau());
         }
         if (dto.getCompteEmail() != null) {
@@ -613,7 +616,11 @@ public class ProblemeService {
         dto.setDateProbleme(probleme.getDateProbleme());
         dto.setSurfaceM2(probleme.getSurfaceM2());
 
-        double budget = configurationService.calculerBudget(probleme.getNiveau());
+        double budget = probleme.getBudget();
+        if (probleme.getNiveau() != null) {
+
+            budget = configurationService.calculerBudget(probleme.getSurfaceM2(),probleme.getNiveau());
+        }
         dto.setBudget(budget);
         dto.setEntrepriseNom(probleme.getEntreprise() != null ? probleme.getEntreprise().getNom() : null);
         dto.setIdEntreprise(probleme.getEntreprise() != null ? probleme.getEntreprise().getFirebaseId() : null);
@@ -621,7 +628,8 @@ public class ProblemeService {
         dto.setCompteEmail(probleme.getCompte() != null ? probleme.getCompte().getEmail() : null);
         dto.setSignalementId(probleme.getSignalement() != null ? probleme.getSignalement().getIdSignalement() : null);
         ProblemeStatus latestStatus = problemeStatusRepository.findTopByProblemeOrderByDateStatusDesc(probleme);
-        System.out.println("In probleme Service, Status taken: idStatus=" + latestStatus.getStatus().getIdStatus() + ", nom=" + latestStatus.getStatus().getNom());
+        System.out.println("In probleme Service, Status taken: idStatus=" + latestStatus.getStatus().getIdStatus()
+                + ", nom=" + latestStatus.getStatus().getNom());
         dto.setStatut(latestStatus.getStatus().getIdStatus());
         dto.setStatutNom(latestStatus.getStatus().getNom());
         return dto;
@@ -718,10 +726,10 @@ public class ProblemeService {
         probleme.getStatusList().add(problemeStatus);
         Integer niveau = 1;
         // ConfigurationService c = new ConfigurationService(null);
-        System.out.println("niveauuuuu "+dto.getNiveau());
-        if(dto.getNiveau()!=null){
-            niveau= dto.getNiveau();
-            double budget = configurationService.calculerBudget(niveau);
+        System.out.println("niveauuuuu " + dto.getNiveau());
+        if (dto.getNiveau() != null) {
+            niveau = dto.getNiveau();
+            double budget = configurationService.calculerBudget(probleme.getSurfaceM2(),niveau);
             probleme.setBudget(budget);
         }
         probleme.setNiveau(niveau);
@@ -763,16 +771,7 @@ public class ProblemeService {
         RecapDashboardDTO recap = new RecapDashboardDTO();
 
         List<Probleme> problemes = problemeRepo.findAll();
-        List<Signalement> signalements = signalementRepo.findAll();
-
-        // Nombre total de signalements
-        long nbSignalements = signalements.size();
-        
-        // Nombre de signalements sans problème (non traités)
-        long nbNonTraites = signalements.stream()
-            .filter(s -> s.getProbleme() == null)
-            .count();
-
+        // 
         int nbProblemes = problemes.size();
         double totalSurface = 0;
         double totalBudget = 0;
@@ -793,7 +792,7 @@ public class ProblemeService {
             Pageable topOne = PageRequest.of(0, 1,
                     Sort.by("dateStatus").descending().and(Sort.by("idProblemeStatus").descending()));
             List<ProblemeStatus> statusList = problemeStatusRepository.findByProbleme(probleme, topOne);
-            
+
             if (statusList != null && !statusList.isEmpty()) {
                 ProblemeStatus lastStatus = statusList.get(0);
                 String statusNom = lastStatus.getStatus().getNom().toLowerCase();
@@ -801,10 +800,11 @@ public class ProblemeService {
                     case "termine" -> {
                         avancementTotal += 100;
                         nbTermines++;
-                        // Calcul du délai: différence entre date de création du problème et date du statut terminé
+                        // Calcul du délai: différence entre date de création du problème et date du
+                        // statut terminé
                         if (probleme.getDateProbleme() != null && lastStatus.getDateStatus() != null) {
                             long jours = java.time.temporal.ChronoUnit.DAYS.between(
-                                probleme.getDateProbleme(), lastStatus.getDateStatus());
+                                    probleme.getDateProbleme(), lastStatus.getDateStatus());
                             totalDelaiJours += jours;
                             countDelai++;
                         }
@@ -822,12 +822,11 @@ public class ProblemeService {
         }
 
         // Avancement global: on compte aussi les non-traités comme 0%
-        double avancementPercent = nbSignalements == 0 ? 0 : avancementTotal / nbSignalements;
+        double avancementPercent = nbProblemes == 0 ? 0 : avancementTotal / nbProblemes;
         double delaiMoyenJours = countDelai == 0 ? 0 : (double) totalDelaiJours / countDelai;
 
         recap.setNbPoints(nbProblemes);
-        recap.setNbSignalements(nbSignalements);
-        recap.setNbNonTraites(nbNonTraites);
+
         recap.setTotalSurface(totalSurface);
         recap.setTotalBudget(totalBudget);
         recap.setAvancementPercent(avancementPercent);

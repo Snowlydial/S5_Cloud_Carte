@@ -25,7 +25,8 @@ const Sidebar = () => {
                 ...baseItems,
                 { path: '/problemes', label: 'Problemes', icon: '●' },
                 { path: '/signalements', label: 'Signalement', icon: '◆' },
-                { path: '/users', label: 'Utilisateurs', icon: '▼' }
+                { path: '/users', label: 'Utilisateurs', icon: '▼' },
+                { path: '/configuration', label: 'Configuration', icon: '▼' },
             ];
         }
 

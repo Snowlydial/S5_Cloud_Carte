@@ -586,7 +586,13 @@ public class SignalementService {
         dto.setIdProbleme(probleme.getIdProbleme());
         dto.setDateProbleme(probleme.getDateProbleme());
         dto.setSurfaceM2(probleme.getSurfaceM2());
-        double budget = configurationService.calculerBudget(probleme.getNiveau());
+        Integer niveau = 1;
+        double budget = probleme.getBudget();
+        if(probleme.getNiveau()!=null){
+
+             budget = configurationService.calculerBudget(probleme.getSurfaceM2(),probleme.getNiveau());
+        }
+
         dto.setBudget(budget);
         dto.setEntrepriseNom(probleme.getEntreprise() != null ? probleme.getEntreprise().getNom() : null);
         dto.setIdEntreprise(probleme.getEntreprise() != null ? probleme.getEntreprise().getFirebaseId() : null);

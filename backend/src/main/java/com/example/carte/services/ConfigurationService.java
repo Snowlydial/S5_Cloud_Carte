@@ -56,9 +56,8 @@ public class ConfigurationService {
         return getConfiguration().getM2Forfaitaire();
     }
 
-    public double calculerBudget(int niveau) {
-        List<Configuration> configuration = configurationRepository.findAll();
-        Configuration c = configuration.get(0);
-        return c.getM2Forfaitaire() * getM2Forfaitaire() * niveau;
+    public double calculerBudget(double surfaceM2, int niveau) {
+        return surfaceM2 * getM2Forfaitaire() * niveau;
     }
+    
 }

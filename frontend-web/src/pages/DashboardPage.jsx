@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getRecapDashboard } from '../services/problemeService';
-
 import '../styles/Dashboard.css';
 
 const DashboardPage = () => {
@@ -93,11 +92,6 @@ const DashboardPage = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>Non Traité</td>
-                                        <td className="value-cell">{stats.nbNonTraites || 0}</td>
-                                        <td>Signalements sans problème associé</td>
-                                    </tr>
                                     <tr>
                                         <td>Nouveau</td>
                                         <td className="value-cell">{stats.nbNouveaux || 0}</td>

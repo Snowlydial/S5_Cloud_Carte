@@ -89,6 +89,7 @@ public class TypeSignalementService {
                 typeMap.put("nom", local.getNom());
                 typeMap.put("firebaseId", fbId);
 
+
                 db.collection("type_signalement").document(fbId).set(typeMap);
             }
 
@@ -111,7 +112,7 @@ public class TypeSignalementService {
         dto.setIdType(doc.contains("idType") ? doc.getLong("idType").intValue() : null);
         dto.setNom(doc.contains("nom") ? doc.getString("nom") : null);
         dto.setFirebaseId(doc.contains("firebaseId") ? doc.getString("firebaseId") : null);
-
+        dto.setIdimage(doc.contains("idimage") ? doc.getString("idimage") :null);
         return dto;
     }
 

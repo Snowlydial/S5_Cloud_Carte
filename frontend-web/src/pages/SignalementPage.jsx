@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
 import {
     getAllSignalements,
     updateSignalement,
@@ -183,8 +185,34 @@ const SignalementPage = () => {
         });
     };
 
+    // const handleProblemeInputChange = (field, value) => {
+    //     setProblemeForm(prev => ({ ...prev, [field]: value }));
+
+    // };
     const handleProblemeInputChange = (field, value) => {
         setProblemeForm(prev => ({ ...prev, [field]: value }));
+        const token = localStorage.getItem("JWT_TOKEN");
+
+        const niveau = field === 'niveau' ? Number(value) : Number(problemeForm.niveau);
+        const surface = field === 'surface' ? Number(value) : Number(problemeForm.surface);
+
+        if (niveau && surface) {
+            axios.get(`http://localhost:8080/api/configuration/calcul-budget`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                params: {
+                    surface: surface,
+                    niveau: niveau
+                }
+            })
+                .then(res => {
+                    setProblemeForm(prev => ({ ...prev, budget: res.data }));
+                })
+                .catch(err => {
+                    console.error("Erreur lors du calcul du budget :", err);
+                });
+        }
     };
 
     const handleSubmitProbleme = async (e) => {
@@ -325,7 +353,6 @@ const SignalementPage = () => {
                                                     Modifier
                                                 </button>
 
-                                                {/* ✅ Afficher bouton ajouter problème si pas encore de problème */}
                                                 {!sig.problemeDTO && (
                                                     <button
                                                         onClick={() => handleOpenModal(sig.idSignalement)}
@@ -335,7 +362,6 @@ const SignalementPage = () => {
                                                     </button>
                                                 )}
 
-                                                {/* ✅ Afficher bouton changer statut si problème existe */}
                                                 {sig.problemeDTO && (
                                                     <button
                                                         onClick={() => handleOpenStatusModal(sig.problemeDTO)}
@@ -424,6 +450,7 @@ const SignalementPage = () => {
                             id="budget"
                             value={problemeForm.budget}
                             onChange={(e) => handleProblemeInputChange('budget', e.target.value)}
+                            readOnly
                             min="0"
                             required
                         />
