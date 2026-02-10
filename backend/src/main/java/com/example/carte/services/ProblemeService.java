@@ -771,7 +771,7 @@ public class ProblemeService {
         RecapDashboardDTO recap = new RecapDashboardDTO();
 
         List<Probleme> problemes = problemeRepo.findAll();
-        // 
+
         int nbProblemes = problemes.size();
         double totalSurface = 0;
         double totalBudget = 0;

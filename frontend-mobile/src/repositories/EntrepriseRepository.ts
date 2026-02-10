@@ -13,7 +13,7 @@ import { Entreprise } from "../models/Entreprise";
 import { db } from "@/firebase";
 
 export class EntrepriseRepository {
-    static COLLECTION = "entreprises";
+    static COLLECTION = "entreprise";   
 
     static async getAll(): Promise<Entreprise[]> {
         const snap = await getDocs(collection(db, EntrepriseRepository.COLLECTION));

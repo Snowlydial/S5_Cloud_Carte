@@ -1,9 +1,10 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
-  appName: 'frontend-mobile',
-  webDir: 'dist'
+  appId: 'com.map.android',
+  appName: 'Signa-lalana',
+  webDir: 'dist',
+  
 };
 
 export default config;

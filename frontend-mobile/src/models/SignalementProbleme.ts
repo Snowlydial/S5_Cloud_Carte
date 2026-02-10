@@ -20,4 +20,6 @@ export interface SignalementProbleme extends Signalement {
   // Détails Status (Le plus récent)
   statusActuel?: string;
   statusDate?: Date;
+
+  niveau?: number;
 }

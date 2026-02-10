@@ -75,7 +75,9 @@ export const useSignalementProbleme = () => {
           
           // Enrichissement Status
           statusActuel: sLabel?.nom || "Nouveau",
-          statusDate: pStat?.dateStatus
+          statusDate: pStat?.dateStatus,
+          niveau: prob?.niveau
+          
         };
       });
 
