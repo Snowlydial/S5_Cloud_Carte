@@ -149,6 +149,7 @@ public class UserService {
                 local.setFirebaseUid(fbId);
                 userRepo.save(local);
             }
+        boolean firebaseUserExists = false;
 
             DocumentReference docRef = colRef.document(local.getFirebaseUid());
             DocumentSnapshot snapshot = docRef.get().get();
@@ -167,7 +168,7 @@ public class UserService {
                 if (local.getProfil().getFirebaseId() == null) {
                     profilSyncService.getListSyncProfils();
                 }
-                compteMap.put("profil", local.getProfil().getFirebaseId());
+                compteMap.put("idProfil", local.getProfil().getFirebaseId());
                 compteMap.put("firebaseUid", local.getFirebaseUid());
                 compteMap.put("lastSync", local.getLastSync().toString());
                 compteMap.put("password", local.getPassword());
@@ -389,7 +390,6 @@ public class UserService {
                 UserRecord userRecord = FirebaseAuth.getInstance().createUser(request);
                 System.out.println("Successfully created new user: " + userRecord.getUid());
                 fbuid = userRecord.getUid();
-
             }
             // enregistrer localement
             System.out.println("lolllll  -----" + role);
@@ -398,6 +398,7 @@ public class UserService {
             newUser.setPassword(password);
             newUser.setRole(role);
             newUser.setFirebaseUid(fbuid);
+            newUser.setLastSync(LocalDateTime.now());
             Profil profil = profilRepository.findByNom("USER")
                     .orElseThrow(() -> new RuntimeException("Profil introuvable pour le rôle: " + role));
             newUser.setProfil(profil);

@@ -28,7 +28,7 @@ public class UserController {
 
     @Operation(summary = "Lister tous les utilisateurs")
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() throws InterruptedException, ExecutionException {
+    public ResponseEntity<List<UserDTO>> getAllUsers() throws InterruptedException, ExecutionException, FirebaseAuthException {
         return ResponseEntity.ok(userService.getListSyncComptes());
     }
 
@@ -45,7 +45,7 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
     @PostMapping("/sync")
-    public ResponseEntity<Void> sync() throws InterruptedException, ExecutionException{
+    public ResponseEntity<Void> sync() throws InterruptedException, ExecutionException, FirebaseAuthException{
         List<UserDTO> users = userService.getListSyncComptes();
         return null;
         

@@ -27,6 +27,7 @@ import com.example.carte.repository.SignalementImageRepository;
 import com.example.carte.repository.SignalementRepository;
 import com.example.carte.repository.TypeSignalementRepository;
 import com.example.carte.repository.UtilisateurRepository;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.cloud.FirestoreClient;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -539,8 +540,9 @@ public class SignalementService {
      * 
      * @throws ExecutionException
      * @throws InterruptedException
+     * @throws FirebaseAuthException 
      */
-    private Signalement mapDTOToEntity(SignalementDTO dto) throws InterruptedException, ExecutionException {
+    private Signalement mapDTOToEntity(SignalementDTO dto) throws InterruptedException, ExecutionException, FirebaseAuthException {
         System.out.println("dto " + dto.toString());
         Signalement s = new Signalement();
         User u = utilisateurRepository.findByFirebaseUid(dto.getFirebaseId()).orElse(null);

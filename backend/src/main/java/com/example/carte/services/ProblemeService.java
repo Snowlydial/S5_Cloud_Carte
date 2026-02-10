@@ -826,7 +826,7 @@ public class ProblemeService {
     @Transactional
     public ProblemeDTO updateStatus(Integer idProbleme, ProblemeStatusData statusData) throws Exception {
 
-        System.out.println(statusData.toJsonString());
+        // System.out.println(statusData.toJsonString());
         Probleme probleme = problemeRepo.findById(idProbleme)
                 .orElseThrow(() -> new RuntimeException("Problème introuvable"));
 
@@ -850,6 +850,7 @@ public class ProblemeService {
         String username = u.getEmail().split("@")[0];
         String message = buildMessage(status, username);
         if (isOnline()) {
+            System.out.println("en ligne !!");
             if (u.getFirebaseUid() == null) {
                 userService.getListSyncComptes();
             }
