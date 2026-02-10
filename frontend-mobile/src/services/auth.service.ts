@@ -8,9 +8,13 @@ import { CompteRepository } from "@/repositories/CompteRepository";
 import { auth, initPushNotifications } from "@/firebase";
 import { CompteService } from "./Compte.service";
 import { ProfilService } from "./Profil.service";
+<<<<<<< HEAD
 import { Preferences } from '@capacitor/preferences';
 import { ConfigurationRepository } from "@/repositories/ConfigurationRepository";
 
+=======
+import { v4 as uuidv4 } from 'uuid';
+>>>>>>> parent of b9a28ac (Merge branch 'fix/notif' of https://github.com/Snowlydial/S5_Cloud_Carte into fix/notif)
 export async function loginService(email: string, password: string): Promise<ApiResponse> {
     async function checkInternet(timeoutMs = 5000): Promise<boolean> {
         const controller = new AbortController();
