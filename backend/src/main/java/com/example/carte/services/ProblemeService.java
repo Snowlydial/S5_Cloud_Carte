@@ -62,6 +62,8 @@ public class ProblemeService {
     private UserService userService;
     @Autowired
     private SignalementService signalementService;
+    @Autowired
+    private FirebaseNotificationService firebaseNotificationService;
 
     private final ProblemeStatusService problemeStatusService;
     private final ReentrantLock syncLock = new ReentrantLock();
@@ -249,7 +251,7 @@ public class ProblemeService {
                         newLocal.setCompte(compte);
                     }
 
-                    ProblemeStatus problemeStatus = new ProblemeStatus();
+                    // ProblemeStatus problemeStatus = new ProblemeStatus();
                     System.out.println("statutus " + firebaseDto.getStatutNom());
                     problemeRepo.save(newLocal);
                     // if (firebaseDto.getStatutNom() != null) {
@@ -822,7 +824,7 @@ public class ProblemeService {
     }
 
     @Transactional
-    public ProblemeDTO updateStatus(Integer idProbleme, ProblemeStatusData statusData) {
+    public ProblemeDTO updateStatus(Integer idProbleme, ProblemeStatusData statusData) throws Exception {
 
         System.out.println(statusData.toJsonString());
         Probleme probleme = problemeRepo.findById(idProbleme)
@@ -842,9 +844,47 @@ public class ProblemeService {
         problemeStatusRepository.save(problemeStatus);
 
         // probleme.(status);
+        // envoi notification si en ligne
+        String title = "progression de votre signalement";
+        User u = probleme.getSignalement().getCompte();
+        String username = u.getEmail().split("@")[0];
+        String message = buildMessage(status, username);
+        if (isOnline()) {
+            if (u.getFirebaseUid() == null) {
+                userService.getListSyncComptes();
+            }
+            List<String> tokens = userService.getFcmTokensByUid(u.getFirebaseUid());
+            firebaseNotificationService.sendNotificationToTokens(tokens, title, message);
+
+        }
         problemeRepo.save(probleme);
 
         return mapToDTO(probleme);
+    }
+
+    private String buildMessage(Status status, String username) {
+
+        switch (status.getNom().toLowerCase()) {
+
+            case "nouveau":
+                return "👋 Salut " + username + " !\n"
+                        + "Ton signalement a bien été reçu ✅\n"
+                        + "Nos équipes vont l’analyser très bientôt.";
+
+            case "en_cours":
+                return "🚧 Bonne nouvelle " + username + " !\n"
+                        + "Le problème que tu as signalé est actuellement en cours de traitement.\n"
+                        + "Merci pour ta patience 🙏";
+
+            case "termine":
+                return "🎉 Félicitations " + username + " !\n"
+                        + "Le problème signalé a été résolu avec succès.\n"
+                        + "Merci d’avoir contribué à améliorer la situation 💙";
+
+            default:
+                return "Bonjour " + username + ",\n"
+                        + "Le statut de ton signalement a été mis à jour.";
+        }
     }
 
     @Transactional
