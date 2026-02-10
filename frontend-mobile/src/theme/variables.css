@@ -430,3 +430,53 @@ ion-icon {
     --ion-item-background: #2d2d44;
   }
 }
+
+/* ==========================================
+   NEOBRUTALISM ALERT STYLING
+   ========================================== */
+.neo-alert .alert-head {
+    background-color: #4ECDC4;
+    color: #2C3A47;
+}
+
+.neo-alert .alert-wrapper {
+    background-color: #2C3A47;
+}
+
+.neo-alert .alert-button {
+    color: #4ECDC4;
+}
+
+.neo-alert .alert-message {
+    color: #F5F6FA;
+}
+
+/* Default ion-alert styling (for select options popup) */
+.alert-head {
+    background-color: #4ECDC4 !important;
+    color: #2C3A47 !important;
+}
+
+.alert-wrapper {
+    background-color: #2C3A47 !important;
+}
+
+.alert-button {
+    color: #4ECDC4 !important;
+}
+
+.alert-message,
+.alert-title {
+    color: #F5F6FA !important;
+}
+
+.alert-checkbox-label,
+.alert-radio-label {
+    color: #F5F6FA !important;
+}
+
+.alert-radio-icon,
+.alert-checkbox-icon {
+    background-color: #2C3A47 !important;
+    border-color: #4ECDC4 !important;
+}
