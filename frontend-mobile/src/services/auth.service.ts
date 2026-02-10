@@ -8,7 +8,6 @@ import { CompteRepository } from "@/repositories/CompteRepository";
 import { auth, initPushNotifications } from "@/firebase";
 import { CompteService } from "./Compte.service";
 import { ProfilService } from "./Profil.service";
-import { v4 as uuidv4 } from 'uuid';
 export async function loginService(email: string, password: string): Promise<ApiResponse> {
     async function checkInternet(timeoutMs = 5000): Promise<boolean> {
         const controller = new AbortController();
