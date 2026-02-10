@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.map.android',
-  appName: 'frontend-mobile',
+  appName: 'Signa-lalana',
   webDir: 'dist'
 };
 

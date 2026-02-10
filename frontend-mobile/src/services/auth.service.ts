@@ -8,11 +8,30 @@ import { CompteRepository } from "@/repositories/CompteRepository";
 import { auth, initPushNotifications } from "@/firebase";
 import { CompteService } from "./Compte.service";
 import { ProfilService } from "./Profil.service";
-import { v4 as uuidv4 } from 'uuid';
 export async function loginService(email: string, password: string): Promise<ApiResponse> {
-    const compte = await CompteRepository.findByEmail(email);
+    async function checkInternet(timeoutMs = 5000): Promise<boolean> {
+        // In browser environments, use navigator.onLine as primary check
+        // The fetch approach fails due to CORS restrictions
+        if (!navigator.onLine) {
+            return false;
+        }
+        return true;
+    }
 
+
+    // const isOnline = navigator.onLine;
+    // if (!isOnline){
+    //     throw new Error("Aucune connexion internet. Veuillez vérifier votre connexion et réessayer.");
+    // }
+    
+    let compte = null;
     try {
+        const isOnline = await checkInternet();
+        if (!isOnline) {
+            console.log ("totototot")
+            throw new Error("Aucune connexion internet. Veuillez vérifier votre connexion et réessayer.");
+        }
+        compte = await CompteRepository.findByEmail(email);
         if (!compte) {
             throw new Error("Compte non trouvé avec cet email.");
         }
@@ -22,10 +41,10 @@ export async function loginService(email: string, password: string): Promise<Api
 
             throw new Error("Compte verrouillé en raison de trop nombreuses tentatives de connexion échouées.");
         }
-        if (compte.idProfil === undefined || compte.idProfil === null || compte.idProfil === "") {
+        if (compte.profil === undefined || compte.profil === null || compte.profil === "") {
             throw new Error("Le profil du compte n'est pas défini.");
         }
-        const profilCompte = compte ? await ProfilService.getById(compte.idProfil) : null;
+        const profilCompte = compte ? await ProfilService.getById(compte.profil) : null;
         console.log("Profil du compte lors de la connexion :", profilCompte);
         if (!profilCompte || profilCompte.nom !== "USER") {
             throw new Error("Le profil du compte n'est pas autorisé à se connecter.");
@@ -35,7 +54,7 @@ export async function loginService(email: string, password: string): Promise<Api
         // const userCredential = await signInWithEmailAndPassword(auth, testEmail, testPassword);
 
 
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        // const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
         console.log("Compte trouvé lors de la connexion réussie :", compte);
         if (compte) {
@@ -67,14 +86,16 @@ export async function loginService(email: string, password: string): Promise<Api
             code: 200,
             message: "Connexion réussie",
             data: {
-                uid: userCredential.user.uid,
-                email: userCredential.user.email
+                uid: compte.firebaseId,
+                email: compte.email
             }
         };
     } catch (err: any) {
 
         console.log("Compte trouvé lors de l'échec de connexion :", compte);
-        if (compte && compte.mdp !== password) {
+        const isOnline = await checkInternet();
+
+        if (compte && compte.mdp !== password && isOnline) {
             const tentative = compte.tentative || 0;
 
             await CompteRepository.update(compte.idCompte!, { tentative: tentative + 1 });
@@ -103,13 +124,13 @@ export async function signinService(email: string, password: string): Promise<Ap
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-        const profil: Profil | null = await ProfilRepository.getByName("utilisateur");
+        const profil: Profil | null = await ProfilRepository.getByName("USER");
         if (!profil) {
             throw new Error("Profil 'utilisateur' non trouvé");
         }
-        if (!profil.idProfil) {
-            throw new Error("Profil ID non défini");
-        }
+        // if (!profil.profil) {
+        //     throw new Error("Profil ID non défini");
+        // }
 
         // const compte: Compte = {
         //     email: email,
