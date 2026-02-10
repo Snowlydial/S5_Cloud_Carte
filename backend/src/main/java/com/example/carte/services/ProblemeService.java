@@ -745,15 +745,6 @@ public class ProblemeService {
         RecapDashboardDTO recap = new RecapDashboardDTO();
 
         List<Probleme> problemes = problemeRepo.findAll();
-        List<Signalement> signalements = signalementRepo.findAll();
-
-        // Nombre total de signalements
-        long nbSignalements = signalements.size();
-        
-        // Nombre de signalements sans problème (non traités)
-        long nbNonTraites = signalements.stream()
-            .filter(s -> s.getProbleme() == null)
-            .count();
 
         int nbProblemes = problemes.size();
         double totalSurface = 0;
@@ -803,13 +794,11 @@ public class ProblemeService {
             }
         }
 
-        // Avancement global: on compte aussi les non-traités comme 0%
-        double avancementPercent = nbSignalements == 0 ? 0 : avancementTotal / nbSignalements;
+        // Avancement global: basé uniquement sur les problèmes
+        double avancementPercent = nbProblemes == 0 ? 0 : avancementTotal / nbProblemes;
         double delaiMoyenJours = countDelai == 0 ? 0 : (double) totalDelaiJours / countDelai;
 
         recap.setNbPoints(nbProblemes);
-        recap.setNbSignalements(nbSignalements);
-        recap.setNbNonTraites(nbNonTraites);
         recap.setTotalSurface(totalSurface);
         recap.setTotalBudget(totalBudget);
         recap.setAvancementPercent(avancementPercent);

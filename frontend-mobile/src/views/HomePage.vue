@@ -2,20 +2,22 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>Blank</ion-title>
+        <ion-title>Accueil</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar>
-          <ion-title size="large">Blank</ion-title>
-        </ion-toolbar>
-      </ion-header>
-
-      <div id="container">3
-        <strong>Ready to create an app?</strong>
-        <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+      <div class="neo-container">
+        <div class="neo-welcome-card">
+          <h1 class="neo-title">Cloud Carte</h1>
+          <p class="neo-subtitle">Prêt à cartographier ?</p>
+          <p class="neo-description">
+            Commencez avec les 
+            <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">
+              composants Ionic
+            </a>
+          </p>
+        </div>
       </div>
     </ion-content>
   </ion-page>
@@ -26,31 +28,63 @@ import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar } from '@ionic/vue
 </script>
 
 <style scoped>
-#container {
+.neo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 24px;
+  background: var(--neo-background, #F5F6FA);
+}
+
+.neo-welcome-card {
+  background: var(--neo-background, #F5F6FA);
+  border: 4px solid var(--neo-dark, #2C3A47);
+  box-shadow: 8px 8px 0 var(--neo-dark, #2C3A47);
+  padding: 48px 32px;
   text-align: center;
-  
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  max-width: 400px;
+  width: 100%;
 }
 
-#container strong {
-  font-size: 20px;
-  line-height: 26px;
+.neo-title {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--neo-dark, #2C3A47);
+  margin: 0 0 12px 0;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  font-family: var(--neo-font, 'Space Mono', monospace);
 }
 
-#container p {
+.neo-subtitle {
   font-size: 16px;
-  line-height: 22px;
-  
-  color: #8c8c8c;
-  
-  margin: 0;
+  font-weight: 700;
+  color: var(--neo-dark, #2C3A47);
+  margin: 0 0 24px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: var(--neo-font, 'Space Mono', monospace);
 }
 
-#container a {
+.neo-description {
+  font-size: 13px;
+  color: var(--neo-dark, #2C3A47);
+  margin: 0;
+  font-family: var(--neo-font, 'Space Mono', monospace);
+}
+
+.neo-description a {
+  color: var(--neo-primary, #FFC312);
+  background: var(--neo-dark, #2C3A47);
   text-decoration: none;
+  padding: 2px 8px;
+  font-weight: 700;
+  transition: all 0.1s ease;
+}
+
+.neo-description a:hover {
+  background: var(--neo-primary, #FFC312);
+  color: var(--neo-dark, #2C3A47);
 }
 </style>

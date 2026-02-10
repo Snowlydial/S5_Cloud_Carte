@@ -1,0 +1,502 @@
+/* ==========================================
+   NEOBRUTALISM HOME PAGE STYLES
+   Bottom Sheet Pattern for better UX
+   ========================================== */
+
+/* Wrapper - fullscreen */
+.main-wrapper {
+    position: relative;
+    height: 100%;
+    background: #F5F6FA;
+    overflow: hidden;
+}
+
+/* Map - takes full screen */
+#map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+/* ==========================================
+   NEOBRUTALISM FAB BUTTONS
+   ========================================== */
+.neo-fab-container {
+    position: absolute;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    z-index: 1000;
+}
+
+.neo-fab-label {
+    background: #F5F6FA;
+    border: 2px solid #2C3A47;
+    padding: 6px 10px;
+    margin-right: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #2C3A47;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'Space Mono', monospace;
+    box-shadow: 2px 2px 0 #2C3A47;
+}
+
+.neo-fab-button {
+    width: 44px;
+    height: 44px;
+    background: #2C3A47;
+    border: 3px solid #2C3A47;
+    box-shadow: 3px 3px 0 #2C3A47;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.1s ease;
+}
+
+.neo-fab-button:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 #2C3A47;
+}
+
+.neo-fab-button:active {
+    transform: translate(0, 0);
+    box-shadow: 1px 1px 0 #2C3A47;
+}
+
+.neo-fab-button ion-icon {
+    font-size: 22px;
+    color: #F5F6FA;
+}
+
+.neo-fab-secondary {
+    background: #4ECDC4;
+}
+
+.neo-fab-secondary ion-icon {
+    color: #2C3A47;
+}
+
+.neo-fab-info {
+    background: #3F88C5;
+}
+
+.neo-fab-info ion-icon {
+    color: #F5F6FA;
+}
+
+.neo-fab-danger {
+    background: #FF6F61;
+}
+
+.neo-fab-danger ion-icon {
+    color: white;
+}
+
+/* Position buttons */
+.fab-location {
+    top: 12px;
+}
+
+.fab-logout {
+    top: 66px;
+}
+
+.fab-filter {
+    top: 120px;
+}
+
+.fab-recap {
+    top: 174px;
+}
+
+/* ==========================================
+   BOTTOM SHEET
+   ========================================== */
+.bottom-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1001;
+    background: #F5F6FA;
+    border-top: 4px solid #2C3A47;
+    box-shadow: 0 -6px 0 #2C3A47;
+    max-height: 70vh;
+    transform: translateY(calc(100% - 60px));
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bottom-sheet.sheet-expanded {
+    transform: translateY(0);
+}
+
+/* Sheet Handle */
+.sheet-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    background: #FFC312;
+    border-bottom: 3px solid #2C3A47;
+    user-select: none;
+}
+
+.handle-bar {
+    width: 40px;
+    height: 4px;
+    background: #2C3A47;
+    border-radius: 2px;
+}
+
+.handle-text {
+    font-size: 12px;
+    font-weight: 900;
+    color: #2C3A47;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Space Mono', monospace;
+}
+
+.handle-icon {
+    font-size: 18px;
+    color: #2C3A47;
+}
+
+/* Sheet Content */
+.sheet-content {
+    padding: 20px;
+    max-height: calc(70vh - 60px);
+    overflow-y: auto;
+    background: #2C3A47;
+}
+
+/* ==========================================
+   POSITION BADGE (in sheet)
+   ========================================== */
+.neo-position-badge {
+    background: #2C3A47;
+    border: 3px solid #F5F6FA;
+    box-shadow: 4px 4px 0 #F5F6FA;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.badge-label {
+    font-size: 10px;
+    font-weight: 900;
+    color: #F5F6FA;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Space Mono', monospace;
+}
+
+.badge-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #F5F6FA;
+    font-family: 'Space Mono', monospace;
+}
+
+.badge-warning {
+    color: #FF6F61;
+}
+
+/* ==========================================
+   FORM CARD
+   ========================================== */
+.neo-form-card {
+    background: #2C3A47;
+    border: 3px solid #F5F6FA;
+    box-shadow: 4px 4px 0 #F5F6FA;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 900;
+    color: #F5F6FA;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    font-family: 'Space Mono', monospace;
+}
+
+/* ==========================================
+   NATIVE SELECT & INPUT STYLING
+   ========================================== */
+.neo-select,
+.neo-input-text {
+    width: 100%;
+    padding: 12px;
+    background: #F5F6FA;
+    color: #2C3A47;
+    border: 3px solid #2C3A47;
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.1s ease;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.neo-select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232C3A47' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.neo-select:focus,
+.neo-input-text:focus {
+    outline: none;
+    box-shadow: 3px 3px 0 #F5F6FA;
+    transform: translate(-2px, -2px);
+    background: #F5F6FA;
+}
+
+.neo-select option {
+    background: #F5F6FA;
+    color: #2C3A47;
+    padding: 8px;
+}
+
+.neo-select option:disabled {
+    color: #7f8c8d;
+}
+
+.neo-input-text::placeholder {
+    color: #7f8c8d;
+    opacity: 1;
+}
+
+.neo-submit-btn {
+    margin-top: 8px;
+    --padding-top: 14px;
+    --padding-bottom: 14px;
+    --color: #2C3A47;
+    --border-color: #F5F6FA;
+}
+
+/* ==========================================
+   RECAP SECTION (in sheet)
+   ========================================== */
+.neo-recap-section {
+    margin-top: 8px;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 900;
+    color: #F5F6FA;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 16px 0;
+    font-family: 'Space Mono', monospace;
+    padding-bottom: 8px;
+    border-bottom: 3px solid #4ECDC4;
+}
+
+.recap-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.recap-item {
+    background: #F5F6FA;
+    border: 2px solid #2C3A47;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.recap-label {
+    font-size: 10px;
+    font-weight: 900;
+    color: #2C3A47;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'Space Mono', monospace;
+}
+
+.recap-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: #2C3A47;
+    font-family: 'Space Mono', monospace;
+}
+
+.recap-highlight {
+    color: #FFC312;
+    background: #2C3A47;
+    padding: 2px 6px;
+    display: inline-block;
+}
+
+.recap-success {
+    color: #2C3A47;
+    background: #4ECDC4;
+    padding: 2px 6px;
+    display: inline-block;
+}
+
+/* ==========================================
+   PHOTO MODAL GRID
+   ========================================== */
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.photo-item {
+    position: relative;
+    height: 140px;
+    border: 3px solid #2C3A47;
+    box-shadow: 3px 3px 0 #2C3A47;
+}
+
+.photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.neo-photo-delete {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 32px;
+    height: 32px;
+    background: #FF6F61;
+    border: 2px solid #2C3A47;
+    box-shadow: 2px 2px 0 #2C3A47;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.neo-photo-delete ion-icon {
+    color: white;
+    font-size: 16px;
+}
+
+.add-photo-btn {
+    border: 3px dashed #2C3A47;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 140px;
+    color: #2C3A47;
+    background: #F5F6FA;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    font-family: 'Space Mono', monospace;
+}
+
+.add-photo-btn:hover {
+    background: #4ECDC4;
+}
+
+.add-photo-btn p {
+    margin: 8px 0 0 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Custom Marker */
+:deep(.custom-marker) {
+    background: transparent;
+    border: none;
+}
+
+/* ==========================================
+   TOOLBAR OVERRIDE (Turquoise)
+   ========================================== */
+ion-toolbar {
+    --background: #4ECDC4;
+    --color: #2C3A47;
+}
+
+ion-toolbar ion-title {
+    text-align: center;
+}
+
+/* ==========================================
+   RECAP MODAL STYLES
+   ========================================== */
+.recap-modal-content {
+    --background: #F5F6FA;
+}
+
+.recap-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.recap-modal-item {
+    background: #F5F6FA;
+    border: 3px solid #2C3A47;
+    box-shadow: 4px 4px 0 #2C3A47;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.recap-modal-label {
+    font-size: 11px;
+    font-weight: 900;
+    color: #2C3A47;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Space Mono', monospace;
+}
+
+.recap-modal-value {
+    font-size: 24px;
+    font-weight: 900;
+    color: #2C3A47;
+    font-family: 'Space Mono', monospace;
+}
+
+.recap-modal-highlight {
+    background: #FFC312;
+}
+
+.recap-modal-success {
+    background: #4ECDC4;
+}
+
+.recap-modal-success .recap-modal-value {
+    color: #2C3A47;
+}
