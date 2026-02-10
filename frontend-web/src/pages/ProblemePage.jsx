@@ -267,8 +267,8 @@ const ProblemePage = () => {
                                         <td>{Number(prob.budget).toLocaleString()}</td>
                                         <td>{prob.entrepriseNom || '-'}</td>
                                         <td>
-                                            <span className={`status-badge status-${prob.currentStatus || prob.statut}`}>
-                                                {prob.currentStatus || prob.statut || 'nouveau'}
+                                            <span className={`status-badge status-${prob.statutNom || prob.currentStatus || 'nouveau'}`}>
+                                                {prob.statutNom || prob.currentStatus || 'nouveau'}
                                             </span>
                                         </td>
                                         <td>{prob.dateProbleme ? new Date(prob.dateProbleme).toLocaleDateString('fr-FR') : '-'}</td>
@@ -383,7 +383,7 @@ const ProblemePage = () => {
                             <option value="">Sélectionner un statut</option>
                             {statusList.map(status => (
                                 <option key={status.id} value={status.nom}>
-                                    {status.nom}
+                                    {status.nom} ({status.nom === 'nouveau' ? '0%' : status.nom === 'en_cours' ? '50%' : '100%'})
                                 </option>
                             ))}
                         </select>

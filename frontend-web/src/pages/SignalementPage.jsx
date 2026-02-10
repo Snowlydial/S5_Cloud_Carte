@@ -11,20 +11,22 @@ import {
 } from '../services/signalementService';
 import {
     getEntreprises,
+    getStatusList,
+    updateProblemeStatus,
+    createProbleme
 } from '../services/problemeService';
-import { createProbleme } from '../services/problemeService';
 import Modal from '../components/Modal';
-import { SIGNALEMENT_STATUS } from '../config/constants';
 import '../styles/SharedPages.css';
 
 const SignalementPage = () => {
-    const { user, hasRole } = useAuth();
+    const { hasRole } = useAuth();
     const navigate = useNavigate();
 
     const [signalements, setSignalements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
     const [entreprises, setEntreprises] = useState([]);
+    const [statusList, setStatusList] = useState([]);
 
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -44,6 +46,14 @@ const SignalementPage = () => {
         entrepriseId: ''
     });
 
+    //*-- Modal state for changing status
+    const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+    const [selectedProbleme, setSelectedProbleme] = useState(null);
+    const [statusForm, setStatusForm] = useState({
+        etat: '',
+        dateStatus: ''
+    });
+
     useEffect(() => {
         if (!hasRole('MANAGER')) {
             navigate('/dashboard');
@@ -53,6 +63,7 @@ const SignalementPage = () => {
     useEffect(() => {
         loadSignalements();
         loadEntreprises();
+        loadStatusList();
     }, []);
 
     const loadSignalements = async () => {
@@ -68,17 +79,20 @@ const SignalementPage = () => {
         }
     };
     const loadEntreprises = async () => {
-        setLoading(true);
-        setError('');
         try {
-            const response = await getEntreprises(); // on attend la promesse
+            const response = await getEntreprises();
             setEntreprises(response.data || response);
-            console.log("Entreprises :", response);
         } catch (err) {
             console.error("Erreur lors du chargement des entreprises :", err);
-            setError(err.message || "Erreur lors du chargement");
-        } finally {
-            setLoading(false);
+        }
+    };
+
+    const loadStatusList = async () => {
+        try {
+            const response = await getStatusList();
+            setStatusList(response.data || response);
+        } catch (err) {
+            console.error("Erreur lors du chargement des statuts :", err);
         }
     };
 
@@ -199,6 +213,50 @@ const SignalementPage = () => {
         }
     };
 
+    //?=== STATUS MODAL HANDLERS
+    const handleOpenStatusModal = (probleme) => {
+        setSelectedProbleme(probleme);
+        setStatusForm({
+            etat: probleme.statutNom || '',
+            dateStatus: new Date().toISOString().slice(0, 16)
+        });
+        setIsStatusModalOpen(true);
+    };
+
+    const handleCloseStatusModal = () => {
+        setIsStatusModalOpen(false);
+        setSelectedProbleme(null);
+        setStatusForm({ etat: '', dateStatus: '' });
+    };
+
+    const handleStatusInputChange = (field, value) => {
+        setStatusForm(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSubmitStatus = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        if (!statusForm.etat || !statusForm.dateStatus) {
+            setError('Veuillez remplir tous les champs');
+            return;
+        }
+
+        try {
+            await updateProblemeStatus(selectedProbleme.idProbleme, {
+                etat: statusForm.etat,
+                dateStatus: statusForm.dateStatus
+            });
+
+            setSuccess('Statut mis à jour avec succès');
+            handleCloseStatusModal();
+            loadSignalements();
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
     return (
         <div className="page-container">
             <div className="page-header">
@@ -249,8 +307,8 @@ const SignalementPage = () => {
                                         <td>
                                             {/* ✅ Afficher le statut en fonction de l'existence du problème */}
                                             {sig.problemeDTO ? (
-                                                <span className="status-badge status-traite">
-                                                    Déjà traité
+                                                <span className={`status-badge status-${sig.problemeDTO.statutNom || 'nouveau'}`}>
+                                                    {sig.problemeDTO.statutNom || 'nouveau'}
                                                 </span>
                                             ) : (
                                                 <span className="status-badge status-non-traite">
@@ -265,13 +323,23 @@ const SignalementPage = () => {
                                                     Modifier
                                                 </button>
 
-                                                {/* ✅ Afficher le bouton seulement si pas encore de problème */}
+                                                {/* ✅ Afficher bouton ajouter problème si pas encore de problème */}
                                                 {!sig.problemeDTO && (
                                                     <button
                                                         onClick={() => handleOpenModal(sig.idSignalement)}
                                                         className="btn-add-probleme"
                                                     >
                                                         Ajouter Problème
+                                                    </button>
+                                                )}
+
+                                                {/* ✅ Afficher bouton changer statut si problème existe */}
+                                                {sig.problemeDTO && (
+                                                    <button
+                                                        onClick={() => handleOpenStatusModal(sig.problemeDTO)}
+                                                        className="btn-status"
+                                                    >
+                                                        Changer Statut
                                                     </button>
                                                 )}
 
@@ -359,8 +427,8 @@ const SignalementPage = () => {
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="budget">Entreprise </label>
-                        <select name="entrepriseId" id="entrepriseId" value={editForm.entrepriseNom}
+                        <label htmlFor="entrepriseId">Entreprise </label>
+                        <select name="entrepriseId" id="entrepriseId" value={problemeForm.entrepriseId}
                             onChange={(e) => handleProblemeInputChange('entrepriseId', e.target.value)}>
                             <option value="">-- Sélectionner une entreprise --</option>
 
@@ -380,6 +448,52 @@ const SignalementPage = () => {
                         </button>
                         <button type="submit" className="btn-submit">
                             Ajouter
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Modal for changing status */}
+            <Modal
+                isOpen={isStatusModalOpen}
+                onClose={handleCloseStatusModal}
+                title="Changer le Statut"
+            >
+                <form onSubmit={handleSubmitStatus} className="modal-form">
+                    <div className="form-group">
+                        <label htmlFor="etat">Nouveau statut</label>
+                        <select
+                            id="etat"
+                            value={statusForm.etat}
+                            onChange={(e) => handleStatusInputChange('etat', e.target.value)}
+                            required
+                        >
+                            <option value="">-- Sélectionner un statut --</option>
+                            {statusList.map((status) => (
+                                <option key={status.idStatus} value={status.nom}>
+                                    {status.nom} ({status.nom === 'nouveau' ? '0%' : status.nom === 'en_cours' ? '50%' : '100%'})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="dateStatus">Date du changement</label>
+                        <input
+                            type="datetime-local"
+                            id="dateStatus"
+                            value={statusForm.dateStatus}
+                            onChange={(e) => handleStatusInputChange('dateStatus', e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div className="modal-actions">
+                        <button type="button" onClick={handleCloseStatusModal} className="btn-cancel">
+                            Annuler
+                        </button>
+                        <button type="submit" className="btn-submit">
+                            Mettre à jour
                         </button>
                     </div>
                 </form>

@@ -168,3 +168,14 @@
   transform: translate(-1px, -1px);
   box-shadow: 2px 2px 0 #000;
 }
+
+.guest-link {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 2px solid #2C3A47;
+}
+
+.guest-link a {
+  color: #4ECDC4;
+  border-bottom-color: #4ECDC4;
+}
