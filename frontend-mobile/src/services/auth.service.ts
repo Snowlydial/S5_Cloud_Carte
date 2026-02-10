@@ -63,7 +63,7 @@ export async function loginService(email: string, password: string): Promise<Api
         // const userCredential = await signInWithEmailAndPassword(auth, testEmail, testPassword);
 
 
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        // const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
         console.log("Compte trouvé lors de la connexion réussie :", compte);
         if (compte) {
@@ -95,8 +95,8 @@ export async function loginService(email: string, password: string): Promise<Api
             code: 200,
             message: "Connexion réussie",
             data: {
-                uid: userCredential.user.uid,
-                email: userCredential.user.email
+                uid: compte.firebaseId,
+                email: compte.email
             }
         };
     } catch (err: any) {
