@@ -32,9 +32,6 @@ export async function loginService(email: string, password: string): Promise<Api
             clearTimeout(timeout);
         }
     }
-
-
-    // const isOnline = navigator.onLine;
     // if (!isOnline){
     //     throw new Error("Aucune connexion internet. Veuillez vérifier votre connexion et réessayer.");
     // }
@@ -86,7 +83,7 @@ export async function loginService(email: string, password: string): Promise<Api
         }
         if (compte) {
 
-            // localStorage.setItem("compteId", compte.idCompte!);
+            localStorage.setItem("compteId", compte.idCompte!);
             await Preferences.set({ key: 'compteId', value: compte.idCompte! });
         }
 

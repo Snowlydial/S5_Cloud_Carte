@@ -4,6 +4,7 @@ export interface Probleme {
     surfaceM2: number;
     budget: number;
     idEntreprise?: string;
+    niveau: number;
     idCompte: string;
     idSignalement: string;
 }

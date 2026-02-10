@@ -14,6 +14,7 @@ import { ProblemeStatus } from "@/models/ProblemeStatus";
 import { ProblemeStatusRepository } from "@/repositories/ProblemeStatusRepository";
 import { ProblemeStatusService } from "./ProblemeStatus.service";
 import { StatusService } from "./Status.service";
+import { ConfigurationRepository } from "@/repositories/ConfigurationRepository";
 
 export class CompteService {
 
@@ -24,6 +25,10 @@ export class CompteService {
         pourcentageMap.set ('nouveau', 0);
         pourcentageMap.set ('en_cours', 50);
         pourcentageMap.set ('termine', 100);
+
+        let prixForfaitaire = 0;
+        const configurations = await ConfigurationRepository.findAll();
+        prixForfaitaire = configurations[0]?.m2_forfaitaire ?? 0;
 
         let nbrPoint = 0;
         let totalSurface = 0;
@@ -50,7 +55,8 @@ export class CompteService {
                 // }
             }
             totalSurface += probleme.surfaceM2;
-            totalBudget += probleme.budget ?? 0;
+            totalBudget += probleme.niveau ?? 0 * (probleme.surfaceM2 ?? 0) * prixForfaitaire; 
+            // totalBudget += probleme.budget ?? 0;
         }
 
         // }
