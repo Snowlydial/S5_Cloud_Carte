@@ -30,6 +30,8 @@ export class CompteService {
         const configurations = await ConfigurationRepository.findAll();
         prixForfaitaire = configurations[0]?.m2_forfaitaire ?? 0;
 
+        console.log ("Prix forfaitaire récupéré pour le calcul du budget :", prixForfaitaire); // Debug
+
         let nbrPoint = 0;
         let totalSurface = 0;
         let totalBudget = 0;
@@ -54,8 +56,8 @@ export class CompteService {
                 //     totalTermine += 1;
                 // }
             }
-            totalSurface += probleme.surfaceM2;
-            totalBudget += probleme.niveau ?? 0 * (probleme.surfaceM2 ?? 0) * prixForfaitaire; 
+            totalSurface += probleme.surfaceM2 ?? 0;
+            totalBudget += (probleme.niveau ?? 1) * (probleme.surfaceM2 ?? 1) * prixForfaitaire; 
             // totalBudget += probleme.budget ?? 0;
         }
 
