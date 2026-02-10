@@ -243,7 +243,7 @@ const {
   signaler, 
   getAllSignalements, 
   listeSignalement, 
-  mySignalement 
+  getAllSignalementsMine 
 } = useSignalement();
 
 import { PhotoService } from '@/services/Photo.service';
@@ -254,7 +254,7 @@ const {
   fetchAllData 
 } = useSignalementProbleme();
 
-const { logout, currentUser } = useAuth();
+const { logout, user } = useAuth();
 const router = useRouter();
 
 // Form state
@@ -282,7 +282,8 @@ const format = (num : number) => {
 const listeSignalementEffectif = ref<SignalementProbleme[]>([]);
 const filterMySignalement = async () => {
   if(listeSignalementEffectif.value.length <= 0 || listeSignalementEffectif.value === listeSignalementProbleme.value){
-    const mesSig = await mySignalement(currentUser.value?.email as string);
+    await getAllSignalementsMine();
+    const mesSig = listeSignalement.value;
     console.log("Mes signalements :", mesSig);
     renderSignalementMarkers(mesSig as SignalementProbleme[]);
     listeSignalementEffectif.value = mesSig as SignalementProbleme[];
