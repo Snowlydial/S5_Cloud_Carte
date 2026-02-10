@@ -25,11 +25,11 @@ import { SupabaseService } from "./services/supabase.service";
 
 
   // await CloudinaryService.uploadImage ();
-  try {
-    await SupabaseService.uploadImage();
-  } catch (err) {
-    console.error("Erreur upload Supabase :", err);
-  }
+  // try {
+  //   await SupabaseService.uploadImage();
+  // } catch (err) {
+  //   console.error("Erreur upload Supabase :", err);
+  // }
 
 
   // await ProfilSeeder.seed();

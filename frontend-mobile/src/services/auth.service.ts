@@ -5,10 +5,10 @@ import { Profil } from "@/models/Profil";
 import { ProfilRepository } from "@/repositories/ProfilRepository";
 import { Compte } from "@/models/Compte";
 import { CompteRepository } from "@/repositories/CompteRepository";
-import { auth } from "@/firebase";
+import { auth, initPushNotifications } from "@/firebase";
 import { CompteService } from "./Compte.service";
 import { ProfilService } from "./Profil.service";
-
+import { v4 as uuidv4 } from 'uuid';
 export async function loginService(email: string, password: string): Promise<ApiResponse> {
     async function checkInternet(timeoutMs = 5000): Promise<boolean> {
         const controller = new AbortController();
@@ -36,12 +36,6 @@ export async function loginService(email: string, password: string): Promise<Api
     
     let compte = null;
     try {
-        const isOnline = await checkInternet();
-        if (!isOnline) {
-            console.log ("totototot")
-            throw new Error("Aucune connexion internet. Veuillez vérifier votre connexion et réessayer.");
-        }
-        compte = await CompteRepository.findByEmail(email);
         if (!compte) {
             throw new Error("Compte non trouvé avec cet email.");
         }
@@ -81,6 +75,15 @@ export async function loginService(email: string, password: string): Promise<Api
 
         // const profils : Profil[] = await ProfilRepository.getAll();
         // console.log("Profils récupérés lors de la connexion :",     profils);
+        const token = await initPushNotifications ();
+        if (token && compte) {
+            compte.fcmTokens = compte.fcmTokens ? [...compte.fcmTokens, token] : [token];
+            const tokens = compte.fcmTokens || [];
+            compte.fcmTokens = Array.from(new Set([...tokens, token]));
+            await CompteRepository.update(compte.idCompte!, { fcmTokens: compte.fcmTokens });
+        }
+
+
         localStorage.setItem("loginTime", Date.now().toString());
         return {
             success: true,
