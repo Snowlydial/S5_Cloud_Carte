@@ -70,7 +70,7 @@ export async function loginService(email: string, password: string): Promise<Api
         }
         if (compte) {
 
-            // localStorage.setItem("compteId", compte.idCompte!);
+            localStorage.setItem("compteId", compte.idCompte!);
             await Preferences.set({ key: 'compteId', value: compte.idCompte! });
         }
 
