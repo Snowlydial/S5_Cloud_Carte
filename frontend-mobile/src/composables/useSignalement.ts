@@ -47,10 +47,10 @@ const useSignalement = () => {
     loading.value = true;
 
     try {
-        const auth = getAuth();
-        const currentUser = auth.currentUser;
+        // const auth = getAuth();
+        // const currentUser = auth.currentUser;
         
-        if (!currentUser) throw new Error("Utilisateur non authentifié");
+        // if (!currentUser) throw new Error("Utilisateur non authentifié");
 
         const myId = await Util.getCompteId();
         compteId.value = myId;
