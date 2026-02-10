@@ -93,11 +93,6 @@ const DashboardPage = () => {
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>Non Traité</td>
-                                        <td className="value-cell">{stats.nbNonTraites || 0}</td>
-                                        <td>Signalements sans problème associé</td>
-                                    </tr>
-                                    <tr>
                                         <td>Nouveau</td>
                                         <td className="value-cell">{stats.nbNouveaux || 0}</td>
                                         <td>0% d'avancement</td>
