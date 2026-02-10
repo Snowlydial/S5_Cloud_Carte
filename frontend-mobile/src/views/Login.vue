@@ -1,10 +1,5 @@
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar>
-        <ion-title>Connexion</ion-title>
-      </ion-toolbar>
-    </ion-header>
 
     <ion-content class="ion-padding">
       <div class="login-container">

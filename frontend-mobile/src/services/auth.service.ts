@@ -10,21 +10,12 @@ import { CompteService } from "./Compte.service";
 import { ProfilService } from "./Profil.service";
 export async function loginService(email: string, password: string): Promise<ApiResponse> {
     async function checkInternet(timeoutMs = 5000): Promise<boolean> {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-        try {
-            const res = await fetch("https://1.1.1.1/cdn-cgi/trace", {
-                cache: "no-store",
-                signal: controller.signal
-            });
-
-            return res.ok;
-        } catch (e) {
+        // In browser environments, use navigator.onLine as primary check
+        // The fetch approach fails due to CORS restrictions
+        if (!navigator.onLine) {
             return false;
-        } finally {
-            clearTimeout(timeout);
         }
+        return true;
     }
 
 
