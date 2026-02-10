@@ -10,24 +10,37 @@ import { CompteService } from "./Compte.service";
 import { ProfilService } from "./Profil.service";
 import { Preferences } from '@capacitor/preferences';
 import { ConfigurationRepository } from "@/repositories/ConfigurationRepository";
+
 export async function loginService(email: string, password: string): Promise<ApiResponse> {
     async function checkInternet(timeoutMs = 5000): Promise<boolean> {
-        // In browser environments, use navigator.onLine as primary check
-        // The fetch approach fails due to CORS restrictions
-        if (!navigator.onLine) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+
+
+
+        try {
+            const res = await fetch("https://1.1.1.1/cdn-cgi/trace", {
+                cache: "no-store",
+                signal: controller.signal
+            });
+
+            return res.ok;
+        } catch (e) {
             return false;
+        } finally {
+            clearTimeout(timeout);
         }
-        return true;
     }
     // if (!isOnline){
     //     throw new Error("Aucune connexion internet. Veuillez vérifier votre connexion et réessayer.");
     // }
-    
+
     let compte = null;
     try {
         const isOnline = await checkInternet();
         if (!isOnline) {
-            console.log ("totototot")
+            console.log("totototot")
             throw new Error("Aucune connexion internet. Veuillez vérifier votre connexion et réessayer.");
         }
         compte = await CompteRepository.findByEmail(email);
@@ -84,7 +97,7 @@ export async function loginService(email: string, password: string): Promise<Api
 
         // const profils : Profil[] = await ProfilRepository.getAll();
         // console.log("Profils récupérés lors de la connexion :",     profils);
-        const token = await initPushNotifications ();
+        const token = await initPushNotifications();
         if (token && compte) {
             compte.fcmTokens = compte.fcmTokens ? [...compte.fcmTokens, token] : [token];
             const tokens = compte.fcmTokens || [];
