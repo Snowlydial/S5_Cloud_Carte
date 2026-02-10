@@ -11,25 +11,30 @@ import {
 } from '../services/signalementService';
 import {
     getEntreprises,
+    getStatusList,
+    updateProblemeStatus,
+    createProbleme
 } from '../services/problemeService';
-import { createProbleme } from '../services/problemeService';
 import Modal from '../components/Modal';
-import { SIGNALEMENT_STATUS } from '../config/constants';
-import '../styles/Signalement.css';
+import '../styles/SharedPages.css';
 
 const SignalementPage = () => {
-    const { user, hasRole } = useAuth();
+    const { hasRole } = useAuth();
     const navigate = useNavigate();
 
     const [signalements, setSignalements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
-    const [editingId, setEditingId] = useState(null);
-    const [editForm, setEditForm] = useState({});
     const [entreprises, setEntreprises] = useState([]);
+    const [statusList, setStatusList] = useState([]);
 
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+
+    //*-- Modal state for editing signalement
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [editForm, setEditForm] = useState({});
 
     //*-- Modal state for adding probleme
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,6 +46,14 @@ const SignalementPage = () => {
         entrepriseId: ''
     });
 
+    //*-- Modal state for changing status
+    const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+    const [selectedProbleme, setSelectedProbleme] = useState(null);
+    const [statusForm, setStatusForm] = useState({
+        etat: '',
+        dateStatus: ''
+    });
+
     useEffect(() => {
         if (!hasRole('MANAGER')) {
             navigate('/dashboard');
@@ -50,6 +63,7 @@ const SignalementPage = () => {
     useEffect(() => {
         loadSignalements();
         loadEntreprises();
+        loadStatusList();
     }, []);
 
     const loadSignalements = async () => {
@@ -65,17 +79,20 @@ const SignalementPage = () => {
         }
     };
     const loadEntreprises = async () => {
-        setLoading(true);
-        setError('');
         try {
-            const response = await getEntreprises(); // on attend la promesse
+            const response = await getEntreprises();
             setEntreprises(response.data || response);
-            console.log("Entreprises :", response);
         } catch (err) {
             console.error("Erreur lors du chargement des entreprises :", err);
-            setError(err.message || "Erreur lors du chargement");
-        } finally {
-            setLoading(false);
+        }
+    };
+
+    const loadStatusList = async () => {
+        try {
+            const response = await getStatusList();
+            setStatusList(response.data || response);
+        } catch (err) {
+            console.error("Erreur lors du chargement des statuts :", err);
         }
     };
 
@@ -98,22 +115,27 @@ const SignalementPage = () => {
         }
     };
 
-    const handleEdit = (signalement) => {
-        setEditingId(signalement.id);
+    //?=== EDIT MODAL HANDLERS
+    const handleOpenEditModal = (signalement) => {
+        setEditingId(signalement.idSignalement);
         setEditForm({ ...signalement });
+        setIsEditModalOpen(true);
     };
 
-    const handleCancelEdit = () => {
+    const handleCloseEditModal = () => {
+        setIsEditModalOpen(false);
         setEditingId(null);
         setEditForm({});
     };
 
-    const handleSaveEdit = async () => {
+    const handleSaveEdit = async (e) => {
+        e.preventDefault();
         setError('');
         setSuccess('');
         try {
             await updateSignalement(editingId, editForm);
             setSuccess('Signalement mis à jour');
+            setIsEditModalOpen(false);
             setEditingId(null);
             setEditForm({});
             loadSignalements();
@@ -136,10 +158,6 @@ const SignalementPage = () => {
         } catch (err) {
             setError(err.message);
         }
-    };
-
-    const handleInputChange = (field, value) => {
-        setEditForm(prev => ({ ...prev, [field]: value }));
     };
 
     //?=== PROBLEME MODAL HANDLERS
@@ -186,9 +204,54 @@ const SignalementPage = () => {
                 budget: Number(problemeForm.budget),
                 entrepriseId: Number(problemeForm.entrepriseId)
             });
+
             setSuccess('Problème ajouté avec succès');
             handleCloseModal();
-            loadSignalements(); // Reload to show updated data
+            loadSignalements();
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    //?=== STATUS MODAL HANDLERS
+    const handleOpenStatusModal = (probleme) => {
+        setSelectedProbleme(probleme);
+        setStatusForm({
+            etat: probleme.statutNom || '',
+            dateStatus: new Date().toISOString().slice(0, 16)
+        });
+        setIsStatusModalOpen(true);
+    };
+
+    const handleCloseStatusModal = () => {
+        setIsStatusModalOpen(false);
+        setSelectedProbleme(null);
+        setStatusForm({ etat: '', dateStatus: '' });
+    };
+
+    const handleStatusInputChange = (field, value) => {
+        setStatusForm(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSubmitStatus = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+
+        if (!statusForm.etat || !statusForm.dateStatus) {
+            setError('Veuillez remplir tous les champs');
+            return;
+        }
+
+        try {
+            await updateProblemeStatus(selectedProbleme.idProbleme, {
+                etat: statusForm.etat,
+                dateStatus: statusForm.dateStatus
+            });
+
+            setSuccess('Statut mis à jour avec succès');
+            handleCloseStatusModal();
+            loadSignalements();
         } catch (err) {
             setError(err.message);
         }
@@ -197,9 +260,9 @@ const SignalementPage = () => {
     return (
         <div className="page-container">
             <div className="page-header">
-                <div>
+                <div className="header-title">
                     <h1>Gestion des Signalements</h1>
-                    <p>Gérer les informations des problèmes routiers</p>
+                    <p>CRUD des signalements et synchronisation Firebase</p>
                 </div>
                 <div className="header-actions">
                     <button
@@ -207,13 +270,7 @@ const SignalementPage = () => {
                         className="btn-primary"
                         disabled={syncing}
                     >
-                        {syncing ? 'Synchronisation...' : 'Synchroniser'}
-                    </button>
-                    <button onClick={() => navigate('/map')} className="btn-secondary">
-                        Voir la carte
-                    </button>
-                    <button onClick={() => navigate('/dashboard')} className="btn-secondary">
-                        Retour
+                        {syncing ? 'SYNC...' : 'SYNCHRONISER'}
                     </button>
                 </div>
             </div>
@@ -238,8 +295,6 @@ const SignalementPage = () => {
                                     <th>Date</th>
                                     <th>Statut</th>
                                     <th>Surface (m²)</th>
-                                    {/* <th>Budget (Ar)</th>
-                                    <th>Entreprise</th> */}
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -247,24 +302,13 @@ const SignalementPage = () => {
                                 {signalements.map((sig) => (
                                     <tr key={sig.idSignalement}>
                                         <td>{sig.idSignalement}</td>
-                                        <td>
-                                            {editingId === sig.idSignalement ? (
-                                                <input
-                                                    type="text"
-                                                    value={editForm.description}
-                                                    onChange={(e) => handleInputChange('description', e.target.value)}
-                                                    className="edit-input"
-                                                />
-                                            ) : (
-                                                sig.description
-                                            )}
-                                        </td>
+                                        <td>{sig.description}</td>
                                         <td>{new Date(sig.dateSignalement).toLocaleDateString()}</td>
                                         <td>
                                             {/* ✅ Afficher le statut en fonction de l'existence du problème */}
                                             {sig.problemeDTO ? (
-                                                <span className="status-badge status-traite">
-                                                    Déjà traité
+                                                <span className={`status-badge status-${sig.problemeDTO.statutNom || 'nouveau'}`}>
+                                                    {sig.problemeDTO.statutNom || 'nouveau'}
                                                 </span>
                                             ) : (
                                                 <span className="status-badge status-non-traite">
@@ -272,50 +316,36 @@ const SignalementPage = () => {
                                                 </span>
                                             )}
                                         </td>
-                                        <td>
-                                            {editingId === sig.idSignalement ? (
-                                                <input
-                                                    type="number"
-                                                    value={editForm.problemeDTO.surfaceM2}
-                                                    onChange={(e) => handleInputChange('surface', Number(e.target.value))}
-                                                    className="edit-input"
-                                                />
-                                            ) : (
-                                                sig.problemeDTO?.surfaceM2
-                                            )}
-                                        </td>
+                                        <td>{sig.problemeDTO?.surfaceM2}</td>
                                         <td>
                                             <div className="action-buttons">
-                                                {editingId === sig.idSignalement ? (
-                                                    <>
-                                                        <button onClick={handleSaveEdit} className="btn-save">
-                                                            Sauver
-                                                        </button>
-                                                        <button onClick={handleCancelEdit} className="btn-cancel">
-                                                            Annuler
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <button onClick={() => handleEdit(sig)} className="btn-edit">
-                                                            Modifier
-                                                        </button>
+                                                <button onClick={() => handleOpenEditModal(sig)} className="btn-edit">
+                                                    Modifier
+                                                </button>
 
-                                                        {/* ✅ Afficher le bouton seulement si pas encore de problème */}
-                                                        {!sig.problemeDTO && (
-                                                            <button
-                                                                onClick={() => handleOpenModal(sig.idSignalement)}
-                                                                className="btn-add-probleme"
-                                                            >
-                                                                Ajouter Problème
-                                                            </button>
-                                                        )}
-
-                                                        <button onClick={() => handleDelete(sig.idSignalement)} className="btn-delete">
-                                                            Supprimer
-                                                        </button>
-                                                    </>
+                                                {/* ✅ Afficher bouton ajouter problème si pas encore de problème */}
+                                                {!sig.problemeDTO && (
+                                                    <button
+                                                        onClick={() => handleOpenModal(sig.idSignalement)}
+                                                        className="btn-add-probleme"
+                                                    >
+                                                        Ajouter Problème
+                                                    </button>
                                                 )}
+
+                                                {/* ✅ Afficher bouton changer statut si problème existe */}
+                                                {sig.problemeDTO && (
+                                                    <button
+                                                        onClick={() => handleOpenStatusModal(sig.problemeDTO)}
+                                                        className="btn-status"
+                                                    >
+                                                        Changer Statut
+                                                    </button>
+                                                )}
+
+                                                <button onClick={() => handleDelete(sig.idSignalement)} className="btn-delete">
+                                                    Supprimer
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -325,6 +355,34 @@ const SignalementPage = () => {
                     </div>
                 )}
             </div>
+
+            {/* Modal for editing signalement */}
+            <Modal
+                isOpen={isEditModalOpen}
+                onClose={handleCloseEditModal}
+                title="Modifier le Signalement"
+            >
+                <form onSubmit={handleSaveEdit} className="modal-form">
+                    <div className="form-group">
+                        <label htmlFor="description">Description</label>
+                        <input
+                            type="text"
+                            id="description"
+                            value={editForm.description || ''}
+                            onChange={(e) => handleEditInputChange('description', e.target.value)}
+                            required
+                        />
+                    </div>
+                    <div className="modal-actions">
+                        <button type="button" onClick={handleCloseEditModal} className="btn-cancel">
+                            Annuler
+                        </button>
+                        <button type="submit" className="btn-submit">
+                            Mettre à jour
+                        </button>
+                    </div>
+                </form>
+            </Modal>
 
             {/* Modal for adding probleme */}
             <Modal
@@ -369,15 +427,8 @@ const SignalementPage = () => {
                         />
                     </div>
                     <div className="form-group">
-                        <label htmlFor="budget">Entreprise </label>
-                        {/* <input
-                            type="number"
-                            id="entrepriseId"
-                            onChange={(e) => handleProblemeInputChange('entrepriseId', e.target.value)}
-                            min="0"
-                            required
-                        /> */}
-                        <select name="entrepriseId" id="entrepriseId" value={editForm.entrepriseNom}
+                        <label htmlFor="entrepriseId">Entreprise </label>
+                        <select name="entrepriseId" id="entrepriseId" value={problemeForm.entrepriseId}
                             onChange={(e) => handleProblemeInputChange('entrepriseId', e.target.value)}>
                             <option value="">-- Sélectionner une entreprise --</option>
 
@@ -397,6 +448,52 @@ const SignalementPage = () => {
                         </button>
                         <button type="submit" className="btn-submit">
                             Ajouter
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Modal for changing status */}
+            <Modal
+                isOpen={isStatusModalOpen}
+                onClose={handleCloseStatusModal}
+                title="Changer le Statut"
+            >
+                <form onSubmit={handleSubmitStatus} className="modal-form">
+                    <div className="form-group">
+                        <label htmlFor="etat">Nouveau statut</label>
+                        <select
+                            id="etat"
+                            value={statusForm.etat}
+                            onChange={(e) => handleStatusInputChange('etat', e.target.value)}
+                            required
+                        >
+                            <option value="">-- Sélectionner un statut --</option>
+                            {statusList.map((status) => (
+                                <option key={status.idStatus} value={status.nom}>
+                                    {status.nom} ({status.nom === 'nouveau' ? '0%' : status.nom === 'en_cours' ? '50%' : '100%'})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="dateStatus">Date du changement</label>
+                        <input
+                            type="datetime-local"
+                            id="dateStatus"
+                            value={statusForm.dateStatus}
+                            onChange={(e) => handleStatusInputChange('dateStatus', e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div className="modal-actions">
+                        <button type="button" onClick={handleCloseStatusModal} className="btn-cancel">
+                            Annuler
+                        </button>
+                        <button type="submit" className="btn-submit">
+                            Mettre à jour
                         </button>
                     </div>
                 </form>

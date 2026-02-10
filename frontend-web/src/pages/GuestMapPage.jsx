@@ -1,15 +1,15 @@
-//?=== MAP PAGE (Shows problems on Antananarivo map)
+//?=== GUEST MAP PAGE (Public access - no authentication required)
 
 import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { getAllSignalements } from '../services/signalementService';
-import { getRecapDashboard, getStatusList } from '../services/problemeService';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { Link } from 'react-router-dom';
 import { useOfflineMap } from '../hooks/useOfflineMap';
+import axios from 'axios';
+import { API_BASE_URL } from '../config/constants';
 import 'leaflet/dist/leaflet.css';
 import '../styles/Map.css';
-import '../styles/ModalImage.css'
+import '../styles/ModalImage.css';
+
 //*-- Fix Leaflet default icon issue with React
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -23,9 +23,14 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-const MapPage = () => {
-    const { user } = useAuth();
-    const navigate = useNavigate();
+//*-- Public API endpoints (no auth required)
+const PUBLIC_ENDPOINTS = {
+    SIGNALEMENTS: `${API_BASE_URL}/public/signalements`,
+    RECAP: `${API_BASE_URL}/public/recap`,
+    STATUS: `${API_BASE_URL}/public/status`
+};
+
+const GuestMapPage = () => {
     const { tileUrl, attribution, isOnline } = useOfflineMap();
 
     const [signalements, setSignalements] = useState([]);
@@ -34,17 +39,19 @@ const MapPage = () => {
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('');
     const [error, setError] = useState('');
-    //pour afficher les images
+
+    //*-- Image modal state
     const [showImageModal, setShowImageModal] = useState(false);
     const [selectedImages, setSelectedImages] = useState([]);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    //*-- Antananarivo center coordinates (Leaflet uses [lat, lon] format)
+
+    //*-- Antananarivo center coordinates
     const center = [-18.91425, 47.52817];
 
-    //*-- Tile bounds from mbtiles
+    //*-- Tile bounds
     const tileBounds = [
-        [-19.025, 47.37],   // Southwest
-        [-18.772, 47.679]   // Northeast
+        [-19.025, 47.37],
+        [-18.772, 47.679]
     ];
 
     useEffect(() => {
@@ -55,74 +62,64 @@ const MapPage = () => {
         loadSignalements();
     }, [statusFilter]);
 
-    //*-- Load status list and initial recap data
     const loadInitialData = async () => {
         try {
-            const statusData = await getStatusList();
-            setStatusList(statusData);
+            const [statusRes, recapRes] = await Promise.all([
+                axios.get(PUBLIC_ENDPOINTS.STATUS),
+                axios.get(PUBLIC_ENDPOINTS.RECAP)
+            ]);
+            setStatusList(statusRes.data || []);
+            setRecapStats(recapRes.data);
         } catch (err) {
             console.error('Error loading initial data:', err);
         }
     };
 
-    //*-- Load signalements based on filter
     const loadSignalements = async () => {
         setLoading(true);
         setError('');
         try {
-            const signalementsData = await getAllSignalements();
-            
-            let filteredData = signalementsData;
+            const response = await axios.get(PUBLIC_ENDPOINTS.SIGNALEMENTS);
+            const data = response.data || [];
+
+            let filteredData = data;
             if (statusFilter === 'non_traite') {
                 // Filter signalements without a problem
-                filteredData = signalementsData.filter(s => !s.problemeDTO);
+                filteredData = data.filter(s => !s.problemeDTO);
             } else if (statusFilter) {
                 // Filter by problem status ID
-                filteredData = signalementsData.filter(s => s.problemeDTO?.statut == statusFilter);
+                filteredData = data.filter(s => s.problemeDTO?.statut === statusFilter);
             }
 
             setSignalements(filteredData);
         } catch (err) {
-            setError(err.message);
+            setError('Erreur lors du chargement des données');
+            console.error(err);
         } finally {
             setLoading(false);
         }
     };
 
-    //*-- Load recap data separately to always show global stats
-    const loadRecapData = async () => {
-        try {
-            const recapData = await getRecapDashboard();
-            setRecapStats(recapData);
-        } catch (err) {
-            console.error('Error loading recap:', err);
+    const getMarkerColor = (signalement) => {
+        if (!signalement.problemeDTO) return '#3498db';
+        const statusNom = signalement.problemeDTO?.statutNom;
+        switch (statusNom) {
+            case "nouveau": return '#e863f4';
+            case "en_cours": return '#f39c12';
+            case "termine": return '#27ae60';
+            default: return '#3498db';
         }
     };
 
-    //*-- Load recap when component mounts or when signalements change
-    useEffect(() => {
-        if (signalements.length >= 0) {
-            loadRecapData();
-        }
-    }, [signalements]);
-
-    const getMarkerColor2 = (statusId) => {
-        //*-- Color based on status ID (adjust according to your status IDs)
-        switch (statusId) {
-            case "nouveau": return '#e863f4';  // nouveau (Bleu)
-            case "en_cours": return '#f39c12';  // en cours (Orange)
-            case "termine": return '#27ae60';  // terminé (Vert)
-            default: return '#3498db'; // Par défaut bleu
+    const getMarkerColor2 = (statusNom) => {
+        switch (statusNom) {
+            case "nouveau": return '#e863f4';
+            case "en_cours": return '#f39c12';
+            case "termine": return '#27ae60';
+            default: return '#3498db';
         }
     };
 
-    const handleTileLoad = (e) => {
-        console.log('✔ Tile loaded:', e.tile.src);
-    };
-
-    const handleTileError = (e) => {
-        console.warn('✘ Tile failed:', e.tile.src);
-    };
     const createCustomIcon = (color) => {
         return new L.DivIcon({
             html: `<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
@@ -136,24 +133,21 @@ const MapPage = () => {
             shadowSize: [41, 41]
         });
     };
+
     const handleViewPhotos = (images) => {
-        console.log("jdbnv;bv")
         if (images && images.length > 0) {
-            console.log("hargbvsivbp " + images)
             setSelectedImages(images);
             setCurrentImageIndex(0);
             setShowImageModal(true);
         }
     };
 
-    // 🆕 Fonction pour fermer le modal
     const closeModal = () => {
         setShowImageModal(false);
         setSelectedImages([]);
         setCurrentImageIndex(0);
     };
 
-    // 🆕 Navigation entre les images
     const nextImage = () => {
         setCurrentImageIndex((prev) =>
             prev === selectedImages.length - 1 ? 0 : prev + 1
@@ -165,27 +159,13 @@ const MapPage = () => {
             prev === 0 ? selectedImages.length - 1 : prev - 1
         );
     };
-    const getMarkerColor = (signalement) => {
-        // Si pas de problème associé = non-commencé (Bleu)
-        if (!signalement.problemeDTO) return '#3498db';
 
-        const statusId = signalement.problemeDTO?.statutNom; // Vérifiez le chemin exact de l'ID status dans votre DTO
-
-        switch (statusId) {
-            case "nouveau": return '#e863f4';  // nouveau (Bleu)
-            case "en_cours": return '#f39c12';  // en cours (Orange)
-            case "termine": return '#27ae60';  // terminé (Vert)
-            default: return '#3498db'; // Par défaut bleu
-        }
-    };
     return (
-        <div className="map-page">
+        <div className="map-page guest-map-page">
             <div className="map-header">
                 <div>
                     <h1>Carte des Travaux Routiers</h1>
-                    <p>Antananarivo</p>
-
-                    {/* Show map status indicator */}
+                    <p>Antananarivo - Mode Visiteur</p>
                     <div className="map-status-indicator">
                         <span className={`status-dot ${isOnline ? 'online' : 'offline'}`}></span>
                         <span className="status-text">
@@ -194,17 +174,9 @@ const MapPage = () => {
                     </div>
                 </div>
                 <div className="header-actions">
-                    {user?.role === 'MANAGER' && (
-                        <button
-                            onClick={() => navigate('/signalements')}
-                            className="btn-primary"
-                        >
-                            Gérer les signalements
-                        </button>
-                    )}
-                    <button onClick={() => navigate('/dashboard')} className="btn-secondary">
-                        Retour
-                    </button>
+                    <Link to="/login" className="btn-primary">
+                        Se connecter
+                    </Link>
                 </div>
             </div>
 
@@ -257,21 +229,24 @@ const MapPage = () => {
                     <div className="legend-section">
                         <h3>Légende</h3>
                         <div className="legend-item">
-                            <span
-                                className="legend-color"
-                                style={{ backgroundColor: '#3498db' }}
-                            ></span>
+                            <span className="legend-color" style={{ backgroundColor: '#3498db' }}></span>
                             <span>Non traité</span>
                         </div>
                         {statusList.map(status => (
-                            <div key={status.id} className="legend-item">
+                            <div key={status.idStatus} className="legend-item">
                                 <span
                                     className="legend-color"
                                     style={{ backgroundColor: getMarkerColor2(status.nom) }}
                                 ></span>
-                                <span>{status.nom || status.etat}</span>
+                                <span>{status.nom}</span>
                             </div>
                         ))}
+                    </div>
+
+                    {/* Guest info */}
+                    <div className="guest-info-section">
+                        <p>Vous consultez en mode visiteur.</p>
+                        <p><Link to="/login">Connectez-vous</Link> pour gérer les signalements.</p>
                     </div>
                 </div>
 
@@ -286,14 +261,9 @@ const MapPage = () => {
                             maxBounds={tileBounds}
                             maxBoundsViscosity={0.8}
                         >
-                            {/* Auto-switching between online/offline tiles */}
                             <TileLayer
                                 attribution={attribution}
                                 url={tileUrl}
-                                eventHandlers={{
-                                    tileload: handleTileLoad,
-                                    tileerror: handleTileError
-                                }}
                                 maxZoom={14}
                                 minZoom={10}
                             />
@@ -304,9 +274,9 @@ const MapPage = () => {
 
                                 return (
                                     <Marker
-                                        key={signalement.id}
+                                        key={signalement.idSignalement}
                                         position={[signalement.latitude, signalement.longitude]}
-                                        icon={customIcon} // Utilisation de l'icône colorée
+                                        icon={customIcon}
                                     >
                                         <Popup>
                                             <div className="marker-popup">
@@ -321,10 +291,9 @@ const MapPage = () => {
                                                     <>
                                                         <p><strong>Surface:</strong> {signalement.problemeDTO.surfaceM2} m²</p>
                                                         <p><strong>Budget:</strong> {signalement.problemeDTO.budget?.toLocaleString()} Ar</p>
-                                                        <p><strong>Entreprise:</strong> {signalement.problemeDTO.entrepriseNom} </p>
+                                                        <p><strong>Entreprise:</strong> {signalement.problemeDTO.entrepriseNom}</p>
                                                     </>
                                                 )}
-                                                {/* 🆕 Lien pour voir les photos */}
                                                 {signalement.lienImage && signalement.lienImage.length > 0 && (
                                                     <button
                                                         onClick={() => handleViewPhotos(signalement.lienImage)}
@@ -350,20 +319,18 @@ const MapPage = () => {
                             })}
                         </MapContainer>
                     )}
-
                 </div>
             </div>
-            {/* 🆕 MODAL D'IMAGES */}
+
+            {/* Image Modal */}
             {showImageModal && (
                 <div className="image-modal-overlay" onClick={closeModal}>
                     <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
                         <button className="modal-close-btn" onClick={closeModal}>×</button>
-
                         <div className="image-modal-body">
                             {selectedImages.length > 1 && (
                                 <button className="nav-btn prev-btn" onClick={prevImage}>‹</button>
                             )}
-
                             <div className="image-container">
                                 <img
                                     src={selectedImages[currentImageIndex]}
@@ -374,7 +341,6 @@ const MapPage = () => {
                                     {currentImageIndex + 1} / {selectedImages.length}
                                 </div>
                             </div>
-
                             {selectedImages.length > 1 && (
                                 <button className="nav-btn next-btn" onClick={nextImage}>›</button>
                             )}
@@ -386,4 +352,4 @@ const MapPage = () => {
     );
 };
 
-export default MapPage;
+export default GuestMapPage;

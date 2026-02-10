@@ -17,10 +17,12 @@ import com.example.carte.dto.ProblemeDTO;
 import com.example.carte.dto.SignalementDTO;
 import com.example.carte.dto.UserDTO;
 import com.example.carte.entities.Probleme;
+import com.example.carte.entities.ProblemeStatus;
 import com.example.carte.entities.Signalement;
 import com.example.carte.entities.SignalementImage;
 import com.example.carte.entities.TypeSignalement;
 import com.example.carte.entities.User;
+import com.example.carte.repository.ProblemeStatusRepository;
 import com.example.carte.repository.SignalementImageRepository;
 import com.example.carte.repository.SignalementRepository;
 import com.example.carte.repository.TypeSignalementRepository;
@@ -55,6 +57,8 @@ public class SignalementService {
 
     @Autowired
     private SignalementImageRepository signalementImageRepository;
+    @Autowired
+    private ProblemeStatusRepository problemeStatusRepository;
 
     private final ReentrantLock syncLock = new ReentrantLock();
 
@@ -842,7 +846,7 @@ public class SignalementService {
         return s;
     }
 
- public ProblemeDTO mapToDTO(Probleme probleme) {
+    public ProblemeDTO mapToDTO(Probleme probleme) {
         ProblemeDTO dto = new ProblemeDTO();
         dto.setIdProbleme(probleme.getIdProbleme());
         dto.setDateProbleme(probleme.getDateProbleme());
@@ -853,8 +857,10 @@ public class SignalementService {
 
         dto.setCompteEmail(probleme.getCompte() != null ? probleme.getCompte().getEmail() : null);
         dto.setSignalementId(probleme.getSignalement() != null ? probleme.getSignalement().getIdSignalement() : null);
-        dto.setStatut(probleme.getStatusList().getLast().getStatus().getIdStatus());
-        dto.setStatutNom(probleme.getStatusList().getLast().getStatus().getNom());
+        ProblemeStatus latestStatus = problemeStatusRepository.findTopByProblemeOrderByDateStatusDesc(probleme);
+        System.out.println("In signalement Service, Status taken: idStatus=" + latestStatus.getStatus().getIdStatus() + ", nom=" + latestStatus.getStatus().getNom());
+        dto.setStatut(latestStatus.getStatus().getIdStatus());
+        dto.setStatutNom(latestStatus.getStatus().getNom());
         return dto;
     }
 }

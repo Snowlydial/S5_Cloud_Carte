@@ -1,88 +1,144 @@
-//?=== DASHBOARD PAGE (Main page after login)
+//?=== DASHBOARD PAGE (Stats and overview)
 
-import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getRecapDashboard } from '../services/problemeService';
 import '../styles/Dashboard.css';
 
 const DashboardPage = () => {
-    const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    const handleLogout = async () => {
-        await logout();
-        navigate('/login');
+    useEffect(() => {
+        loadStats();
+    }, []);
+
+    const loadStats = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const data = await getRecapDashboard();
+            setStats(data);
+        } catch (err) {
+            setError('Erreur lors du chargement des statistiques');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className="dashboard-container">
-            <header className="dashboard-header">
-                <h1>Tableau de bord</h1>
-                <div className="user-info">
-                    <span>{user?.email}</span>
-                    <span className="role-badge">{user?.role}</span>
-                    <button onClick={handleLogout} className="btn-secondary">
-                        Déconnexion
-                    </button>
-                </div>
-            </header>
-
-            <div className="dashboard-content">
-                <div className="welcome-card">
-                    <h2>Bienvenue, {user?.email}</h2>
-                    <p>Système de gestion des travaux routiers - Antananarivo</p>
-                </div>
-
-                <div className="modules-grid">
-                    <div className="module-card">
-                        <h3>Carte & Signalements</h3>
-                        <p>Visualiser les problèmes routiers sur la carte d'Antananarivo</p>
-                        <button
-                            onClick={() => navigate('/map')}
-                            className="btn-primary"
-                        >
-                            Voir la carte
-                        </button>
-                    </div>
-
-                    {user?.role === 'MANAGER' && (
-                        <>
-                            <div className="module-card">
-                                <h3>Gestion Utilisateurs</h3>
-                                <p>Gérer les comptes bloqués et synchroniser les utilisateurs</p>
-                                <button
-                                    onClick={() => navigate('/users')}
-                                    className="btn-primary"
-                                >
-                                    Gérer les utilisateurs
-                                </button>
-                            </div>
-
-                            <div className="module-card">
-                                <h3>Gestion Signalements</h3>
-                                <p>CRUD des signalements et synchronisation Firebase</p>
-                                <button
-                                    onClick={() => navigate('/signalements')}
-                                    className="btn-primary"
-                                >
-                                    Gérer les signalements
-                                </button>
-                            </div>
-
-                            <div className="module-card">
-                                <h3>Gestion Problèmes</h3>
-                                <p>CRUD complet des problèmes avec statuts et entreprises</p>
-                                <button
-                                    onClick={() => navigate('/problemes')}
-                                    className="btn-primary"
-                                >
-                                    Gérer les problèmes
-                                </button>
-                            </div>
-                        </>
-                    )}
+        <div className="dashboard-wrapper">
+            <div className="dashboard-hero">
+                <div className="hero-content">
+                    <h1 className="hero-title">ROADFIX ANTANANARIVO</h1>
+                    <p className="hero-subtitle">Système de gestion des travaux routiers</p>
                 </div>
             </div>
+
+            {error && <div className="error-message">{error}</div>}
+
+            {loading ? (
+                <div className="loading-state">Chargement des statistiques...</div>
+            ) : stats && (
+                <div className="dashboard-content">
+                    {/* Recap Cards */}
+                    <div className="stats-grid">
+                        <div className="stat-card">
+                            <div className="stat-icon">📍</div>
+                            <div className="stat-info">
+                                <span className="stat-value">{stats.nbSignalements || 0}</span>
+                                <span className="stat-label">Signalements</span>
+                            </div>
+                        </div>
+
+                        <div className="stat-card">
+                            <div className="stat-icon">📐</div>
+                            <div className="stat-info">
+                                <span className="stat-value">{stats.totalSurface?.toFixed(2)} m²</span>
+                                <span className="stat-label">Surface totale</span>
+                            </div>
+                        </div>
+
+                        <div className="stat-card">
+                            <div className="stat-icon">💰</div>
+                            <div className="stat-info">
+                                <span className="stat-value">{stats.totalBudget?.toLocaleString()} Ar</span>
+                                <span className="stat-label">Budget total</span>
+                            </div>
+                        </div>
+
+                        <div className="stat-card highlight">
+                            <div className="stat-icon">📊</div>
+                            <div className="stat-info">
+                                <span className="stat-value">{stats.avancementPercent?.toFixed(1)}%</span>
+                                <span className="stat-label">Avancement global</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Statistics Table */}
+                    <div className="stats-table-section">
+                        <h2>Tableau de Statistiques</h2>
+                        <div className="stats-table-container">
+                            <table className="stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Statut</th>
+                                        <th>Nombre</th>
+                                        <th>Avancement</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Non Traité</td>
+                                        <td className="value-cell">{stats.nbNonTraites || 0}</td>
+                                        <td>Signalements sans problème associé</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Nouveau</td>
+                                        <td className="value-cell">{stats.nbNouveaux || 0}</td>
+                                        <td>0% d'avancement</td>
+                                    </tr>
+                                    <tr>
+                                        <td>En Cours</td>
+                                        <td className="value-cell">{stats.nbEnCours || 0}</td>
+                                        <td>50% d'avancement</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Terminé</td>
+                                        <td className="value-cell">{stats.nbTermines || 0}</td>
+                                        <td>100% d'avancement</td>
+                                    </tr>
+                                    <tr className="highlight-row">
+                                        <td>Délai Moyen</td>
+                                        <td className="value-cell">{stats.delaiMoyenJours?.toFixed(1) || 0} jours</td>
+                                        <td>Du problème créé à terminé</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="quick-actions">
+                        <h2>Actions Rapides</h2>
+                        <div className="actions-grid">
+                            <button onClick={() => navigate('/map')} className="action-btn map-btn">
+                                🗺️ Voir la Carte
+                            </button>
+                            <button onClick={() => navigate('/signalements')} className="action-btn signalement-btn">
+                                📋 Gérer Signalements
+                            </button>
+                            <button onClick={() => navigate('/problemes')} className="action-btn probleme-btn">
+                                🔧 Gérer Problèmes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

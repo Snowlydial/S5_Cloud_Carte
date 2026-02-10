@@ -14,7 +14,7 @@ import {
 } from '../services/problemeService';
 import { getAllSignalements } from '../services/signalementService';
 import Modal from '../components/Modal';
-import '../styles/Probleme.css';
+import '../styles/SharedPages.css';
 
 const ProblemePage = () => {
     const { user, hasRole } = useAuth();
@@ -194,27 +194,28 @@ const ProblemePage = () => {
             setError(err.message);
         }
     };
-const handleSync = async () => {
+    
+    const handleSync = async () => {
         setSyncing(true);
         setError('');
         setSuccess('');
         try {
             const response = await asyncProblemes();
             setSuccess(response.data?.message || response.message || 'Synchronisation réussie');
-            // loadSignalements();
-            loadAllData()
+            loadAllData();
         } catch (err) {
             setError(err.message);
         } finally {
             setSyncing(false);
         }
     };
+
     return (
         <div className="page-container">
             <div className="page-header">
-                <div>
+                <div className="header-title">
                     <h1>Gestion des Problèmes</h1>
-                    <p>CRUD complet des problèmes routiers</p>
+                    <p>CRUD complet des problèmes avec statuts et entreprises</p>
                 </div>
                 <div className="header-actions">
                     <button
@@ -222,14 +223,10 @@ const handleSync = async () => {
                         className="btn-primary"
                         disabled={syncing}
                     >
-                        {syncing ? 'Synchronisation...' : 'Synchroniser'}
-
+                        {syncing ? 'SYNC...' : 'SYNCHRONISER'}
                     </button>
                     <button onClick={() => navigate('/signalements')} className="btn-secondary">
                         Voir signalements
-                    </button>
-                    <button onClick={() => navigate('/dashboard')} className="btn-secondary">
-                        Retour
                     </button>
                 </div>
             </div>
@@ -270,8 +267,8 @@ const handleSync = async () => {
                                         <td>{Number(prob.budget).toLocaleString()}</td>
                                         <td>{prob.entrepriseNom || '-'}</td>
                                         <td>
-                                            <span className={`status-badge status-${prob.currentStatus || prob.statut}`}>
-                                                {prob.currentStatus || prob.statut || 'nouveau'}
+                                            <span className={`status-badge status-${prob.statutNom || prob.currentStatus || 'nouveau'}`}>
+                                                {prob.statutNom || prob.currentStatus || 'nouveau'}
                                             </span>
                                         </td>
                                         <td>{prob.dateProbleme ? new Date(prob.dateProbleme).toLocaleDateString('fr-FR') : '-'}</td>
@@ -341,13 +338,6 @@ const handleSync = async () => {
 
                     <div className="form-group">
                         <label htmlFor="entrepriseNom">Entreprise</label>
-                        {/* <input
-                            type="text"
-                            id="entrepriseNom"
-                            value={editForm.entrepriseNom}
-                            onChange={(e) => handleEditInputChange('entrepriseNom', e.target.value)}
-                            placeholder="Nom de l'entreprise"
-                        /> */}
                         <select name="entrepriseNom" id="entrepriseNom" value={editForm.entrepriseNom}
                             onChange={(e) => handleEditInputChange('entrepriseNom', e.target.value)}>
                             <option value="">-- Sélectionner une entreprise --</option>
@@ -393,7 +383,7 @@ const handleSync = async () => {
                             <option value="">Sélectionner un statut</option>
                             {statusList.map(status => (
                                 <option key={status.id} value={status.nom}>
-                                    {status.nom}
+                                    {status.nom} ({status.nom === 'nouveau' ? '0%' : status.nom === 'en_cours' ? '50%' : '100%'})
                                 </option>
                             ))}
                         </select>

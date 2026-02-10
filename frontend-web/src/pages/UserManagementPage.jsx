@@ -12,7 +12,7 @@ import {
     syncUsers
 } from '../services/userService';
 import Modal from '../components/Modal';
-import '../styles/UserManagement.css';
+import '../styles/SharedPages.css';
 
 const UserManagementPage = () => {
     const { user, hasRole } = useAuth();
@@ -169,7 +169,7 @@ const UserManagementPage = () => {
     return (
         <div className="page-container">
             <div className="page-header">
-                <div>
+                <div className="header-title">
                     <h1>Gestion des Utilisateurs</h1>
                     <p>Gérer les comptes bloqués et synchronisation</p>
                 </div>
@@ -179,10 +179,7 @@ const UserManagementPage = () => {
                         className="btn-primary"
                         disabled={syncing}
                     >
-                        {syncing ? 'Synchronisation...' : 'Synchroniser'}
-                    </button>
-                    <button onClick={() => navigate('/dashboard')} className="btn-secondary">
-                        Retour
+                        {syncing ? 'SYNC...' : 'SYNCHRONISER'}
                     </button>
                 </div>
             </div>
@@ -193,13 +190,13 @@ const UserManagementPage = () => {
             <div className="content-card">
                 {/* Filter */}
                 <div className="filter-bar">
-                    <label>
+                    <label className="filter-checkbox">
                         <input
                             type="checkbox"
                             checked={filterBlocked}
                             onChange={(e) => setFilterBlocked(e.target.checked)}
                         />
-                        Afficher uniquement les utilisateurs bloqués
+                        <span>Afficher uniquement les utilisateurs bloqués</span>
                     </label>
                 </div>
 

@@ -3,11 +3,13 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Layout from "./components/Layout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import UserManagementPage from "./pages/UserManagementPage";
 import MapPage from "./pages/MapPage";
+import GuestMapPage from "./pages/GuestMapPage";
 import SignalementPage from "./pages/SignalementPage";
 import ProblemePage from "./pages/ProblemePage";
 import "./App.css";
@@ -59,48 +61,22 @@ function App() {
                             </PublicRoute>
                         }
                     />
+
+                    {/* Guest map route (public, no auth required) */}
+                    <Route path="/guest-map" element={<GuestMapPage />} />
                     
-                    {/* Protected routes */}
-                    <Route
-                        path="/dashboard"
-                        element={
-                            <ProtectedRoute>
-                                <DashboardPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/users"
-                        element={
-                            <ProtectedRoute>
-                                <UserManagementPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/map"
-                        element={
-                            <ProtectedRoute>
-                                <MapPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/signalements"
-                        element={
-                            <ProtectedRoute>
-                                <SignalementPage />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/problemes"
-                        element={
-                            <ProtectedRoute>
-                                <ProblemePage />
-                            </ProtectedRoute>
-                        }
-                    />
+                    {/* Protected routes with Layout */}
+                    <Route element={
+                        <ProtectedRoute>
+                            <Layout />
+                        </ProtectedRoute>
+                    }>
+                        <Route path="/dashboard" element={<DashboardPage />} />
+                        <Route path="/map" element={<MapPage />} />
+                        <Route path="/users" element={<UserManagementPage />} />
+                        <Route path="/signalements" element={<SignalementPage />} />
+                        <Route path="/problemes" element={<ProblemePage />} />
+                    </Route>
 
                     {/* 404 fallback */}
                     <Route path="*" element={<Navigate to="/login" />} />
