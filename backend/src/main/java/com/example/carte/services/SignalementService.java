@@ -60,6 +60,8 @@ public class SignalementService {
     private SignalementImageRepository signalementImageRepository;
     @Autowired
     private ProblemeStatusRepository problemeStatusRepository;
+    @Autowired
+    private ConfigurationService configurationService;
 
     private final ReentrantLock syncLock = new ReentrantLock();
 
@@ -584,7 +586,8 @@ public class SignalementService {
         dto.setIdProbleme(probleme.getIdProbleme());
         dto.setDateProbleme(probleme.getDateProbleme());
         dto.setSurfaceM2(probleme.getSurfaceM2());
-        dto.setBudget(probleme.getBudget());
+        double budget = configurationService.calculerBudget(probleme.getNiveau());
+        dto.setBudget(budget);
         dto.setEntrepriseNom(probleme.getEntreprise() != null ? probleme.getEntreprise().getNom() : null);
         dto.setIdEntreprise(probleme.getEntreprise() != null ? probleme.getEntreprise().getFirebaseId() : null);
 

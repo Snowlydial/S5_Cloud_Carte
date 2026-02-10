@@ -43,7 +43,8 @@ const SignalementPage = () => {
         dateProbleme: '',
         surface: '',
         budget: '',
-        entrepriseId: ''
+        entrepriseId: '',
+        niveau: ''
     });
 
     //*-- Modal state for changing status
@@ -202,7 +203,8 @@ const SignalementPage = () => {
                 dateProbleme: problemeForm.dateProbleme,
                 surface: Number(problemeForm.surface),
                 budget: Number(problemeForm.budget),
-                entrepriseId: Number(problemeForm.entrepriseId)
+                entrepriseId: Number(problemeForm.entrepriseId),
+                niveau: Number(problemeForm.niveau)
             });
 
             setSuccess('Problème ajouté avec succès');
@@ -442,6 +444,23 @@ const SignalementPage = () => {
                             ))}
                         </select>
                     </div>
+                    <div className="form-group">
+                        <label htmlFor="niveau">Niveau</label>
+                        <select
+                            id="niveau"
+                            value={problemeForm.niveau}
+                            onChange={(e) => handleProblemeInputChange('niveau', e.target.value)}
+                            required
+                        >
+                            <option value="">-- Sélectionner un niveau --</option>
+                            {[...Array(10)].map((_, i) => (
+                                <option key={i + 1} value={i + 1}>
+                                    {i + 1}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
                     <div className="modal-actions">
                         <button type="button" onClick={handleCloseModal} className="btn-cancel">
                             Annuler

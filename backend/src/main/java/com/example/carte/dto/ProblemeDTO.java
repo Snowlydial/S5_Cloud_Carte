@@ -21,6 +21,7 @@ public class ProblemeDTO {
     private LocalDateTime lastSync;
     private String idEntreprise;
     private String statutNom;
+    private Integer niveau;
     // 🔹 Getters & Setters
     public Integer getIdProbleme() { return idProbleme; }
     public void setIdProbleme(Integer idProbleme) { this.idProbleme = idProbleme; }

@@ -66,7 +66,8 @@ export const createProbleme = async (signalementId, problemeData) => {
             entrepriseNom: problemeData.entrepriseId || null,
             compteEmail: problemeData.compteEmail || null,
             signalementId: signalementId,
-            statut: problemeData.statut || 1                 // statut par défaut
+            statut: problemeData.statut || 1  ,
+            niveau: problemeData.niveau               // statut par défaut
         };
         console.log('New probleme to be created:', newProbleme);
         mockProblemes.push(newProbleme);

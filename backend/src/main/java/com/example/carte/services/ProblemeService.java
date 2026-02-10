@@ -64,6 +64,8 @@ public class ProblemeService {
     private SignalementService signalementService;
     @Autowired
     private FirebaseNotificationService firebaseNotificationService;
+    @Autowired
+    private ConfigurationService configurationService;
 
     private final ProblemeStatusService problemeStatusService;
     private final ReentrantLock syncLock = new ReentrantLock();
@@ -414,7 +416,7 @@ public class ProblemeService {
         map.put("budget", local.getBudget());
         map.put("firebaseId", fbId);
         map.put("lastSync", local.getLastSync().toString());
-
+        map.put("niveau",local.getNiveau());
         // Compte
         map.put("compteEmail",
                 local.getCompte() != null ? local.getCompte().getEmail() : null);
@@ -451,7 +453,9 @@ public class ProblemeService {
         ProblemeDTO dto = new ProblemeDTO();
 
         dto.setIdProbleme(doc.contains("idProbleme") ? doc.getLong("idProbleme").intValue() : null);
-
+        if(doc.contains("niveau")){
+            dto.setNiveau((Integer)doc.get("niveau"));
+        }
         if (doc.contains("dateProbleme")) {
             Object rawDate = doc.get("dateProbleme");
 
@@ -483,7 +487,9 @@ public class ProblemeService {
         p.setDateProbleme(dto.getDateProbleme() != null ? dto.getDateProbleme() : LocalDateTime.now());
         p.setSurfaceM2(dto.getSurfaceM2());
         p.setBudget(dto.getBudget());
-
+        if(p.getNiveau()!=null){
+            p.setNiveau(dto.getNiveau());
+        }
         if (dto.getCompteEmail() != null) {
             User compte = utilisateurRepository.findByEmail(dto.getCompteEmail())
                     .orElseThrow(() -> new RuntimeException("Compte introuvable"));
@@ -606,7 +612,9 @@ public class ProblemeService {
         dto.setIdProbleme(probleme.getIdProbleme());
         dto.setDateProbleme(probleme.getDateProbleme());
         dto.setSurfaceM2(probleme.getSurfaceM2());
-        dto.setBudget(probleme.getBudget());
+
+        double budget = configurationService.calculerBudget(probleme.getNiveau());
+        dto.setBudget(budget);
         dto.setEntrepriseNom(probleme.getEntreprise() != null ? probleme.getEntreprise().getNom() : null);
         dto.setIdEntreprise(probleme.getEntreprise() != null ? probleme.getEntreprise().getFirebaseId() : null);
 
@@ -708,8 +716,16 @@ public class ProblemeService {
             probleme.setStatusList(new java.util.LinkedList<>());
         }
         probleme.getStatusList().add(problemeStatus);
+        Integer niveau = 1;
+        // ConfigurationService c = new ConfigurationService(null);
+        System.out.println("niveauuuuu "+dto.getNiveau());
+        if(dto.getNiveau()!=null){
+            niveau= dto.getNiveau();
+            double budget = configurationService.calculerBudget(niveau);
+            probleme.setBudget(budget);
+        }
+        probleme.setNiveau(niveau);
         Probleme saved = problemeRepo.save(probleme);
-
         dto.setIdProbleme(saved.getIdProbleme());
         dto.setDateProbleme(saved.getDateProbleme());
         dto.setStatut(saved.getStatusList().getLast().getStatus().getIdStatus());

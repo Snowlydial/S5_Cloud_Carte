@@ -50,6 +50,7 @@ public class Probleme implements Syncable,Serializable {
     @Column(name = "last_sync")
     private LocalDateTime lastSync;
 
+    private Integer niveau;
     // Constructors
     public Probleme() {
     }
