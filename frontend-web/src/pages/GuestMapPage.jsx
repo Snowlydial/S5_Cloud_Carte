@@ -82,9 +82,14 @@ const GuestMapPage = () => {
             const response = await axios.get(PUBLIC_ENDPOINTS.SIGNALEMENTS);
             const data = response.data || [];
 
-            const filteredData = statusFilter
-                ? data.filter(s => s.problemeDTO?.statut === statusFilter)
-                : data;
+            let filteredData = data;
+            if (statusFilter === 'non_traite') {
+                // Filter signalements without a problem
+                filteredData = data.filter(s => !s.problemeDTO);
+            } else if (statusFilter) {
+                // Filter by problem status ID
+                filteredData = data.filter(s => s.problemeDTO?.statut === statusFilter);
+            }
 
             setSignalements(filteredData);
         } catch (err) {
@@ -188,6 +193,7 @@ const GuestMapPage = () => {
                             className="filter-select"
                         >
                             <option value="">Tous les statuts</option>
+                            <option value="non_traite">Non traité</option>
                             {statusList.map(status => (
                                 <option key={status.idStatus} value={status.idStatus}>
                                     {status.nom || status.etat}
@@ -201,8 +207,8 @@ const GuestMapPage = () => {
                         <div className="stats-section">
                             <h3>Récapitulatif</h3>
                             <div className="stat-item">
-                                <span className="stat-label">Nombre de points</span>
-                                <span className="stat-value">{recapStats.nbPoints}</span>
+                                <span className="stat-label">Signalements</span>
+                                <span className="stat-value">{recapStats.nbSignalements || recapStats.nbPoints}</span>
                             </div>
                             <div className="stat-item">
                                 <span className="stat-label">Surface totale</span>

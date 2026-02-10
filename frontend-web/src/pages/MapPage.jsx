@@ -70,21 +70,18 @@ const MapPage = () => {
         setLoading(true);
         setError('');
         try {
-            //*-- Build filter params for signalement API
-            const filters = {};
-            if (statusFilter) {
-                filters.statusId = statusFilter;
+            const signalementsData = await getAllSignalements();
+            
+            let filteredData = signalementsData;
+            if (statusFilter === 'non_traite') {
+                // Filter signalements without a problem
+                filteredData = signalementsData.filter(s => !s.problemeDTO);
+            } else if (statusFilter) {
+                // Filter by problem status ID
+                filteredData = signalementsData.filter(s => s.problemeDTO?.statut == statusFilter);
             }
 
-            const signalementsData = await getAllSignalements(filters);
-            // Dans loadSignalements, après avoir reçu les data :
-            console.log("filtre ", signalementsData);
-            const filteredData = statusFilter
-                ? signalementsData.filter(s => s.problemeDTO?.statut == statusFilter)
-                : signalementsData;
-
             setSignalements(filteredData);
-            // setSignalements(signalementsData.data || signalementsData);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -224,6 +221,7 @@ const MapPage = () => {
                             className="filter-select"
                         >
                             <option value="">Tous les statuts</option>
+                            <option value="non_traite">Non traité</option>
                             {statusList.map(status => (
                                 <option key={status.idStatus} value={status.idStatus}>
                                     {status.nom || status.etat}
@@ -237,8 +235,8 @@ const MapPage = () => {
                         <div className="stats-section">
                             <h3>Récapitulatif</h3>
                             <div className="stat-item">
-                                <span className="stat-label">Nombre de points</span>
-                                <span className="stat-value">{recapStats.nbPoints}</span>
+                                <span className="stat-label">Signalements</span>
+                                <span className="stat-value">{recapStats.nbSignalements || recapStats.nbPoints}</span>
                             </div>
                             <div className="stat-item">
                                 <span className="stat-label">Surface totale</span>
@@ -258,6 +256,13 @@ const MapPage = () => {
                     {/* Legend */}
                     <div className="legend-section">
                         <h3>Légende</h3>
+                        <div className="legend-item">
+                            <span
+                                className="legend-color"
+                                style={{ backgroundColor: '#3498db' }}
+                            ></span>
+                            <span>Non traité</span>
+                        </div>
                         {statusList.map(status => (
                             <div key={status.id} className="legend-item">
                                 <span

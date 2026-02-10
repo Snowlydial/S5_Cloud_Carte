@@ -10,6 +10,12 @@
     font-family: 'Space Mono', 'Courier New', monospace;
 }
 
+/* Guest Map Page - add padding for standalone view */
+.guest-map-page {
+    padding: 24px;
+    box-sizing: border-box;
+}
+
 /* Map Header */
 .map-header {
     background: #F5F6FA;
