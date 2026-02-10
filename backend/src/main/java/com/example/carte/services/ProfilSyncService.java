@@ -39,6 +39,112 @@ public class ProfilSyncService {
     }
 
     /* ---------- Mapping ---------- */
+    // @Transactional
+    // public List<Profil> getListSyncProfils() throws InterruptedException,
+    // ExecutionException {
+
+    // Firestore db = FirestoreClient.getFirestore();
+    // CollectionReference colRef = db.collection("profils");
+
+    // List<Profil> localProfils = profilRepo.findAll();
+
+    // if (!isOnline()) {
+    // return localProfils;
+    // }
+
+    // // Map local par firebaseId
+    // Map<String, Profil> localByFirebaseId = localProfils.stream()
+    // .filter(p -> p.getFirebaseId() != null && !p.getFirebaseId().isBlank())
+    // .collect(Collectors.toMap(Profil::getFirebaseId, p -> p));
+
+    // /*
+    // * =========================
+    // * FIREBASE → LOCAL (PRIORITÉ)
+    // * =========================
+    // */
+    // List<QueryDocumentSnapshot> firebaseDocs = colRef.get().get().getDocuments();
+
+    // for (QueryDocumentSnapshot doc : firebaseDocs) {
+
+    // String firebaseId = doc.getId();
+    // String nom = doc.getString("nom");
+
+    // if (nom == null || nom.isBlank())
+    // continue;
+
+    // Profil local = localByFirebaseId.get(firebaseId);
+
+    // if (local != null) {
+    // // Firebase gagne toujours sur le nom
+    // if (!nom.equals(local.getNom())) {
+    // local.setNom(nom);
+    // }
+    // local.setLastSync(LocalDateTime.now());
+    // profilRepo.save(local);
+
+    // } else {
+    // // Nouveau profil depuis Firebase
+    // Profil newProfil = new Profil();
+    // newProfil.setFirebaseId(firebaseId);
+    // newProfil.setNom(nom);
+    // newProfil.setLastSync(LocalDateTime.now());
+
+    // profilRepo.save(newProfil);
+    // localByFirebaseId.put(firebaseId, newProfil);
+    // }
+    // }
+
+    // /*
+    // * =========================
+    // * LOCAL → FIREBASE (SAFE)
+    // * =========================
+    // */
+    // // Build a set of profile names that already exist in Firebase to avoid
+    // duplicates
+    // Map<String, String> firebaseNameToId = new HashMap<>();
+    // for (QueryDocumentSnapshot doc : firebaseDocs) {
+    // String nom = doc.getString("nom");
+    // if (nom != null && !nom.isBlank()) {
+    // firebaseNameToId.put(nom, doc.getId());
+    // }
+    // }
+
+    // // Re-fetch local profiles to include any newly created ones
+    // List<Profil> updatedLocalProfils = profilRepo.findAll();
+
+    // for (Profil local : updatedLocalProfils) {
+
+    // // Skip if this profile name already exists in Firebase
+    // if (firebaseNameToId.containsKey(local.getNom())) {
+    // // Update local firebaseId if not set
+    // if (local.getFirebaseId() == null || local.getFirebaseId().isBlank()) {
+    // local.setFirebaseId(firebaseNameToId.get(local.getNom()));
+    // profilRepo.save(local);
+    // }
+    // continue;
+    // }
+
+    // if (local.getFirebaseId() == null || local.getFirebaseId().isBlank()) {
+    // // UID logique basé sur le nom
+    // local.setFirebaseId(local.getNom());
+    // profilRepo.save(local);
+    // }
+
+    // DocumentReference docRef = colRef.document(local.getFirebaseId());
+    // DocumentSnapshot snapshot = docRef.get().get();
+
+    // if (!snapshot.exists()) {
+    // Map<String, Object> profilMap = new HashMap<>();
+    // profilMap.put("nom", local.getNom());
+    // profilMap.put("firebaseId", local.getFirebaseId());
+    // profilMap.put("lastSync", LocalDateTime.now().toString());
+
+    // docRef.set(profilMap);
+    // }
+    // }
+
+    // return profilRepo.findAll();
+    // }
     @Transactional
     public List<Profil> getListSyncProfils() throws InterruptedException, ExecutionException {
 
@@ -51,16 +157,14 @@ public class ProfilSyncService {
             return localProfils;
         }
 
-        // Map local par firebaseId
-        Map<String, Profil> localByFirebaseId = localProfils.stream()
-                .filter(p -> p.getFirebaseId() != null && !p.getFirebaseId().isBlank())
-                .collect(Collectors.toMap(Profil::getFirebaseId, p -> p));
+        // Map local par nom pour comparaison
+        Map<String, Profil> localByName = localProfils.stream()
+                .filter(p -> p.getNom() != null && !p.getNom().isBlank())
+                .collect(Collectors.toMap(Profil::getNom, p -> p));
 
-        /*
-         * =========================
-         * FIREBASE → LOCAL (PRIORITÉ)
-         * =========================
-         */
+        // =========================
+        // FIREBASE → LOCAL (PRIORITÉ)
+        // =========================
         List<QueryDocumentSnapshot> firebaseDocs = colRef.get().get().getDocuments();
 
         for (QueryDocumentSnapshot doc : firebaseDocs) {
@@ -71,13 +175,14 @@ public class ProfilSyncService {
             if (nom == null || nom.isBlank())
                 continue;
 
-            Profil local = localByFirebaseId.get(firebaseId);
+            Profil local = localByName.get(nom);
 
             if (local != null) {
-                // Firebase gagne toujours sur le nom
-                if (!nom.equals(local.getNom())) {
-                    local.setNom(nom);
+                // Firebase gagne toujours
+                if (!firebaseId.equals(local.getFirebaseId())) {
+                    local.setFirebaseId(firebaseId); // Met à jour l'UID si différent
                 }
+                local.setNom(nom); // Assure que le nom est identique
                 local.setLastSync(LocalDateTime.now());
                 profilRepo.save(local);
 
@@ -87,34 +192,24 @@ public class ProfilSyncService {
                 newProfil.setFirebaseId(firebaseId);
                 newProfil.setNom(nom);
                 newProfil.setLastSync(LocalDateTime.now());
-
                 profilRepo.save(newProfil);
-                localByFirebaseId.put(firebaseId, newProfil);
+
+                localByName.put(nom, newProfil);
             }
         }
 
-        /*
-         * =========================
-         * LOCAL → FIREBASE (SAFE)
-         * =========================
-         */
-        // Build a set of profile names that already exist in Firebase to avoid duplicates
-        Map<String, String> firebaseNameToId = new HashMap<>();
-        for (QueryDocumentSnapshot doc : firebaseDocs) {
-            String nom = doc.getString("nom");
-            if (nom != null && !nom.isBlank()) {
-                firebaseNameToId.put(nom, doc.getId());
-            }
-        }
+        // =========================
+        // LOCAL → FIREBASE
+        // =========================
+        // Construire un map nom → firebaseId déjà existants dans Firebase
+        Map<String, String> firebaseNameToId = firebaseDocs.stream()
+                .filter(d -> d.getString("nom") != null)
+                .collect(Collectors.toMap(d -> d.getString("nom"), QueryDocumentSnapshot::getId));
 
-        // Re-fetch local profiles to include any newly created ones
-        List<Profil> updatedLocalProfils = profilRepo.findAll();
+        for (Profil local : localProfils) {
 
-        for (Profil local : updatedLocalProfils) {
-
-            // Skip if this profile name already exists in Firebase
+            // Si le nom existe déjà dans Firebase, on met juste à jour le firebaseId local
             if (firebaseNameToId.containsKey(local.getNom())) {
-                // Update local firebaseId if not set
                 if (local.getFirebaseId() == null || local.getFirebaseId().isBlank()) {
                     local.setFirebaseId(firebaseNameToId.get(local.getNom()));
                     profilRepo.save(local);
@@ -122,23 +217,20 @@ public class ProfilSyncService {
                 continue;
             }
 
-            if (local.getFirebaseId() == null || local.getFirebaseId().isBlank()) {
-                // UID logique basé sur le nom
-                local.setFirebaseId(local.getNom());
-                profilRepo.save(local);
-            }
+            // Sinon créer un document Firebase
+            String fbUid = local.getFirebaseId() != null && !local.getFirebaseId().isBlank()
+                    ? local.getFirebaseId()
+                    : local.getNom(); // UID temporaire basé sur le nom si absent
+            DocumentReference docRef = colRef.document(fbUid);
 
-            DocumentReference docRef = colRef.document(local.getFirebaseId());
-            DocumentSnapshot snapshot = docRef.get().get();
+            Map<String, Object> profilMap = new HashMap<>();
+            profilMap.put("nom", local.getNom());
+            profilMap.put("firebaseId", fbUid);
+            profilMap.put("lastSync", LocalDateTime.now().toString());
 
-            if (!snapshot.exists()) {
-                Map<String, Object> profilMap = new HashMap<>();
-                profilMap.put("nom", local.getNom());
-                profilMap.put("firebaseId", local.getFirebaseId());
-                profilMap.put("lastSync", LocalDateTime.now().toString());
-
-                docRef.set(profilMap);
-            }
+            docRef.set(profilMap);
+            local.setFirebaseId(fbUid);
+            profilRepo.save(local);
         }
 
         return profilRepo.findAll();

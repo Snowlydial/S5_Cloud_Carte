@@ -82,6 +82,7 @@ const MapPage = () => {
             }
 
             setSignalements(filteredData);
+            console.log("filtre ",filteredData);
         } catch (err) {
             setError(err.message);
         } finally {

@@ -13,6 +13,7 @@ import GuestMapPage from "./pages/GuestMapPage";
 import SignalementPage from "./pages/SignalementPage";
 import ProblemePage from "./pages/ProblemePage";
 import "./App.css";
+import ConfigurationPage from "./pages/ConfigurationPage";
 
 //*-- Protected Route: redirects to login if not authenticated
 const ProtectedRoute = ({ children }) => {
@@ -76,6 +77,7 @@ function App() {
                         <Route path="/users" element={<UserManagementPage />} />
                         <Route path="/signalements" element={<SignalementPage />} />
                         <Route path="/problemes" element={<ProblemePage />} />
+                        <Route path="/configuration" element={<ConfigurationPage />} />
                     </Route>
 
                     {/* 404 fallback */}

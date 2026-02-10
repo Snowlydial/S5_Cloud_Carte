@@ -62,6 +62,10 @@ public class ProblemeService {
     private UserService userService;
     @Autowired
     private SignalementService signalementService;
+    @Autowired
+    private FirebaseNotificationService firebaseNotificationService;
+    @Autowired
+    private ConfigurationService configurationService;
 
     private final ProblemeStatusService problemeStatusService;
     private final ReentrantLock syncLock = new ReentrantLock();
@@ -249,7 +253,7 @@ public class ProblemeService {
                         newLocal.setCompte(compte);
                     }
 
-                    ProblemeStatus problemeStatus = new ProblemeStatus();
+                    // ProblemeStatus problemeStatus = new ProblemeStatus();
                     System.out.println("statutus " + firebaseDto.getStatutNom());
                     problemeRepo.save(newLocal);
                     // if (firebaseDto.getStatutNom() != null) {
@@ -297,7 +301,7 @@ public class ProblemeService {
         local.setBudget(firebaseDto.getBudget());
         local.setDateProbleme(firebaseDto.getDateProbleme());
         local.setLastSync(firebaseDto.getLastSync());
-
+        local.setNiveau(firebaseDto.getNiveau());
         // Mettre à jour le compte
         if (firebaseDto.getCompteEmail() != null) {
             User compte = utilisateurRepository.findByEmail(firebaseDto.getCompteEmail())
@@ -412,7 +416,7 @@ public class ProblemeService {
         map.put("budget", local.getBudget());
         map.put("firebaseId", fbId);
         map.put("lastSync", local.getLastSync().toString());
-
+        map.put("niveau", local.getNiveau());
         // Compte
         map.put("compteEmail",
                 local.getCompte() != null ? local.getCompte().getEmail() : null);
@@ -449,7 +453,11 @@ public class ProblemeService {
         ProblemeDTO dto = new ProblemeDTO();
 
         dto.setIdProbleme(doc.contains("idProbleme") ? doc.getLong("idProbleme").intValue() : null);
-
+        dto.setNiveau(1); 
+        if (doc.contains("niveau")) {
+            Long niveau = (Long) doc.get("niveau");
+            dto.setNiveau(niveau.intValue());
+        }
         if (doc.contains("dateProbleme")) {
             Object rawDate = doc.get("dateProbleme");
 
@@ -481,7 +489,10 @@ public class ProblemeService {
         p.setDateProbleme(dto.getDateProbleme() != null ? dto.getDateProbleme() : LocalDateTime.now());
         p.setSurfaceM2(dto.getSurfaceM2());
         p.setBudget(dto.getBudget());
-
+        p.setNiveau(dto.getNiveau());
+        if (p.getNiveau() != null) {
+            p.setNiveau(dto.getNiveau());
+        }
         if (dto.getCompteEmail() != null) {
             User compte = utilisateurRepository.findByEmail(dto.getCompteEmail())
                     .orElseThrow(() -> new RuntimeException("Compte introuvable"));
@@ -604,14 +615,21 @@ public class ProblemeService {
         dto.setIdProbleme(probleme.getIdProbleme());
         dto.setDateProbleme(probleme.getDateProbleme());
         dto.setSurfaceM2(probleme.getSurfaceM2());
-        dto.setBudget(probleme.getBudget());
+
+        double budget = probleme.getBudget();
+        if (probleme.getNiveau() != null) {
+
+            budget = configurationService.calculerBudget(probleme.getSurfaceM2(),probleme.getNiveau());
+        }
+        dto.setBudget(budget);
         dto.setEntrepriseNom(probleme.getEntreprise() != null ? probleme.getEntreprise().getNom() : null);
         dto.setIdEntreprise(probleme.getEntreprise() != null ? probleme.getEntreprise().getFirebaseId() : null);
 
         dto.setCompteEmail(probleme.getCompte() != null ? probleme.getCompte().getEmail() : null);
         dto.setSignalementId(probleme.getSignalement() != null ? probleme.getSignalement().getIdSignalement() : null);
         ProblemeStatus latestStatus = problemeStatusRepository.findTopByProblemeOrderByDateStatusDesc(probleme);
-        System.out.println("In probleme Service, Status taken: idStatus=" + latestStatus.getStatus().getIdStatus() + ", nom=" + latestStatus.getStatus().getNom());
+        System.out.println("In probleme Service, Status taken: idStatus=" + latestStatus.getStatus().getIdStatus()
+                + ", nom=" + latestStatus.getStatus().getNom());
         dto.setStatut(latestStatus.getStatus().getIdStatus());
         dto.setStatutNom(latestStatus.getStatus().getNom());
         return dto;
@@ -706,8 +724,16 @@ public class ProblemeService {
             probleme.setStatusList(new java.util.LinkedList<>());
         }
         probleme.getStatusList().add(problemeStatus);
+        Integer niveau = 1;
+        // ConfigurationService c = new ConfigurationService(null);
+        System.out.println("niveauuuuu " + dto.getNiveau());
+        if (dto.getNiveau() != null) {
+            niveau = dto.getNiveau();
+            double budget = configurationService.calculerBudget(probleme.getSurfaceM2(),niveau);
+            probleme.setBudget(budget);
+        }
+        probleme.setNiveau(niveau);
         Probleme saved = problemeRepo.save(probleme);
-
         dto.setIdProbleme(saved.getIdProbleme());
         dto.setDateProbleme(saved.getDateProbleme());
         dto.setStatut(saved.getStatusList().getLast().getStatus().getIdStatus());
@@ -766,7 +792,7 @@ public class ProblemeService {
             Pageable topOne = PageRequest.of(0, 1,
                     Sort.by("dateStatus").descending().and(Sort.by("idProblemeStatus").descending()));
             List<ProblemeStatus> statusList = problemeStatusRepository.findByProbleme(probleme, topOne);
-            
+
             if (statusList != null && !statusList.isEmpty()) {
                 ProblemeStatus lastStatus = statusList.get(0);
                 String statusNom = lastStatus.getStatus().getNom().toLowerCase();
@@ -774,10 +800,11 @@ public class ProblemeService {
                     case "termine" -> {
                         avancementTotal += 100;
                         nbTermines++;
-                        // Calcul du délai: différence entre date de création du problème et date du statut terminé
+                        // Calcul du délai: différence entre date de création du problème et date du
+                        // statut terminé
                         if (probleme.getDateProbleme() != null && lastStatus.getDateStatus() != null) {
                             long jours = java.time.temporal.ChronoUnit.DAYS.between(
-                                probleme.getDateProbleme(), lastStatus.getDateStatus());
+                                    probleme.getDateProbleme(), lastStatus.getDateStatus());
                             totalDelaiJours += jours;
                             countDelai++;
                         }
@@ -794,11 +821,12 @@ public class ProblemeService {
             }
         }
 
-        // Avancement global: basé uniquement sur les problèmes
+        // Avancement global: on compte aussi les non-traités comme 0%
         double avancementPercent = nbProblemes == 0 ? 0 : avancementTotal / nbProblemes;
         double delaiMoyenJours = countDelai == 0 ? 0 : (double) totalDelaiJours / countDelai;
 
         recap.setNbPoints(nbProblemes);
+
         recap.setTotalSurface(totalSurface);
         recap.setTotalBudget(totalBudget);
         recap.setAvancementPercent(avancementPercent);
@@ -811,9 +839,9 @@ public class ProblemeService {
     }
 
     @Transactional
-    public ProblemeDTO updateStatus(Integer idProbleme, ProblemeStatusData statusData) {
+    public ProblemeDTO updateStatus(Integer idProbleme, ProblemeStatusData statusData) throws Exception {
 
-        System.out.println(statusData.toJsonString());
+        // System.out.println(statusData.toJsonString());
         Probleme probleme = problemeRepo.findById(idProbleme)
                 .orElseThrow(() -> new RuntimeException("Problème introuvable"));
 
@@ -831,9 +859,48 @@ public class ProblemeService {
         problemeStatusRepository.save(problemeStatus);
 
         // probleme.(status);
+        // envoi notification si en ligne
+        String title = "progression de votre signalement";
+        User u = probleme.getSignalement().getCompte();
+        String username = u.getEmail().split("@")[0];
+        String message = buildMessage(status, username);
+        if (isOnline()) {
+            System.out.println("en ligne !!");
+            if (u.getFirebaseUid() == null) {
+                userService.getListSyncComptes();
+            }
+            List<String> tokens = userService.getFcmTokensByUid(u.getFirebaseUid());
+            firebaseNotificationService.sendNotificationToTokens(tokens, title, message);
+
+        }
         problemeRepo.save(probleme);
 
         return mapToDTO(probleme);
+    }
+
+    private String buildMessage(Status status, String username) {
+
+        switch (status.getNom().toLowerCase()) {
+
+            case "nouveau":
+                return "👋 Salut " + username + " !\n"
+                        + "Ton signalement a bien été reçu ✅\n"
+                        + "Nos équipes vont l’analyser très bientôt.";
+
+            case "en_cours":
+                return "🚧 Bonne nouvelle " + username + " !\n"
+                        + "Le problème que tu as signalé est actuellement en cours de traitement.\n"
+                        + "Merci pour ta patience 🙏";
+
+            case "termine":
+                return "🎉 Félicitations " + username + " !\n"
+                        + "Le problème signalé a été résolu avec succès.\n"
+                        + "Merci d’avoir contribué à améliorer la situation 💙";
+
+            default:
+                return "Bonjour " + username + ",\n"
+                        + "Le statut de ton signalement a été mis à jour.";
+        }
     }
 
     @Transactional
