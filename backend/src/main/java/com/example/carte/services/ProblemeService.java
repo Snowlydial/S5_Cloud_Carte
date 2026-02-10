@@ -610,8 +610,10 @@ public class ProblemeService {
 
         dto.setCompteEmail(probleme.getCompte() != null ? probleme.getCompte().getEmail() : null);
         dto.setSignalementId(probleme.getSignalement() != null ? probleme.getSignalement().getIdSignalement() : null);
-        dto.setStatut(probleme.getStatusList().getLast().getStatus().getIdStatus());
-        dto.setStatutNom(probleme.getStatusList().getLast().getStatus().getNom());
+        ProblemeStatus latestStatus = problemeStatusRepository.findTopByProblemeOrderByDateStatusDesc(probleme);
+        System.out.println("In probleme Service, Status taken: idStatus=" + latestStatus.getStatus().getIdStatus() + ", nom=" + latestStatus.getStatus().getNom());
+        dto.setStatut(latestStatus.getStatus().getIdStatus());
+        dto.setStatutNom(latestStatus.getStatus().getNom());
         return dto;
     }
 
@@ -743,11 +745,26 @@ public class ProblemeService {
         RecapDashboardDTO recap = new RecapDashboardDTO();
 
         List<Probleme> problemes = problemeRepo.findAll();
+        List<Signalement> signalements = signalementRepo.findAll();
 
-        int nbPoints = problemes.size();
+        // Nombre total de signalements
+        long nbSignalements = signalements.size();
+        
+        // Nombre de signalements sans problème (non traités)
+        long nbNonTraites = signalements.stream()
+            .filter(s -> s.getProbleme() == null)
+            .count();
+
+        int nbProblemes = problemes.size();
         double totalSurface = 0;
         double totalBudget = 0;
         double avancementTotal = 0;
+
+        long nbTermines = 0;
+        long nbEnCours = 0;
+        long nbNouveaux = 0;
+        long totalDelaiJours = 0;
+        int countDelai = 0;
 
         for (Probleme probleme : problemes) {
 
@@ -757,25 +774,49 @@ public class ProblemeService {
             // 🔹 Récupérer le dernier status du problème
             Pageable topOne = PageRequest.of(0, 1,
                     Sort.by("dateStatus").descending().and(Sort.by("idProblemeStatus").descending()));
-            ProblemeStatus status = problemeStatusRepository.findByProbleme(probleme, topOne).get(0);
-            // ProblemeStatus lastStatus =
-            // problemeStatusRepository.findTopByProblemeOrderByDateStatusDesc(probleme);
-            ProblemeStatus lastStatus = status;
-            if (lastStatus != null) {
-                switch (lastStatus.getStatus().getNom().toLowerCase()) {
-                    case "termine" -> avancementTotal += 100;
-                    case "en_cours" -> avancementTotal += 50;
-                    case "nouveau" -> avancementTotal += 0;
+            List<ProblemeStatus> statusList = problemeStatusRepository.findByProbleme(probleme, topOne);
+            
+            if (statusList != null && !statusList.isEmpty()) {
+                ProblemeStatus lastStatus = statusList.get(0);
+                String statusNom = lastStatus.getStatus().getNom().toLowerCase();
+                switch (statusNom) {
+                    case "termine" -> {
+                        avancementTotal += 100;
+                        nbTermines++;
+                        // Calcul du délai: différence entre date de création du problème et date du statut terminé
+                        if (probleme.getDateProbleme() != null && lastStatus.getDateStatus() != null) {
+                            long jours = java.time.temporal.ChronoUnit.DAYS.between(
+                                probleme.getDateProbleme(), lastStatus.getDateStatus());
+                            totalDelaiJours += jours;
+                            countDelai++;
+                        }
+                    }
+                    case "en_cours" -> {
+                        avancementTotal += 50;
+                        nbEnCours++;
+                    }
+                    case "nouveau" -> {
+                        avancementTotal += 0;
+                        nbNouveaux++;
+                    }
                 }
             }
         }
 
-        double avancementPercent = nbPoints == 0 ? 0 : avancementTotal / nbPoints;
+        // Avancement global: on compte aussi les non-traités comme 0%
+        double avancementPercent = nbSignalements == 0 ? 0 : avancementTotal / nbSignalements;
+        double delaiMoyenJours = countDelai == 0 ? 0 : (double) totalDelaiJours / countDelai;
 
-        recap.setNbPoints(nbPoints);
+        recap.setNbPoints(nbProblemes);
+        recap.setNbSignalements(nbSignalements);
+        recap.setNbNonTraites(nbNonTraites);
         recap.setTotalSurface(totalSurface);
         recap.setTotalBudget(totalBudget);
         recap.setAvancementPercent(avancementPercent);
+        recap.setNbTermines(nbTermines);
+        recap.setNbEnCours(nbEnCours);
+        recap.setNbNouveaux(nbNouveaux);
+        recap.setDelaiMoyenJours(delaiMoyenJours);
 
         return recap;
     }
