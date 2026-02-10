@@ -146,7 +146,7 @@
     gap: 12px;
     padding: 16px 20px;
     cursor: pointer;
-    background: #4ECDC4;
+    background: #FFC312;
     border-bottom: 3px solid #2C3A47;
     user-select: none;
 }
@@ -240,26 +240,60 @@
     font-family: 'Space Mono', monospace;
 }
 
-.neo-input {
-    --background: #F5F6FA;
+/* ==========================================
+   NATIVE SELECT & INPUT STYLING
+   ========================================== */
+.neo-select,
+.neo-input-text {
+    width: 100%;
+    padding: 12px;
+    background: #F5F6FA;
     color: #2C3A47;
-    --border-width: 3px;
-    --border-color: #2C3A47;
-    --border-radius: 0;
-    --highlight-color-focused: #4ECDC4;
+    border: 3px solid #2C3A47;
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
     transition: all 0.1s ease;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
-.neo-input:focus-within {
+.neo-select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232C3A47' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+}
+
+.neo-select:focus,
+.neo-input-text:focus {
+    outline: none;
     box-shadow: 3px 3px 0 #F5F6FA;
     transform: translate(-2px, -2px);
+    background: #F5F6FA;
+}
+
+.neo-select option {
+    background: #F5F6FA;
+    color: #2C3A47;
+    padding: 8px;
+}
+
+.neo-select option:disabled {
+    color: #7f8c8d;
+}
+
+.neo-input-text::placeholder {
+    color: #7f8c8d;
+    opacity: 1;
 }
 
 .neo-submit-btn {
     margin-top: 8px;
     --padding-top: 14px;
     --padding-bottom: 14px;
-    /* --background: #4ECDC4; */
     --color: #2C3A47;
     --border-color: #F5F6FA;
 }
@@ -411,6 +445,10 @@ ion-toolbar {
     --color: #2C3A47;
 }
 
+ion-toolbar ion-title {
+    text-align: center;
+}
+
 /* ==========================================
    RECAP MODAL STYLES
    ========================================== */
@@ -461,35 +499,4 @@ ion-toolbar {
 
 .recap-modal-success .recap-modal-value {
     color: #2C3A47;
-}
-
-/* ==========================================
-   ION-INPUT TEXT COLOR FIX
-   ========================================== */
-.neo-input ion-input {
-    --color: #2C3A47;
-}
-
-.neo-input ion-select {
-    --color: #2C3A47;
-}
-
-/* ==========================================
-   ALERT STYLING
-   ========================================== */
-.neo-alert .alert-head {
-    background-color: #4ECDC4;
-    color: #2C3A47;
-}
-
-.neo-alert .alert-wrapper {
-    background-color: #2C3A47;
-}
-
-.neo-alert .alert-button {
-    color: #4ECDC4;
-}
-
-.neo-alert .alert-message {
-    color: #F5F6FA;
 }
