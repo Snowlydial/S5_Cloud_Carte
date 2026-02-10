@@ -783,6 +783,7 @@ public class SignalementService {
         dto.setCompteEmail(s.getCompte().getEmail());
         dto.setIdTypeSignalement(s.getTypeSignalement().getFirebaseId());
         List<SignalementImage> signalementImages = signalementImageRepository.findBySignalement_IdSignalement(s.getIdSignalement());
+        System.out.println("idddddddddddddddddddddd "+s.getIdSignalement()+" "+signalementImages.size());
         List<String> liens = new ArrayList<>();
         if(!signalementImages.isEmpty()){
             //on ajoute au dto
@@ -791,6 +792,7 @@ public class SignalementService {
             }
         }
         
+        dto.setLienImage(liens);
         String entrepriseNom = null;
         if (s.getProbleme() != null && s.getProbleme().getEntreprise() != null) {
             entrepriseNom = s.getProbleme().getEntreprise().getNom();
