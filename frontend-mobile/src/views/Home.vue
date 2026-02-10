@@ -1,122 +1,159 @@
 <template>
   <ion-page>
     <ion-header>
-      <ion-toolbar color="primary">
-        <ion-title>Accueil - Antananarivo</ion-title>
+      <ion-toolbar>
+        <ion-title>Carte d'Antananarivo</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content :scroll-y="false">
       <div class="main-wrapper">
+        <!-- Fullscreen Map -->
         <div id="map" ref="mapContainer"></div>
-        <div class="fab-container fab-location">
-          <span class="fab-label">Ma position</span>
-          <ion-fab-button size="small" @click="getCurrentLocation" color="light">
+        
+        <!-- FAB Buttons with Neobrutalism styling -->
+        <div class="neo-fab-container fab-location">
+          <span class="neo-fab-label">Position</span>
+          <button class="neo-fab-button" @click="getCurrentLocation">
             <ion-icon :icon="locateOutline"></ion-icon>
-          </ion-fab-button>
+          </button>
         </div>
 
-        <div class="fab-container fab-logout">
-          <span class="fab-label">Déconnexion</span>
-          <ion-fab-button size="small" @click="handleLogout" color="light">
+        <div class="neo-fab-container fab-logout">
+          <span class="neo-fab-label">Déconnexion</span>
+          <button class="neo-fab-button neo-fab-danger" @click="handleLogout">
             <ion-icon :icon="logOutOutline"></ion-icon>
-          </ion-fab-button>
+          </button>
         </div>
 
-        <div class="fab-container fab-filter">
-          <span class="fab-label">Mes signalements</span>
-          <ion-fab-button size="small" @click="filterMySignalement" color="light">
+        <div class="neo-fab-container fab-filter">
+          <span class="neo-fab-label">Mes signalements</span>
+          <button class="neo-fab-button neo-fab-info" @click="filterMySignalement">
             <ion-icon :icon="filterOutline"></ion-icon>
-          </ion-fab-button>
+          </button>
         </div>
 
-        <div class="form-container">
-          <ion-list>
-            <ion-item lines="none">
-              <ion-label>
-                <h2 v-if="form.lat !== null && form.lng !== null">
-                  📍 Position : {{ form.lat.toFixed(4) }}, {{ form.lng.toFixed(4) }}
-                </h2>
-                <h2 v-else>Sélectionnez un point sur la carte</h2>
-              </ion-label>
-            </ion-item>
+        <!-- Recap FAB Button -->
+        <div v-if="recapView" class="neo-fab-container fab-recap">
+          <span class="neo-fab-label">Récapitulatif</span>
+          <button class="neo-fab-button neo-fab-secondary" @click="isRecapModalOpen = true">
+            <ion-icon :icon="statsChartOutline"></ion-icon>
+          </button>
+        </div>
 
-            <ion-item fill="outline" class="ion-margin-bottom">
-              <ion-select v-model="form.type" label="Nature du danger" label-placement="floating">
-                <ion-select-option v-for="t in typesSignalement" :key="t.idTypeSignalement"
-                  :value="t.idTypeSignalement">
-                  {{ t.nom }}
-                </ion-select-option>
-              </ion-select>
-            </ion-item>
+        <!-- Bottom Sheet -->
+        <div class="bottom-sheet" :class="{ 'sheet-expanded': isSheetExpanded }">
+          <!-- Handle to drag/toggle -->
+          <div class="sheet-handle" @click="isSheetExpanded = !isSheetExpanded">
+            <div class="handle-bar"></div>
+            <span class="handle-text">{{ isSheetExpanded ? 'Réduire' : 'Nouveau signalement' }}</span>
+            <ion-icon :icon="isSheetExpanded ? chevronDownOutline : chevronUpOutline" class="handle-icon"></ion-icon>
+          </div>
 
-            <ion-item fill="outline" class="ion-margin-bottom">
-              <ion-input :value="form.description"
-                @ionInput="form.description = ($event.target as unknown as HTMLInputElement).value || ''"
-                label="Description" label-placement="floating" placeholder="Description">
-              </ion-input>
-            </ion-item>
+          <!-- Sheet Content (scrollable) -->
+          <div class="sheet-content">
+            <!-- Position Badge -->
+            <div class="neo-position-badge">
+              <span class="badge-label">Position sélectionnée</span>
+              <span class="badge-value" v-if="form.lat !== null && form.lng !== null">
+                📍 {{ form.lat.toFixed(4) }}, {{ form.lng.toFixed(4) }}
+              </span>
+              <span class="badge-value badge-warning" v-else>
+                Touchez la carte pour sélectionner
+              </span>
+            </div>
 
-            <ion-button expand="block" :disabled="!form.lat" @click="envoyerSignalement">
-              Confirmer le signalement
-            </ion-button>
-          </ion-list>
-          <ion-modal :is-open="isPhotoModalOpen" @didDismiss="isPhotoModalOpen = false">
-            <ion-header>
-              <ion-toolbar>
-                <ion-title>Ajouter des photos</ion-title>
-                <ion-buttons slot="end">
-                  <ion-button @click="isPhotoModalOpen = false">Fermer</ion-button>
-                </ion-buttons>
-              </ion-toolbar>
-            </ion-header>
-            <ion-content class="ion-padding">
-              <div class="photo-grid">
-                <div v-for="(photo, index) in selectedPhotos" :key="index" class="photo-item">
-                  <img :src="photo.webPath" />
-                  <ion-button color="danger" size="small" @click="removePhoto(index)">
-                    <ion-icon :icon="trashOutline"></ion-icon>
-                  </ion-button>
-                </div>
-                <div class="add-photo-btn" @click="takePhoto">
-                  <ion-icon :icon="cameraOutline" size="large"></ion-icon>
-                  <p>Ajouter une photo</p>
-                </div>
+            <!-- Form Card -->
+            <div class="neo-form-card">
+              <div class="form-group">
+                <label class="form-label">Nature du danger</label>
+                <select v-model="form.type" class="neo-select">
+                  <option value="" disabled selected>Sélectionner</option>
+                  <option v-for="t in typesSignalement" :key="t.idTypeSignalement" :value="t.idTypeSignalement">
+                    {{ t.nom }}
+                  </option>
+                </select>
               </div>
 
-              <ion-button expand="block" class="ion-margin-top" @click="finaliserSignalement">
-                Envoyer le signalement final
+              <div class="form-group">
+                <label class="form-label">Description</label>
+                <input 
+                  v-model="form.description"
+                  type="text"
+                  class="neo-input-text"
+                  placeholder="Décrivez le signalement"
+                />
+              </div>
+              
+              <ion-button expand="block" :disabled="!form.lat" @click="envoyerSignalement" class="neo-submit-btn">
+                Confirmer le signalement
               </ion-button>
-            </ion-content>
-          </ion-modal>
-
-          <ion-card v-if="recapView">
-            <ion-card-header>
-              <ion-card-title>Récapitulatif</ion-card-title>
-            </ion-card-header>
-            <ion-card-content>
-              <ion-grid>
-                <ion-row>
-                  <ion-col size="6"><strong>Points (problemes) :</strong></ion-col>
-                  <ion-col size="6">{{ recapView.nbrPoint }}</ion-col>
-                </ion-row>
-                <ion-row>
-                  <ion-col size="6"><strong>Surface totale :</strong></ion-col>
-                  <ion-col size="6">{{ format(recapView.totalSurface) }} m²</ion-col>
-                </ion-row>
-                <ion-row>
-                  <ion-col size="6"><strong>Budget total :</strong></ion-col>
-                  <ion-col size="6">{{ format(recapView.totalBudget) }} AR</ion-col>
-                </ion-row>
-                <ion-row>
-                  <ion-col size="6"><strong>Avancement :</strong></ion-col>
-                  <ion-col size="6">{{ recapView.avancement }} %</ion-col>
-                </ion-row>
-              </ion-grid>
-            </ion-card-content>
-          </ion-card>
+            </div>
+          </div>
         </div>
 
+        <!-- Recap Modal -->
+        <ion-modal :is-open="isRecapModalOpen" @didDismiss="isRecapModalOpen = false">
+          <ion-header>
+            <ion-toolbar>
+              <ion-title>Récapitulatif global</ion-title>
+              <ion-buttons slot="end">
+                <ion-button @click="isRecapModalOpen = false">Fermer</ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content class="ion-padding recap-modal-content">
+            <div v-if="recapView" class="recap-modal-grid">
+              <div class="recap-modal-item">
+                <span class="recap-modal-label">Points signalés</span>
+                <span class="recap-modal-value">{{ recapView.nbrPoint }}</span>
+              </div>
+              <div class="recap-modal-item">
+                <span class="recap-modal-label">Surface totale</span>
+                <span class="recap-modal-value">{{ format(recapView.totalSurface) }} m²</span>
+              </div>
+              <div class="recap-modal-item recap-modal-highlight">
+                <span class="recap-modal-label">Budget total</span>
+                <span class="recap-modal-value">{{ format(recapView.totalBudget) }} AR</span>
+              </div>
+              <div class="recap-modal-item recap-modal-success">
+                <span class="recap-modal-label">Avancement</span>
+                <span class="recap-modal-value">{{ recapView.avancement }} %</span>
+              </div>
+            </div>
+          </ion-content>
+        </ion-modal>
+
+        <!-- Photo Modal -->
+        <ion-modal :is-open="isPhotoModalOpen" @didDismiss="isPhotoModalOpen = false">
+          <ion-header>
+            <ion-toolbar>
+              <ion-title>Ajouter des photos</ion-title>
+              <ion-buttons slot="end">
+                <ion-button @click="isPhotoModalOpen = false">Fermer</ion-button>
+              </ion-buttons>
+            </ion-toolbar>
+          </ion-header>
+          <ion-content class="ion-padding">
+            <div class="photo-grid">
+              <div v-for="(photo, index) in selectedPhotos" :key="index" class="photo-item">
+                <img :src="photo.webPath" />
+                <button class="neo-photo-delete" @click="removePhoto(index)">
+                  <ion-icon :icon="trashOutline"></ion-icon>
+                </button>
+              </div>
+              <div class="add-photo-btn" @click="takePhoto">
+                <ion-icon :icon="cameraOutline" size="large"></ion-icon>
+                <p>Ajouter une photo</p>
+              </div>
+            </div>
+            
+            <ion-button expand="block" class="ion-margin-top" @click="finaliserSignalement">
+              Envoyer le signalement
+            </ion-button>
+          </ion-content>
+        </ion-modal>
+        
       </div>
     </ion-content>
   </ion-page>
@@ -149,7 +186,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import useTypeSignalement from '@/composables/useTypeSignalement';
 import useSignalement from '@/composables/useSignalement';
-import { filterOutline, locateOutline, logOutOutline } from 'ionicons/icons';
+import { filterOutline, locateOutline, logOutOutline, chevronUpOutline, chevronDownOutline, statsChartOutline } from 'ionicons/icons';
 import useAuth from '@/composables/useAuth';
 import { useRouter } from 'vue-router';
 import { Recap } from '@/types/Recap';
@@ -159,8 +196,15 @@ import { SignalementProbleme } from "@/models/SignalementProbleme";
 
 import useSignalementProbleme from '@/composables/useSignalementProbleme'
 
-import { cameraOutline, trashOutline, /* ... */ } from 'ionicons/icons';
+import { cameraOutline, trashOutline } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+
+// Bottom sheet state
+const isSheetExpanded = ref(false);
+
+// Recap modal state
+const isRecapModalOpen = ref(false);
+
 // MODAL IMAGE
 const isPhotoModalOpen = ref(false);
 const selectedPhotos = ref<any[]>([]);
@@ -176,15 +220,17 @@ const takePhoto = async () => {
 // NOUVEAU : Fonction pour ouvrir la caméra/galerie
 // const takePhoto = async () => {
 //   try {
-//     const image = await Camera.getPhoto({
+//     const photo = await Camera.getPhoto({
 //       quality: 90,
 //       allowEditing: false,
-//       resultType: CameraResultType.Uri,
-//       source: CameraSource.Prompt // Propose Galerie ou Appareil photo
+//       resultType: CameraResultType.Uri, // ou DataUrl si vous voulez la base64
+//       source: CameraSource.Camera      // ou Prompt pour choisir Camera/Galerie
 //     });
-//     selectedPhotos.value.push(image);
-//   } catch (err) {
-//     console.log("Utilisateur a annulé la sélection");
+
+//     // photo.webPath contient l'URL de l'image
+//     selectedPhotos.value.push(photo);
+//   } catch (error) {
+//     console.error("Erreur lors de la prise de photo:", error);
 //   }
 // };
 
@@ -206,8 +252,16 @@ const format = (value?: number) => {
 
 import { Signalement } from '@/models/Signalement';
 import { TypeSignalementService } from '@/services/TypeSignalement.service';
+const { typesSignalement, getListeTypeSignalement } = useTypeSignalement();
+const { 
+  signaler, 
+  getAllSignalements, 
+  listeSignalement, 
+  mySignalement 
+} = useSignalement();
+
 import { PhotoService } from '@/services/Photo.service';
-import { SupabaseService } from '@/services/supabase.service';
+import { TypeSignalementService } from '@/services/TypeSignalement.service';
 
 const { typesSignalement, getListeTypeSignalement, error, success } = useTypeSignalement();
 const { signaler, loading, getAllSignalements, listeSignalement, getAllSignalementsMine } = useSignalement();
@@ -216,28 +270,50 @@ const { listeSignalementProbleme, fetchAllData } = useSignalementProbleme();
 // getAllSignalements();
 const listeSignalementEffectif = ref<Signalement[]>([]);
 
-// État réactif pour le formulaire
+const { logout, currentUser } = useAuth();
+const router = useRouter();
+
+// Form state
 const form = ref({
+  type: "",
   lat: null as number | null,
   lng: null as number | null,
-  type: 'accident',
-  description: ''
+  description: ""
 });
 
-const typesSignalementListe = ref([]);
+let map: L.Map;
+let marker: L.Marker | null = null;
+const mapContainer = ref();
+const loading = ref(false);
+const recap = ref<Recap>();
 
 const callGetTypesSignalement = async () => {
   const result = await getListeTypeSignalement();
   typesSignalementListe.value = typesSignalementListe.value || [];
 }
+const recapView = computed(() => {
+  return recap.value || null;
+});
 
-callGetTypesSignalement();
+const format = (num : number) => {
+  return Math.round(num);
+}
+
+const listeSignalementEffectif = ref<SignalementProbleme[]>([]);
+const filterMySignalement = async () => {
+  if(listeSignalementEffectif.value.length <= 0 || listeSignalementEffectif.value === listeSignalementProbleme.value){
+    const mesSig = await mySignalement(currentUser.value?.email as string);
+    console.log("Mes signalements :", mesSig);
+    renderSignalementMarkers(mesSig as SignalementProbleme[]);
+    listeSignalementEffectif.value = mesSig as SignalementProbleme[];
+  } else {
+    renderSignalementMarkers(listeSignalementProbleme.value);
+    listeSignalementEffectif.value = listeSignalementProbleme.value;
+  }
+};
 
 
-let map: L.Map;
-let marker: L.Marker | null = null;
-
-// --- NOUVELLE FONCTION DE GÉOLOCALISATION ---
+// Fonction pour récupérer la position actuelle
 const getCurrentLocation = async () => {
   try {
     // Ajouter un timeout
@@ -251,81 +327,52 @@ const getCurrentLocation = async () => {
         setTimeout(() => reject(new Error('Timeout GPS')), 10000)
       )
     ]) as any;
+    // 1️⃣ Demande de permission si besoin
+    const permission = await Geolocation.requestPermissions();
+    if (permission.location !== 'granted') {
+      console.warn("Permission de localisation refusée.");
+      return;
+    }
 
-    const { latitude, longitude } = coordinates.coords;
-    const newPos = L.latLng(latitude, longitude);
+    // 2️⃣ Récupération de la position
+    const position = await Geolocation.getCurrentPosition();
+    const { latitude, longitude } = position.coords;
 
-    map.setView(newPos, 16);
+    console.log("✅ Position actuelle :", latitude, longitude);
+
+    // 3️⃣ Centrer la carte
+    map.setView([latitude, longitude], 14);
+
+    // 4️⃣ Ajouter un marqueur à cette position
+    if (marker) {
+      marker.setLatLng([latitude, longitude]);
+    } else {
+      marker = L.marker([latitude, longitude]).addTo(map);
+    }
+
+    // 5️⃣ Pré-remplir le formulaire (optionnel)
     form.value.lat = latitude;
     form.value.lng = longitude;
 
-    if (marker) {
-      marker.setLatLng(newPos);
-    } else {
-      marker = L.marker(newPos).addTo(map);
-    }
-  } catch (err) {
-    console.error("Erreur de localisation", err);
-    // NE PAS bloquer l'app, juste informer
-    // alert("Position GPS non disponible. Cliquez sur la carte pour sélectionner une position.");
+  } catch (error) {
+    console.error("Erreur de géolocalisation :", error);
   }
 };
-
-const router = useRouter();
 
 const handleLogout = async () => {
-  try {
-    // Nettoyer la carte Leaflet
-    if (map) {
-      map.remove();
-    }
-    if (markersLayer) {
-      markersLayer.clearLayers();
-    }
-    
-    // Réinitialiser les refs
-    selectedPhotos.value = [];
-    form.value = {
-      lat: null,
-      lng: null,
-      type: 'accident',
-      description: ''
-    };
-    
-    await logout();
-    
-    // Forcer un reload complet sur mobile
-    window.location.href = '/login';
-    
-  } catch (err) {
-    console.error("Erreur lors de la déconnexion", err);
-    window.location.href = '/login';
-  }
+  await logout();
+  router.push('/login');
 };
 
-const filterMySignalement = async () => {
-  try {
-    await getAllSignalementsMine();
-
-    console.log("Filtre applique avec succes");
-    renderSignalementMarkers(listeSignalement.value);
-
-  } catch (err) {
-    console.error("Erreur lors de l'obtention avec filtres", err);
-  };
-}
-
 const envoyerSignalement = () => {
-  if (form.value.lat === null || form.value.lng === null) {
-    alert('Veuillez sélectionner une position sur la carte.');
-    return;
-  }
+  // Ouvrir la modale d'ajout de photos
   isPhotoModalOpen.value = true;
-  // Construire coords au format Leaflet et appeler signaler
+  
+  // Ancien code pour envoi direct :
   // const coords: L.LatLngExpression = [form.value.lat!, form.value.lng!];
-  // const idType =  form.value.type;
-  // console.log  ("Envoi du signalement :", {
-  //   type: idType,
+  // const idType = form.value.type;
+  // const desc = form.value.description;
+  // await signaler(idType, coords, {
   //   coords: coords
   // });
   // signaler(idType, coords);
@@ -379,6 +426,7 @@ onMounted(async () => {
   });
 
   await loadMapData();
+  await getListeTypeSignalement();
 
   // Forcer le rendu
   setTimeout(() => {
@@ -434,7 +482,7 @@ const renderSignalementMarkers = async (signalements: SignalementProbleme[]) => 
             `
         : `
               <em style="color:#e67e22;">
-                ⚠️ Le signalement n’a pas encore été traité
+                ⚠️ Le signalement n'a pas encore été traité
               </em>
             `
       }
@@ -546,126 +594,4 @@ const loadMapData = async () => {
 
 </script>
 
-<style scoped>
-/* Wrapper pour occuper tout l'écran disponible */
-.main-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-#map {
-  flex: 6;
-  /* Prend 60% de l'espace disponible */
-  width: 100%;
-}
-
-.fab-container {
-  position: absolute;
-  right: 16px;
-  display: flex;
-  align-items: center;
-  z-index: 1000;
-  /* Pour passer au dessus de la carte Leaflet */
-}
-
-.fab-label {
-  background: rgba(255, 255, 255, 0.9);
-  padding: 4px 8px;
-  border-radius: 4px;
-  margin-right: 10px;
-  font-size: 0.8rem;
-  font-weight: bold;
-  color: #333;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  pointer-events: none;
-  /* Le clic traverse le texte vers le bouton si besoin */
-  opacity: 0.8;
-  transition: opacity 0.2s;
-}
-
-.fab-container:hover .fab-label {
-  opacity: 1;
-}
-
-ion-fab {
-  margin-top: 10px;
-}
-
-/* Position the first button normally */
-.fab-location {
-  top: 10px;
-}
-
-.fab-logout {
-  top: 60px;
-}
-
-.fab-filter {
-  top: 110px;
-}
-
-
-#map {
-  flex: 6;
-  width: 100%;
-  position: relative;
-}
-
-.main-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.form-container {
-  flex: 4;
-  background: white;
-  padding: 10px;
-  z-index: 10;
-  overflow-y: auto;
-}
-
-:deep(.custom-marker) {
-  background: transparent;
-  border: none;
-}
-
-.photo-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  margin-top: 15px;
-}
-
-.photo-item {
-  position: relative;
-  height: 150px;
-}
-
-.photo-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.photo-item ion-button {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  --padding-start: 5px;
-  --padding-end: 5px;
-}
-
-.add-photo-btn {
-  border: 2px dashed #ccc;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 150px;
-  color: #666;
-}
-</style>
+<style scoped src="./Home.css"></style>

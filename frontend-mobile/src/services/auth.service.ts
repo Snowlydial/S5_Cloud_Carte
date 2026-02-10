@@ -28,9 +28,8 @@ export async function loginService(email: string, password: string): Promise<Api
             return res.ok;
         } catch (e) {
             return false;
-        } finally {
-            clearTimeout(timeout);
         }
+        return true;
     }
 
 
