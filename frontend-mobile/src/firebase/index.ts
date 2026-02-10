@@ -2,13 +2,13 @@ import { browserLocalPersistence, getAuth, setPersistence } from "firebase/auth"
 import { getFirestore } from "firebase/firestore";
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { Capacitor } from "@capacitor/core";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 
 
-
+import { PushNotifications } from '@capacitor/push-notifications';
 // Miharisoa
 const firebaseConfig = {
   apiKey: "AIzaSyA_uqtf0wYmmtnGuIxnQqolBUVKK2q6_MQ",
@@ -46,49 +46,107 @@ async function initFirebaseAuth() {
 export const initAuth = initFirebaseAuth();
 
 // Firebase Messaging
-const messaging = getMessaging(app);
+// const messaging = getMessaging(app);
 
 
-// Demander la permission notifications et récupérer token
-export async function requestNotificationPermission() {
-  if (!("Notification" in window)) {
-    alert("Ce navigateur ne supporte pas les notifications.");
-    return;
-  }
 
-  const permission = await Notification.requestPermission();
-  if (permission === "granted") {
-    console.log("Notification autorisée !");
-    try {
-      const token = await getToken(messaging, { vapidKey: "BKczifT1eLLql4ZVLGUdIlFgboONLIOtuDVgGFdHoik78OIg0S8EYjsui1gtW012P3fdX5hI-i3t69emqmnPGRY" });
-      console.log("FCM Token:", token);
-      return token;
-    } catch (err) {
-      console.error("Erreur lors de la récupération du token:", err);
+
+// plateforme
+const isWeb = Capacitor.getPlatform() === "web";
+
+/* =========================
+   PUSH NOTIFICATIONS
+   ========================= */
+
+export async function initPushNotifications(): Promise<string | null> {
+
+  // 📱 MOBILE (Android / iOS)
+  if (!isWeb) {
+    // 1. Demander les permissions
+    const permResult = await PushNotifications.requestPermissions();
+
+    if (permResult.receive === 'granted') {
+      console.log('✅ Permission accordée');
+
+      // 2. Enregistrer pour recevoir les notifications
+      await PushNotifications.register();
+
+      // 3. Listener pour obtenir le token
+      return new Promise((resolve) => {
+        PushNotifications.addListener("registration", (token) => {
+          console.log("📱 FCM MOBILE TOKEN:", token.value);
+          resolve(token.value);
+        });
+
+        // Listener pour les erreurs d'enregistrement
+        PushNotifications.addListener("registrationError", (error) => {
+          console.error("❌ Erreur d'enregistrement:", error);
+          resolve(null);
+        });
+
+        // 4. Listener pour recevoir les notifications (app ouverte)
+        PushNotifications.addListener("pushNotificationReceived", (notification) => {
+          console.log("🔔 Notification reçue:", notification);
+          // Afficher une alerte ou un toast
+          alert(`Nouvelle notification: ${notification.title}\n${notification.body}`);
+        });
+
+        // 5. Listener pour les actions sur les notifications (app fermée)
+        PushNotifications.addListener("pushNotificationActionPerformed", (notification) => {
+          console.log("👆 Notification cliquée:", notification);
+          // Naviguer vers une page spécifique si nécessaire
+        });
+      });
+    } else {
+      console.warn('⚠️ Permission refusée');
+      alert('Veuillez autoriser les notifications dans les paramètres de l\'app');
+      return null;
     }
-  } else {
-    console.warn("Permission notifications refusée");
   }
-}
 
-// Notifications en premier plan
-onMessage(messaging, (payload) => {
-  console.log("Message reçu en premier plan:", payload);
+  // 🌐 WEB
+  try {
+    const { getMessaging, getToken, onMessage } = await import("firebase/messaging");
+    const messaging = getMessaging(app);
 
-  const title = payload.notification?.title || 'Notification';
-  const body = payload.notification?.body || '';
+    // Enregistrer le service worker
+    if ("serviceWorker" in navigator) {
+      await navigator.serviceWorker.register("/firebase-messaging-sw.js");
+    }
 
-  new Notification(title, { body, icon: '/favicon.png' });
-});
+    // Demander la permission pour les notifications web
+    const permission = await Notification.requestPermission();
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/firebase-messaging-sw.js')
-    .then((registration) => {
-      console.log('Service Worker enregistré avec succès:', registration);
-    })
-    .catch((err) => {
-      console.error('Erreur d’enregistrement du Service Worker:', err);
-    });
+    if (permission === 'granted') {
+      console.log('✅ Permission web accordée');
+
+      const token = await getToken(messaging, {
+        vapidKey: "BKczifT1eLLql4ZVLGUdIlFgboONLIOtuDVgGFdHoik78OIg0S8EYjsui1gtW012P3fdX5hI-i3t69emqmnPGRY",
+      });
+
+      console.log("🌐 FCM WEB TOKEN:", token);
+
+      // Écouter les messages quand l'app est ouverte
+      onMessage(messaging, (payload) => {
+        console.log("🔔 Message reçu (web):", payload);
+        new Notification(
+          payload.notification?.title ?? "Notification",
+          {
+            body: payload.notification?.body,
+            icon: payload.notification?.icon || '/icon.png'
+          }
+        );
+      });
+
+      return token;
+    } else {
+      console.warn('⚠️ Permission web refusée');
+      return null;
+    }
+  } catch (error) {
+    console.error("❌ Erreur initialisation FCM Web:", error);
+    return null;
+  }
 }
 
 export const db = getFirestore(app);
