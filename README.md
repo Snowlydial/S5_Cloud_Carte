@@ -20,6 +20,45 @@ Built as a cloud computing project, the goal was to architect a system across th
 - Managing state across mobile, web, and API without a shared session is a different problem from a standard monolith
 - Running an offline tile server (MBTiles via MapTiler) avoided external map API dependencies at the cost of configuring the pipeline locally
 
+## Screenshots
+
+### Dashboard
+
+![Dashboard showing key metrics and road work statistics](docs/screenshots/dashboard.png)
+
+Central dashboard displaying live counts of signalements, total surface coverage, budget allocation, and global progress percentage across all road work projects.
+
+### Map View - Interactive Geolocated Reports
+![Map view](docs/screenshots/Carte.png)
+
+Map interface displaying all signals on Antananarivo, with filterable layers by status (non traité, en cours, nouveau, terminé). Left sidebar shows area statistics, total surface, budget, and progress metrics.
+
+#### Report without any issues yet
+![Signalement marker (without any issues) and popup details](docs/screenshots/CarteSignalementWithoutProb.png)
+
+#### Report with an issue
+![Signalement markers (with an issue) and popup details](docs/screenshots/CarteSignalementWithProb.png)
+
+Displays signal details (date, status, surface area, budget, and enterprise info) on click, with real-time sync from mobile submissions.
+
+### Signal Management
+
+![Signal management table with creation dates, statuses, and quick actions](docs/screenshots/GestSignalement.png)
+
+Complete signal management interface with filterable table showing all road work issues. Managers can modify status (nouveau, en cours, terminé), add problems, and suppress records directly from the dashboard.
+
+### Problems Management
+
+![Problems table with associated signals and status updates](docs/screenshots/GestProblems.png)
+
+Full CRUD interface for road problems. Each problem links to its signalement, shows date and status, and includes quick actions to modify, attach additional issues, and suppress entries from the system.
+
+### Users Management
+
+![Users table with email, role assignment, and permission controls](docs/screenshots/GestUser.png)
+
+Administration panel for user and team management. Supports blocked account management and synchronization controls for managing contractor access and permissions across the platform.
+
 ## Tech Stack
 
 - Backend: Java + Spring Boot
