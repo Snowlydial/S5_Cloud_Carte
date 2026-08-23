@@ -1,6 +1,6 @@
 # S5_Cloud_Carte
 
-A cloud-deployed, multi-platform road issue reporting system. Mobile users submit geolocated reports (signalements) with photos and GPS coordinates. A web admin interface lets managers assign those reports to contractors and track resolution status. Everything syncs in real time through Firebase.
+A road issue reporting system split across three clients. Citizens report potholes and damaged roads from a mobile app with GPS coordinates and a photo; managers see those reports appear on a web map, triage them, and assign them to contractors. A Spring Boot API owns the durable data, and Firebase carries the real-time propagation between surfaces.
 
 Built as a cloud computing project, the goal was to architect a system across three separate clients — a Spring Boot API, a React web dashboard, and an Ionic mobile app — and keep them in sync without tight coupling.
 
@@ -8,17 +8,22 @@ Built as a cloud computing project, the goal was to architect a system across th
 
 ### What it does
 
-- Mobile app (Ionic/Capacitor): report a road issue with GPS coordinates, description, and photo; view your own reports and their current status
-- Web dashboard (React): view all reports on an interactive map with offline tile support; filter by status (nouveau, en cours, terminé); assign reports to contractors
-- Firebase sync: changes from mobile propagate to the web in real time without polling
-- Role-based access: regular users can only see their own reports; managers have full dashboard access
-- Containerized deployment: Spring Boot API, PostgreSQL, React frontend, and a local tile server all run through a single `docker compose` command
+- Mobile app (Ionic/Capacitor): submit a report with GPS coordinates, description, and photo; follow your own reports and their status
+- Web dashboard (React): every report on an interactive map, filterable by status (nouveau, en cours, terminé), assignable to contractors
+- Real-time propagation: a report filed on mobile surfaces on the web without polling
+- Role-based access: regular users see only their own reports, managers see everything
+- Full CRUD for the problems attached to a report, plus user and contractor administration
+- Self-hosted map tiles, no external map API dependency
+- One `docker compose up` brings up the API, PostgreSQL, the web frontend, and the tile server together
 
-### Why this project matters
+### How the pieces fit together
 
-- It required thinking about data ownership across three surfaces: what the mobile app owns locally, what Firebase holds for sync, and what the backend persists
-- Managing state across mobile, web, and API without a shared session is a different problem from a standard monolith
-- Running an offline tile server (MBTiles via MapTiler) avoided external map API dependencies at the cost of configuring the pipeline locally
+- **Postgres is the system of record; Firebase is the transport.** Firestore carries changes between clients in real time, but the backend keeps its own relational copy rather than treating Firestore as the database. Reports are relational data with foreign keys and reporting queries behind them, which is not what a document store is good at, and it means an outage in the sync layer costs live updates rather than the data itself.
+- **Synced entities share one `Syncable` contract instead of one sync routine each.** Any entity mirroring a Firestore collection exposes `firebaseId`, `lastSync`, and its collection name, so a single generic method pulls a collection, upserts each document, and stamps it. Adding a synced entity means implementing the interface rather than writing another near-identical loop.
+- **Reference data is reconciled by business name, not by primary key.** A Firestore document and its Postgres row are matched on `nom`, with the Firebase document id stored alongside rather than adopted as the key. Each system keeps its own identity scheme, which is what avoids Postgres inheriting Firestore's ids or the reverse.
+- **Sync checks reachability first and gives up quietly.** A one-second reachability probe runs before any sync work, so an unreachable Firebase means "no updates this pass" rather than a stack trace on every scheduled run.
+- **Map tiles are served locally from MBTiles rather than pulled from a tile API.** It removes a hard external dependency and any per-request cost or key management, and it works offline. The tradeoff is real and paid up front: the tile pipeline has to be built and the tile data shipped with the deployment.
+- **The whole stack is one compose file.** API, database, web frontend, and tile server come up together, because a system whose interesting behaviour is the interaction between services is not usefully demonstrated by starting them one at a time.
 
 ## Screenshots
 
@@ -26,48 +31,46 @@ Built as a cloud computing project, the goal was to architect a system across th
 
 ![Dashboard showing key metrics and road work statistics](docs/screenshots/dashboard.png)
 
-Central dashboard displaying live counts of signalements, total surface coverage, budget allocation, and global progress percentage across all road work projects.
+Live counts of reports, total surface coverage, allocated budget, and overall progress across every road work project.
 
-### Map View - Interactive Geolocated Reports
+### Map View
+
 ![Map view](docs/screenshots/Carte.png)
 
-Map interface displaying all signals on Antananarivo, with filterable layers by status (non traité, en cours, nouveau, terminé). Left sidebar shows area statistics, total surface, budget, and progress metrics.
+Every report plotted over Antananarivo, with layers filterable by status. The sidebar carries area statistics, surface, budget, and progress.
 
-#### Report without any issues yet
-![Signalement marker (without any issues) and popup details](docs/screenshots/CarteSignalementWithoutProb.png)
+![Signalement marker without any issues and popup details](docs/screenshots/CarteSignalementWithoutProb.png)
+![Signalement markers with an issue and popup details](docs/screenshots/CarteSignalementWithProb.png)
 
-#### Report with an issue
-![Signalement markers (with an issue) and popup details](docs/screenshots/CarteSignalementWithProb.png)
-
-Displays signal details (date, status, surface area, budget, and enterprise info) on click, with real-time sync from mobile submissions.
+Clicking a marker opens its details: date, status, surface area, budget, and the assigned contractor. A report can exist before anyone has attached a specific problem to it, which is why the two states look different.
 
 ### Signal Management
 
 ![Signal management table with creation dates, statuses, and quick actions](docs/screenshots/GestSignalement.png)
 
-Complete signal management interface with filterable table showing all road work issues. Managers can modify status (nouveau, en cours, terminé), add problems, and suppress records directly from the dashboard.
+The triage view. Managers move reports between statuses, attach problems, and remove records, all against the same data the map reads.
 
 ### Problems Management
 
 ![Problems table with associated signals and status updates](docs/screenshots/GestProblems.png)
 
-Full CRUD interface for road problems. Each problem links to its signalement, shows date and status, and includes quick actions to modify, attach additional issues, and suppress entries from the system.
+Problems are separate records linked back to a report, so one location can accumulate several distinct issues over time rather than having its description overwritten.
 
 ### Users Management
 
 ![Users table with email, role assignment, and permission controls](docs/screenshots/GestUser.png)
 
-Administration panel for user and team management. Supports blocked account management and synchronization controls for managing contractor access and permissions across the platform.
+Role assignment, account blocking, and the sync controls that govern contractor access.
 
 ## Tech Stack
 
 - Backend: Java + Spring Boot
 - Web frontend: React
 - Mobile frontend: Ionic + Capacitor (Vue)
-- Real-time sync: Firebase
+- Real-time sync: Firebase (Firestore)
 - Database: PostgreSQL
 - Deployment: Docker + Docker Compose
-- Map tiles: MapTiler tile server
+- Map tiles: MapTiler tile server over MBTiles
 
 ## Project Structure
 
@@ -85,35 +88,34 @@ S5_Cloud_Carte/
 ### Prerequisites
 
 - Docker Desktop
-- Node.js (for mobile development only)
-- A Firebase project with Firestore enabled (for real-time sync)
+- Node.js (only needed for mobile development)
+- A Firebase project with Firestore enabled
 
 ### Run with Docker
 
 ```bash
-# 1) Clone the repository
 git clone https://github.com/Snowlydial/S5_Cloud_Carte.git
 cd S5_Cloud_Carte
+```
 
-# 2) Configure the database
-# Edit ./backend/sql/script_pg.sql with your schema settings before first launch
+Configure the schema in `./backend/sql/script_pg.sql` before the first launch, then:
 
-# 3) Start all services
+```bash
 docker compose up --build -d
 ```
 
-Services:
 - API: http://localhost:8080
 - Web dashboard: http://localhost:3000
 - Tile server: http://localhost:8081
 
-### If you update the database schema
+### If you change the database schema
 
 ```bash
-docker compose down
-docker compose down -v   # removes volumes
+docker compose down -v
 docker compose up --build -d
 ```
+
+`-v` drops the volumes, which is what forces the schema script to run again on the next start.
 
 ### Mobile setup (Ionic)
 
@@ -121,13 +123,11 @@ docker compose up --build -d
 cd frontend-mobile
 npm install
 
-# Sync Capacitor
-npm install @capacitor/geolocation
+npm install @capacitor/geolocation @ionic/pwa-elements
 npx cap sync
-npm install @ionic/pwa-elements
-
-# Android: add ACCESS_FINE_LOCATION to AndroidManifest.xml
 ```
+
+On Android, add `ACCESS_FINE_LOCATION` to `AndroidManifest.xml` — reports are useless without coordinates, so the app has nothing to submit if the permission is missing.
 
 ## Academic context
 
